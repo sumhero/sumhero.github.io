@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#4a90d9">
+    <title id="page-title">SumHero</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/images/icon-192.png">
+    <link rel="apple-touch-icon" href="/images/icon-192.png">
+    <link rel="stylesheet" href="/css/game.css">
+</head>
+<body>
+    <div id="app">
+        <div id="screen-loading" class="screen active">
+            <div class="auth-container">
+                <h1 class="game-title">SumHero</h1>
+                <div class="loader-spinner"></div>
+            </div>
+        </div>
+
+        <div id="screen-games" class="screen">
+            <div class="header">
+                <h2 data-i18n="chooseGame">Choose a Game</h2>
+                <button id="btn-settings" class="btn btn-small" data-i18n="settings">Settings</button>
+            </div>
+            <div id="game-list"></div>
+        </div>
+
+        <div id="screen-settings" class="screen">
+            <div class="header">
+                <button id="btn-back-settings" class="btn btn-small" data-i18n="back">Back</button>
+                <h2 data-i18n="settings">Settings</h2>
+            </div>
+            <div class="settings-section">
+                <h3 class="settings-label" data-i18n="language">Language</h3>
+                <div id="settings-language" class="difficulty-grid"></div>
+            </div>
+            <div class="settings-section">
+                <h3 class="settings-label" data-i18n="difficulty">Difficulty</h3>
+                <div id="settings-difficulty" class="difficulty-grid"></div>
+            </div>
+            <div class="settings-logout">
+                <button id="btn-reload-app" class="btn btn-small" data-i18n="reloadApp">Reload App</button>
+            </div>
+        </div>
+
+        <div id="screen-category" class="screen">
+            <div class="header">
+                <button id="btn-back-category" class="btn btn-small" data-i18n="back">Back</button>
+                <h2 data-i18n="chooseObjects">Choose Objects</h2>
+            </div>
+            <div id="category-picker" class="category-grid"></div>
+        </div>
+
+        <div id="screen-picker" class="screen">
+            <div class="header">
+                <button id="btn-back-games" class="btn btn-small" data-i18n="back">Back</button>
+                <h2 id="picker-title" data-i18n="howManyExercises">How many exercises?</h2>
+            </div>
+            <div id="exercise-picker" class="picker-grid"></div>
+        </div>
+
+        <div id="screen-game" class="screen">
+            <div class="game-header">
+                <div class="game-header-top">
+                    <div id="game-progress" class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                    <button id="btn-exit-game" class="btn btn-small" data-i18n="exit">Exit</button>
+                </div>
+                <div id="game-score" class="score">0 / 0</div>
+            </div>
+            <div class="game-body">
+                <div id="dice-container" class="dice-container"></div>
+                <div id="choices-container" class="choices-container"></div>
+            </div>
+        </div>
+
+        <div id="screen-celebration" class="screen">
+            <div class="celebration-content">
+                <div id="dancing-animals" class="dancing-animals"></div>
+                <h2 id="celebration-title" class="celebration-title" data-i18n="greatJob">Great Job!</h2>
+                <div id="celebration-stats" class="celebration-stats"></div>
+                <div id="confetti-container" class="confetti-container"></div>
+                <button id="btn-play-again" class="btn btn-primary btn-large" data-i18n="playAgain">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/translations.js"></script>
+    <script src="/js/sound.js"></script>
+    <script src="/js/dice-renderer.js"></script>
+    <script src="/js/animation.js"></script>
+    <script src="/js/game-list.js"></script>
+    <script src="/js/count-objects-game.js"></script>
+    <script src="/js/uno-game.js"></script>
+    <script src="/js/dice-recognition-game.js"></script>
+    <script src="/js/countries-data.js"></script>
+    <script src="/js/countries-game.js"></script>
+    <script src="/js/capitals-game.js"></script>
+    <script src="/js/dice-game.js"></script>
+    <script src="/js/app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then((reg) => {
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'activated') {
+                            window.location.reload();
+                        }
+                    });
+                });
+            });
+        }
+    </script>
+</body>
+</html>
