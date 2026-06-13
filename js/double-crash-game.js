@@ -651,20 +651,41 @@ const DoubleCrashGame = {
                 '</div>';
         }
 
-        // wheels — only the active wheel is shown at a time
         const finished = this.state === GAME_STATES.RESOLVED || this.state === GAME_STATES.CASHED_OUT;
-        let wheelsHtml = '';
-        if (this.wheel1Locked()) {
-            // wheel 1 done: show its result compactly, focus on wheel 2
-            wheelsHtml += '<div class="crash-wheel-badge">Wheel 1: <b>' + r.wheel1Final + '</b></div>';
-            wheelsHtml += '<div class="crash-wheel"><div class="crash-wheel-label">Wheel 2' +
-                (finished ? ' — <b>' + r.wheel2Final + '</b>' : '') + '</div>' +
-                '<div class="crash-wheel-grid">' + this.renderWheel(2) + '</div></div>';
-        } else {
-            wheelsHtml += '<div class="crash-wheel"><div class="crash-wheel-label">Wheel 1</div>' +
-                '<div class="crash-wheel-grid">' + this.renderWheel(1) + '</div></div>';
+
+        // result panel + New Round, kept above the wheel so they are visible
+        // on the first screen once the round ends
+        if (finished) {
+            html += this.renderResult();
+            html += '<button id="crash-newround" class="crash-action-btn primary crash-newround">New Round</button>';
         }
-        html += '<div class="crash-wheels">' + wheelsHtml + '</div>';
+
+        // wheel area — only the active wheel is shown at a time; once the
+        // round is finished, show just each wheel's result and their sum
+        if (finished) {
+            html += '<div class="crash-final">' +
+                '<div class="crash-final-item"><span class="crash-final-label">Wheel 1</span>' +
+                    '<span class="crash-final-num">' + r.wheel1Final + '</span></div>' +
+                '<div class="crash-final-op">+</div>' +
+                '<div class="crash-final-item"><span class="crash-final-label">Wheel 2</span>' +
+                    '<span class="crash-final-num">' + r.wheel2Final + '</span></div>' +
+                '<div class="crash-final-op">=</div>' +
+                '<div class="crash-final-item"><span class="crash-final-label">Final</span>' +
+                    '<span class="crash-final-num sum">' + this.calculateFinalScore() + '</span></div>' +
+                '</div>';
+        } else {
+            let wheelsHtml = '';
+            if (this.wheel1Locked()) {
+                // wheel 1 done: show its result compactly, focus on wheel 2
+                wheelsHtml += '<div class="crash-wheel-badge">Wheel 1: <b>' + r.wheel1Final + '</b></div>';
+                wheelsHtml += '<div class="crash-wheel"><div class="crash-wheel-label">Wheel 2</div>' +
+                    '<div class="crash-wheel-grid">' + this.renderWheel(2) + '</div></div>';
+            } else {
+                wheelsHtml += '<div class="crash-wheel"><div class="crash-wheel-label">Wheel 1</div>' +
+                    '<div class="crash-wheel-grid">' + this.renderWheel(1) + '</div></div>';
+            }
+            html += '<div class="crash-wheels">' + wheelsHtml + '</div>';
+        }
 
         // live probability panel
         html += '<div class="crash-panel crash-prob">' +
@@ -695,12 +716,6 @@ const DoubleCrashGame = {
                     cashoutTxt + statusTxt + '</div>';
             });
             html += '<div class="crash-panel crash-bets"><div class="crash-panel-title">Your Bets</div>' + betsHtml + '</div>';
-        }
-
-        // result panel
-        if (this.state === GAME_STATES.RESOLVED || this.state === GAME_STATES.CASHED_OUT) {
-            html += this.renderResult();
-            html += '<button id="crash-newround" class="crash-action-btn primary crash-newround">New Round</button>';
         }
 
         // log
@@ -760,14 +775,12 @@ const DoubleCrashGame = {
 
     renderResult() {
         const r = this.round;
-        const fs = r.finalScore !== null ? r.finalScore : this.calculateFinalScore();
         const resolved = r.bets.filter(b => b.status === 'WON' || b.status === 'LOST');
         const totalPayout = resolved.reduce((s, b) => s + b.payout, 0);
 
-        let body = '<div class="crash-result-row">Threshold: <b>' + r.threshold + '</b></div>' +
-            '<div class="crash-result-row">Wheel 1: <b>' + r.wheel1Final + '</b></div>' +
-            '<div class="crash-result-row">Wheel 2: <b>' + r.wheel2Final + '</b></div>' +
-            '<div class="crash-result-row">Final Score: <b>' + fs + '</b></div>';
+        // wheel results and their sum are shown by the dedicated display; the
+        // result panel focuses on threshold and the money outcome
+        let body = '<div class="crash-result-row">Threshold: <b>' + r.threshold + '</b></div>';
 
         if (this.state === GAME_STATES.CASHED_OUT) {
             const amount = r.result ? r.result.amount : 0;
