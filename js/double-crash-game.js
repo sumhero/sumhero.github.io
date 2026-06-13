@@ -17,9 +17,9 @@ const GAME_STATES = {
     CASHED_OUT: 'CASHED_OUT',
 };
 
-// How many numbers each reveal removes from a wheel.
+// How many numbers each reveal removes from a wheel, over 5 iterations.
 // Sums to 36 so that after the last reveal only the final number remains.
-const REVEAL_PLAN = [8, 8, 10, 10];
+const REVEAL_PLAN = [8, 7, 7, 7, 7];
 
 const RTP = 0.98;
 const CASHOUT_PENALTY = 0.95;
@@ -35,6 +35,7 @@ const DoubleCrashGame = {
     pendingStake: 10,
     pendingSide: 'HIGHER',
     showDebug: false,
+    showRules: false,
     idCounter: 0,
 
     // ---- entry point (called from the game registry) ----
@@ -44,6 +45,7 @@ const DoubleCrashGame = {
         this.pendingStake = 10;
         this.pendingSide = 'HIGHER';
         this.showDebug = false;
+        this.showRules = false;
         this.idCounter = 0;
 
         const gameBody = document.querySelector('.game-body');
@@ -589,6 +591,7 @@ const DoubleCrashGame = {
                 '<span>Status: <b>' + this.statusLabel() + '</b></span>' +
             '</div>' +
             '<div class="crash-threshold">Threshold <span>' + r.threshold + '</span></div>' +
+            '<button id="crash-rules" class="crash-rules-btn">📖 Rules</button>' +
             '</div>';
 
         // betting panel
@@ -610,15 +613,20 @@ const DoubleCrashGame = {
                 '</div>';
         }
 
-        // wheels
-        html += '<div class="crash-wheels">' +
-            '<div class="crash-wheel"><div class="crash-wheel-label">Wheel 1' +
-                (this.wheel1Locked() ? ' — <b>' + r.wheel1Final + '</b>' : '') + '</div>' +
-                '<div class="crash-wheel-grid">' + this.renderWheel(1) + '</div></div>' +
-            '<div class="crash-wheel"><div class="crash-wheel-label">Wheel 2' +
-                ((this.state === GAME_STATES.RESOLVED || this.state === GAME_STATES.CASHED_OUT) ? ' — <b>' + r.wheel2Final + '</b>' : '') + '</div>' +
-                '<div class="crash-wheel-grid">' + this.renderWheel(2) + '</div></div>' +
-            '</div>';
+        // wheels — only the active wheel is shown at a time
+        const finished = this.state === GAME_STATES.RESOLVED || this.state === GAME_STATES.CASHED_OUT;
+        let wheelsHtml = '';
+        if (this.wheel1Locked()) {
+            // wheel 1 done: show its result compactly, focus on wheel 2
+            wheelsHtml += '<div class="crash-wheel-badge">Wheel 1: <b>' + r.wheel1Final + '</b></div>';
+            wheelsHtml += '<div class="crash-wheel"><div class="crash-wheel-label">Wheel 2' +
+                (finished ? ' — <b>' + r.wheel2Final + '</b>' : '') + '</div>' +
+                '<div class="crash-wheel-grid">' + this.renderWheel(2) + '</div></div>';
+        } else {
+            wheelsHtml += '<div class="crash-wheel"><div class="crash-wheel-label">Wheel 1</div>' +
+                '<div class="crash-wheel-grid">' + this.renderWheel(1) + '</div></div>';
+        }
+        html += '<div class="crash-wheels">' + wheelsHtml + '</div>';
 
         // live probability panel
         html += '<div class="crash-panel crash-prob">' +
@@ -698,7 +706,44 @@ const DoubleCrashGame = {
             (this.showDebug ? this.renderDebug() : '') +
             '</div>';
 
+        // rules overlay
+        if (this.showRules) html += this.renderRules();
+
         return html;
+    },
+
+    renderRules() {
+        return '<div class="crash-rules-overlay">' +
+            '<div class="crash-rules-card">' +
+                '<div class="crash-rules-title">How to play</div>' +
+                '<p><b>Goal.</b> Bet whether the final score will be <b>Higher</b> or ' +
+                    '<b>Lower</b> than a random <b>threshold</b> (10–25).</p>' +
+                '<p><b>Two wheels.</b> Two independent roulette wheels (0–36) spin. The ' +
+                    'final score is their average: <i>(Wheel 1 + Wheel 2) / 2</i>. ' +
+                    'Averaging pulls results toward the middle (~18), so extremes are rare ' +
+                    'and the outcome stays tense to the very end.</p>' +
+                '<p><b>Win conditions.</b> Higher wins if the final score is above the ' +
+                    'threshold; Lower wins if it is below. If it lands <b>exactly</b> on the ' +
+                    'threshold it is <b>Center</b> — both sides lose (like zero in roulette).</p>' +
+                '<p><b>The reveal.</b> Each wheel narrows down over <b>5 steps</b>: numbers ' +
+                    'that can no longer come up are burned away until only the result remains. ' +
+                    'Wheel 1 settles first, then Wheel 2. You watch your odds shift live.</p>' +
+                '<p><b>Your moves</b> between steps:</p>' +
+                '<ul>' +
+                    '<li><b>Hold</b> — keep your position and reveal the next step.</li>' +
+                    '<li><b>x2</b> — double your potential payout. The button shows the cash it ' +
+                        'costs at the current fair price.</li>' +
+                    '<li><b>Swap</b> — flip to the other side, keeping an equivalent potential ' +
+                        'payout. The button shows the net cash to switch.</li>' +
+                    '<li><b>Cashout</b> — take your position\'s current value (with a small ' +
+                        'penalty) and end the round early.</li>' +
+                '</ul>' +
+                '<p><b>Fairness.</b> Every price is recalculated live from the remaining ' +
+                    'numbers at a <b>98% RTP</b>, so boosting or swapping is always priced ' +
+                    'fairly — no exploit, math always under control.</p>' +
+                '<button id="crash-rules-close" class="crash-action-btn primary">Got it</button>' +
+            '</div>' +
+            '</div>';
     },
 
     renderResult() {
@@ -812,5 +857,9 @@ const DoubleCrashGame = {
             this.showDebug = !this.showDebug;
             this.updateUI();
         });
+
+        // rules
+        bind('crash-rules', () => { this.showRules = true; this.updateUI(); });
+        bind('crash-rules-close', () => { this.showRules = false; this.updateUI(); });
     },
 };
