@@ -800,6 +800,19 @@ input, textarea {
     overflow: auto;
 }
 
+/* The crash screen scrolls and can grow taller than the viewport; pin a
+   fixed gradient layer behind it so the background never reveals white. */
+.crash-game-layout::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    z-index: -1;
+}
+
 .crash-game-layout .dice-container {
     flex: 1;
     display: block;
