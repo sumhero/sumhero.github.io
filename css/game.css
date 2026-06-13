@@ -859,6 +859,24 @@ input, textarea {
     margin-left: 6px;
 }
 
+.crash-yourbet {
+    margin-top: 10px;
+    display: inline-block;
+    font-weight: 800;
+    font-size: 1rem;
+    padding: 8px 16px;
+    border-radius: 10px;
+    color: #fff;
+}
+
+.crash-yourbet.higher {
+    background: #2e7d32;
+}
+
+.crash-yourbet.lower {
+    background: #c62828;
+}
+
 .crash-rules-btn {
     margin-top: 8px;
     border: none;

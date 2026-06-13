@@ -586,6 +586,21 @@ const DoubleCrashGame = {
             '</div>';
     },
 
+    // prominent banner showing the player's side and win condition relative
+    // to the threshold (uses the pending side before a bet is placed)
+    renderYourBet() {
+        const r = this.round;
+        const side = this.getCurrentMainSide();
+        const isBetting = this.state === GAME_STATES.BETTING;
+        const verb = isBetting ? 'Betting' : 'Your bet';
+        if (side === 'HIGHER') {
+            return '<div class="crash-yourbet higher">' + verb +
+                ': ▲ HIGHER — win if score &gt; ' + r.threshold + '</div>';
+        }
+        return '<div class="crash-yourbet lower">' + verb +
+            ': ▼ LOWER — win if score &lt; ' + r.threshold + '</div>';
+    },
+
     render() {
         const r = this.round;
         const possible = this.countPossiblePairs(r.remainingWheel1, r.remainingWheel2);
@@ -602,6 +617,7 @@ const DoubleCrashGame = {
                 '<span>Status: <b>' + this.statusLabel() + '</b></span>' +
             '</div>' +
             '<div class="crash-threshold">Threshold <span>' + r.threshold + '</span></div>' +
+            this.renderYourBet() +
             '<button id="crash-rules" class="crash-rules-btn">📖 Rules</button>' +
             '</div>';
 
