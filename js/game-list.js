@@ -34,6 +34,11 @@ const GAMES = [
         nameKey: 'guessTime',
         emoji: '\uD83D\uDD50',
     },
+    {
+        type: 'double_crash',
+        nameKey: 'doubleCrash',
+        emoji: '\uD83C\uDFA1',
+    },
 ];
 
 const DIFFICULTY_LEVELS = [
@@ -91,6 +96,8 @@ const GameList = {
                     CapitalsGame.start(this.getDifficulty());
                 } else if (this.selectedGame === 'guess_time') {
                     GuessTimeGame.start(this.getDifficulty());
+                } else if (this.selectedGame === 'double_crash') {
+                    DoubleCrashGame.start(this.getDifficulty());
                 } else {
                     this.showPicker();
                 }

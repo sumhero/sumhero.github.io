@@ -794,6 +794,353 @@ input, textarea {
     line-height: 1;
 }
 
+/* Double Crash Roulette layout */
+.crash-game-layout {
+    flex-direction: column !important;
+    overflow: auto;
+}
+
+.crash-game-layout .dice-container {
+    flex: 1;
+    display: block;
+    margin: 0;
+    overflow: visible;
+    align-items: stretch;
+}
+
+.crash-game-layout .choices-container {
+    display: none !important;
+}
+
+.crash-top {
+    color: #fff;
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.crash-title {
+    font-size: 1.3rem;
+    font-weight: 800;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.crash-topline {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.95rem;
+    margin-top: 6px;
+}
+
+.crash-threshold {
+    margin-top: 8px;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.crash-threshold span {
+    display: inline-block;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #f5c542;
+    margin-left: 6px;
+}
+
+.crash-panel {
+    background: rgba(0,0,0,0.25);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 12px;
+    color: #fff;
+}
+
+.crash-panel-title {
+    font-weight: 700;
+    margin-bottom: 8px;
+    opacity: 0.85;
+    font-size: 0.95rem;
+}
+
+.crash-tagline {
+    text-align: center;
+    font-style: italic;
+    opacity: 0.85;
+    margin-bottom: 12px;
+}
+
+.crash-bet-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.crash-bet-row input {
+    width: 90px;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.crash-side-buttons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.crash-side-btn {
+    flex: 1;
+    border: 3px solid transparent;
+    border-radius: 14px;
+    padding: 14px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #fff;
+    cursor: pointer;
+    background: rgba(255,255,255,0.15);
+    transition: transform 0.15s, border-color 0.2s;
+}
+
+.crash-side-btn small {
+    font-weight: 600;
+    opacity: 0.85;
+}
+
+.crash-side-btn.higher.active {
+    background: #2e7d32;
+    border-color: #f5c542;
+}
+
+.crash-side-btn.lower.active {
+    background: #c62828;
+    border-color: #f5c542;
+}
+
+.crash-side-btn:active {
+    transform: scale(0.95);
+}
+
+.crash-action-btn {
+    border: none;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(255,255,255,0.18);
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.2s;
+}
+
+.crash-action-btn.primary {
+    background: #4a90d9;
+    box-shadow: 0 4px 12px rgba(74,144,217,0.4);
+}
+
+.crash-action-btn:active {
+    transform: scale(0.95);
+}
+
+.crash-action-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.crash-betting .crash-action-btn,
+.crash-newround {
+    width: 100%;
+}
+
+.crash-wheels {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.crash-wheel {
+    flex: 1;
+    background: rgba(0,0,0,0.25);
+    border-radius: 14px;
+    padding: 10px;
+}
+
+.crash-wheel-label {
+    color: #fff;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.crash-wheel-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+}
+
+.crash-num {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.92);
+    color: #222;
+    transition: opacity 0.3s, background 0.3s;
+}
+
+.crash-num.higher {
+    background: #66bb6a;
+    color: #fff;
+}
+
+.crash-num.lower {
+    background: #ef5350;
+    color: #fff;
+}
+
+.crash-num.center {
+    background: #f5c542;
+    color: #222;
+}
+
+.crash-num.eliminated {
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.4);
+    opacity: 0.25;
+    text-decoration: line-through;
+}
+
+.crash-num.final {
+    outline: 3px solid #f5c542;
+    transform: scale(1.15);
+    box-shadow: 0 0 10px rgba(245,197,66,0.8);
+    z-index: 1;
+}
+
+.crash-sides {
+    display: flex;
+    gap: 8px;
+}
+
+.crash-side {
+    flex: 1;
+    text-align: center;
+    border-radius: 10px;
+    padding: 8px 4px;
+    background: rgba(255,255,255,0.1);
+}
+
+.crash-side.higher { border-top: 3px solid #66bb6a; }
+.crash-side.lower { border-top: 3px solid #ef5350; }
+.crash-side.center { border-top: 3px solid #f5c542; }
+
+.crash-side-name {
+    font-weight: 800;
+    font-size: 0.9rem;
+}
+
+.crash-side-stat {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+.crash-side-odds {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #f5c542;
+    margin-top: 2px;
+}
+
+.crash-prob-head {
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.crash-bet {
+    font-size: 0.85rem;
+    padding: 6px 8px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    background: rgba(255,255,255,0.1);
+}
+
+.crash-bet.won { background: rgba(102,187,106,0.35); }
+.crash-bet.lost { background: rgba(239,83,80,0.3); opacity: 0.7; }
+.crash-bet.cashed_out { background: rgba(255,255,255,0.08); opacity: 0.7; }
+
+.crash-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.crash-actions .crash-action-btn.primary {
+    grid-column: 1 / -1;
+}
+
+.crash-result {
+    text-align: center;
+}
+
+.crash-result.win { background: rgba(102,187,106,0.3); }
+.crash-result.loss { background: rgba(239,83,80,0.3); }
+
+.crash-result-title {
+    font-size: 1.4rem;
+    font-weight: 900;
+    margin-bottom: 8px;
+}
+
+.crash-result-row {
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.crash-net {
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin-top: 6px;
+}
+
+.crash-net.win { color: #a5d6a7; }
+.crash-net.loss { color: #ffcdd2; }
+
+.crash-log-scroll {
+    max-height: 140px;
+    overflow-y: auto;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.crash-log-entry {
+    opacity: 0.85;
+    padding: 1px 0;
+}
+
+.crash-debug-toggle {
+    background: none;
+    border: none;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+}
+
+.crash-debug {
+    margin-top: 8px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    opacity: 0.85;
+}
+
 /* Dice entrance animation */
 .dice-enter {
     animation: dice-roll 0.5s ease-out;

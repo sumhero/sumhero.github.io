@@ -70,6 +70,7 @@ const App = {
                 gameBody.classList.remove('dice-recognition-layout');
                 gameBody.classList.remove('geo-game-layout');
                 gameBody.classList.remove('time-game-layout');
+                gameBody.classList.remove('crash-game-layout');
                 const choices = document.getElementById('choices-container');
                 if (choices) choices.style.gridTemplateColumns = '';
             }
