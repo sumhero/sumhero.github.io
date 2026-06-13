@@ -529,8 +529,9 @@ const DoubleCrashGame = {
             this.state === GAME_STATES.CASHED_OUT;
     },
 
-    // class for a single number cell, optionally colored by side when the
-    // other wheel is already locked
+    // class for a single number cell — colored green/red by how good this
+    // number is for the player's chosen side, given the other wheel's
+    // remaining numbers (so the player can read their odds at a glance)
     numClass(wheelNumber, n) {
         const r = this.round;
         const remaining = wheelNumber === 1 ? r.remainingWheel1 : r.remainingWheel2;
@@ -542,12 +543,20 @@ const DoubleCrashGame = {
         if (!isRemaining) return 'crash-num eliminated';
 
         let cls = 'crash-num';
-        // color the still-spinning wheel once the other wheel is locked
-        if (wheelNumber === 2 && this.wheel1Locked()) {
-            const score = r.wheel1Final + n;
-            if (score > r.threshold) cls += ' higher';
-            else if (score < r.threshold) cls += ' lower';
-            else cls += ' center';
+        const side = this.getCurrentMainSide();
+        const other = wheelNumber === 1 ? r.remainingWheel2 : r.remainingWheel1;
+        if (other.length > 0) {
+            // chance the player wins if this wheel lands on n
+            let win = 0;
+            for (const m of other) {
+                const score = n + m;
+                if (side === 'HIGHER' && score > r.threshold) win++;
+                else if (side === 'LOWER' && score < r.threshold) win++;
+            }
+            const p = win / other.length;
+            if (p > 0.5) cls += ' good';
+            else if (p < 0.5) cls += ' bad';
+            else cls += ' even';
         }
         if (isFinalLocked) cls += ' final';
         return cls;
