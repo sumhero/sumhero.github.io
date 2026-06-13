@@ -859,6 +859,75 @@ input, textarea {
     margin-left: 6px;
 }
 
+.crash-rules-btn {
+    margin-top: 8px;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(255,255,255,0.18);
+    cursor: pointer;
+}
+
+.crash-rules-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 50;
+}
+
+.crash-rules-card {
+    background: linear-gradient(135deg, #2a2f6a 0%, #3a2a5a 100%);
+    color: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    max-width: 460px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+}
+
+.crash-rules-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.crash-rules-card p {
+    font-size: 0.92rem;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.crash-rules-card ul {
+    margin: 0 0 10px 18px;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.crash-rules-card li {
+    margin-bottom: 6px;
+}
+
+.crash-rules-card b {
+    color: #f5c542;
+}
+
+.crash-rules-card .crash-action-btn {
+    width: 100%;
+    margin-top: 8px;
+}
+
 .crash-panel {
     background: rgba(0,0,0,0.25);
     border-radius: 14px;
@@ -970,7 +1039,8 @@ input, textarea {
 
 .crash-wheels {
     display: flex;
-    gap: 12px;
+    flex-direction: column;
+    gap: 10px;
     margin-bottom: 12px;
 }
 
@@ -979,6 +1049,20 @@ input, textarea {
     background: rgba(0,0,0,0.25);
     border-radius: 14px;
     padding: 10px;
+}
+
+.crash-wheel-badge {
+    color: #fff;
+    text-align: center;
+    font-size: 1rem;
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+    padding: 8px;
+}
+
+.crash-wheel-badge b {
+    color: #f5c542;
+    font-size: 1.2rem;
 }
 
 .crash-wheel-label {
