@@ -151,8 +151,11 @@ const GuessTimeGame = {
 
         const diceContainer = document.getElementById('dice-container');
         let dayNight = '';
+        document.body.classList.remove('time-theme-day', 'time-theme-night');
         if (this.session.difficulty !== 'easy') {
-            const icon = this.isDaytime(exercise.time) ? '☀️' : '🌙';
+            const isDay = this.isDaytime(exercise.time);
+            document.body.classList.add(isDay ? 'time-theme-day' : 'time-theme-night');
+            const icon = isDay ? '☀️' : '🌙';
             dayNight = '<div class="time-daynight">' + icon + '</div>';
         }
         diceContainer.innerHTML = dayNight + ClockRenderer.render(exercise.time.hour, exercise.time.minute);

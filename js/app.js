@@ -64,6 +64,7 @@ const App = {
         next.classList.add('active');
 
         if (name !== 'game') {
+            document.body.classList.remove('time-theme-day', 'time-theme-night');
             const gameBody = document.querySelector('.game-body');
             if (gameBody) {
                 gameBody.classList.remove('uno-game-body');
