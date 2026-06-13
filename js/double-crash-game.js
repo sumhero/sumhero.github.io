@@ -206,7 +206,9 @@ const DoubleCrashGame = {
         this.round.currentPhase = this.state;
         this.log('Player bet €' + this.fmt(stake) + ' on ' + side + ' at x' + odds + '.');
         this.log('Wheel 1 started.');
-        this.updateUI();
+        // nothing is revealed yet, so there is no real decision to make —
+        // advance the first reveal automatically before asking the player
+        this.nextReveal();
     },
 
     nextReveal() {
