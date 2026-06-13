@@ -24,7 +24,7 @@ const REVEAL_PLAN = [8, 7, 7, 7, 7];
 const RTP = 0.98;
 const CASHOUT_PENALTY = 0.95;
 const START_BALANCE = 1000;
-const MIN_BET = 1;
+const MIN_BET = 0.1;
 const MAX_BET = 100;
 
 const DoubleCrashGame = {
@@ -32,7 +32,7 @@ const DoubleCrashGame = {
     state: GAME_STATES.IDLE,
     round: null,
     logEntries: [],
-    pendingStake: 10,
+    pendingStake: 0.1,
     pendingSide: 'HIGHER',
     showDebug: false,
     showRules: false,
@@ -42,7 +42,7 @@ const DoubleCrashGame = {
     start() {
         this.balance = START_BALANCE;
         this.logEntries = [];
-        this.pendingStake = 10;
+        this.pendingStake = 0.1;
         this.pendingSide = 'HIGHER';
         this.showDebug = false;
         this.showRules = false;
@@ -612,7 +612,7 @@ const DoubleCrashGame = {
             html += '<div class="crash-panel crash-betting">' +
                 '<div class="crash-tagline">Two wheels. One final score. Bet Higher or Lower.</div>' +
                 '<label class="crash-bet-row">Bet Amount €' +
-                    '<input id="crash-stake" type="number" min="' + MIN_BET + '" max="' + MAX_BET + '" step="1" value="' + this.pendingStake + '">' +
+                    '<input id="crash-stake" type="number" min="' + MIN_BET + '" max="' + MAX_BET + '" step="0.1" value="' + this.pendingStake + '">' +
                 '</label>' +
                 '<div class="crash-side-buttons">' +
                     '<button class="crash-side-btn higher' + (this.pendingSide === 'HIGHER' ? ' active' : '') + '" data-side="HIGHER">' +
@@ -624,20 +624,68 @@ const DoubleCrashGame = {
                 '</div>';
         }
 
-        // wheels — only the active wheel is shown at a time
-        const finished = this.state === GAME_STATES.RESOLVED || this.state === GAME_STATES.CASHED_OUT;
-        let wheelsHtml = '';
-        if (this.wheel1Locked()) {
-            // wheel 1 done: show its result compactly, focus on wheel 2
-            wheelsHtml += '<div class="crash-wheel-badge">Wheel 1: <b>' + r.wheel1Final + '</b></div>';
-            wheelsHtml += '<div class="crash-wheel"><div class="crash-wheel-label">Wheel 2' +
-                (finished ? ' — <b>' + r.wheel2Final + '</b>' : '') + '</div>' +
-                '<div class="crash-wheel-grid">' + this.renderWheel(2) + '</div></div>';
-        } else {
-            wheelsHtml += '<div class="crash-wheel"><div class="crash-wheel-label">Wheel 1</div>' +
-                '<div class="crash-wheel-grid">' + this.renderWheel(1) + '</div></div>';
+        // actions panel — kept above the wheels so it is visible without
+        // scrolling; each of the four buttons advances the spin
+        if (this.isDecisionPhase()) {
+            const totalCashout = this.floorTo2(this.calculateTotalCashout());
+            const boostCost = this.boostCost();
+            const swapInfo = this.swapInfo();
+
+            const boostDis = (boostCost === null || boostCost <= 0 || this.balance < boostCost) ? ' disabled' : '';
+            const swapDis = (!swapInfo || swapInfo.net > this.balance) ? ' disabled' : '';
+            const cashDis = totalCashout <= 0 ? ' disabled' : '';
+
+            const boostLabel = boostCost === null ? 'x2' : 'x2 &middot; €' + this.fmt(boostCost);
+            let swapLabel = 'Swap';
+            if (swapInfo) {
+                swapLabel = swapInfo.net >= 0
+                    ? 'Swap &middot; €' + this.fmt(swapInfo.net)
+                    : 'Swap &middot; +€' + this.fmt(-swapInfo.net);
+            }
+
+            html += '<div class="crash-panel crash-actions">' +
+                '<button id="crash-hold" class="crash-action-btn">Hold</button>' +
+                '<button id="crash-boost" class="crash-action-btn"' + boostDis + '>' + boostLabel + '</button>' +
+                '<button id="crash-swap" class="crash-action-btn"' + swapDis + '>' + swapLabel + '</button>' +
+                '<button id="crash-cashout" class="crash-action-btn"' + cashDis + '>Cashout €' + this.fmt(totalCashout) + '</button>' +
+                '</div>';
         }
-        html += '<div class="crash-wheels">' + wheelsHtml + '</div>';
+
+        const finished = this.state === GAME_STATES.RESOLVED || this.state === GAME_STATES.CASHED_OUT;
+
+        // result panel + New Round, kept above the wheel so they are visible
+        // on the first screen once the round ends
+        if (finished) {
+            html += this.renderResult();
+            html += '<button id="crash-newround" class="crash-action-btn primary crash-newround">New Round</button>';
+        }
+
+        // wheel area — only the active wheel is shown at a time; once the
+        // round is finished, show just each wheel's result and their sum
+        if (finished) {
+            html += '<div class="crash-final">' +
+                '<div class="crash-final-item"><span class="crash-final-label">Wheel 1</span>' +
+                    '<span class="crash-final-num">' + r.wheel1Final + '</span></div>' +
+                '<div class="crash-final-op">+</div>' +
+                '<div class="crash-final-item"><span class="crash-final-label">Wheel 2</span>' +
+                    '<span class="crash-final-num">' + r.wheel2Final + '</span></div>' +
+                '<div class="crash-final-op">=</div>' +
+                '<div class="crash-final-item"><span class="crash-final-label">Final</span>' +
+                    '<span class="crash-final-num sum">' + this.calculateFinalScore() + '</span></div>' +
+                '</div>';
+        } else {
+            let wheelsHtml = '';
+            if (this.wheel1Locked()) {
+                // wheel 1 done: show its result compactly, focus on wheel 2
+                wheelsHtml += '<div class="crash-wheel-badge">Wheel 1: <b>' + r.wheel1Final + '</b></div>';
+                wheelsHtml += '<div class="crash-wheel"><div class="crash-wheel-label">Wheel 2</div>' +
+                    '<div class="crash-wheel-grid">' + this.renderWheel(2) + '</div></div>';
+            } else {
+                wheelsHtml += '<div class="crash-wheel"><div class="crash-wheel-label">Wheel 1</div>' +
+                    '<div class="crash-wheel-grid">' + this.renderWheel(1) + '</div></div>';
+            }
+            html += '<div class="crash-wheels">' + wheelsHtml + '</div>';
+        }
 
         // live probability panel
         html += '<div class="crash-panel crash-prob">' +
@@ -668,38 +716,6 @@ const DoubleCrashGame = {
                     cashoutTxt + statusTxt + '</div>';
             });
             html += '<div class="crash-panel crash-bets"><div class="crash-panel-title">Your Bets</div>' + betsHtml + '</div>';
-        }
-
-        // actions panel — each of the four buttons advances the spin
-        if (this.isDecisionPhase()) {
-            const totalCashout = this.floorTo2(this.calculateTotalCashout());
-            const boostCost = this.boostCost();
-            const swapInfo = this.swapInfo();
-
-            const boostDis = (boostCost === null || boostCost <= 0 || this.balance < boostCost) ? ' disabled' : '';
-            const swapDis = (!swapInfo || swapInfo.net > this.balance) ? ' disabled' : '';
-            const cashDis = totalCashout <= 0 ? ' disabled' : '';
-
-            const boostLabel = boostCost === null ? 'x2' : 'x2 &middot; €' + this.fmt(boostCost);
-            let swapLabel = 'Swap';
-            if (swapInfo) {
-                swapLabel = swapInfo.net >= 0
-                    ? 'Swap &middot; €' + this.fmt(swapInfo.net)
-                    : 'Swap &middot; +€' + this.fmt(-swapInfo.net);
-            }
-
-            html += '<div class="crash-panel crash-actions">' +
-                '<button id="crash-hold" class="crash-action-btn">Hold</button>' +
-                '<button id="crash-boost" class="crash-action-btn"' + boostDis + '>' + boostLabel + '</button>' +
-                '<button id="crash-swap" class="crash-action-btn"' + swapDis + '>' + swapLabel + '</button>' +
-                '<button id="crash-cashout" class="crash-action-btn"' + cashDis + '>Cashout €' + this.fmt(totalCashout) + '</button>' +
-                '</div>';
-        }
-
-        // result panel
-        if (this.state === GAME_STATES.RESOLVED || this.state === GAME_STATES.CASHED_OUT) {
-            html += this.renderResult();
-            html += '<button id="crash-newround" class="crash-action-btn primary crash-newround">New Round</button>';
         }
 
         // log
@@ -759,14 +775,12 @@ const DoubleCrashGame = {
 
     renderResult() {
         const r = this.round;
-        const fs = r.finalScore !== null ? r.finalScore : this.calculateFinalScore();
         const resolved = r.bets.filter(b => b.status === 'WON' || b.status === 'LOST');
         const totalPayout = resolved.reduce((s, b) => s + b.payout, 0);
 
-        let body = '<div class="crash-result-row">Threshold: <b>' + r.threshold + '</b></div>' +
-            '<div class="crash-result-row">Wheel 1: <b>' + r.wheel1Final + '</b></div>' +
-            '<div class="crash-result-row">Wheel 2: <b>' + r.wheel2Final + '</b></div>' +
-            '<div class="crash-result-row">Final Score: <b>' + fs + '</b></div>';
+        // wheel results and their sum are shown by the dedicated display; the
+        // result panel focuses on threshold and the money outcome
+        let body = '<div class="crash-result-row">Threshold: <b>' + r.threshold + '</b></div>';
 
         if (this.state === GAME_STATES.CASHED_OUT) {
             const amount = r.result ? r.result.amount : 0;
