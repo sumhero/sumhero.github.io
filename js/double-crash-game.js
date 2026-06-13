@@ -624,6 +624,33 @@ const DoubleCrashGame = {
                 '</div>';
         }
 
+        // actions panel — kept above the wheels so it is visible without
+        // scrolling; each of the four buttons advances the spin
+        if (this.isDecisionPhase()) {
+            const totalCashout = this.floorTo2(this.calculateTotalCashout());
+            const boostCost = this.boostCost();
+            const swapInfo = this.swapInfo();
+
+            const boostDis = (boostCost === null || boostCost <= 0 || this.balance < boostCost) ? ' disabled' : '';
+            const swapDis = (!swapInfo || swapInfo.net > this.balance) ? ' disabled' : '';
+            const cashDis = totalCashout <= 0 ? ' disabled' : '';
+
+            const boostLabel = boostCost === null ? 'x2' : 'x2 &middot; €' + this.fmt(boostCost);
+            let swapLabel = 'Swap';
+            if (swapInfo) {
+                swapLabel = swapInfo.net >= 0
+                    ? 'Swap &middot; €' + this.fmt(swapInfo.net)
+                    : 'Swap &middot; +€' + this.fmt(-swapInfo.net);
+            }
+
+            html += '<div class="crash-panel crash-actions">' +
+                '<button id="crash-hold" class="crash-action-btn">Hold</button>' +
+                '<button id="crash-boost" class="crash-action-btn"' + boostDis + '>' + boostLabel + '</button>' +
+                '<button id="crash-swap" class="crash-action-btn"' + swapDis + '>' + swapLabel + '</button>' +
+                '<button id="crash-cashout" class="crash-action-btn"' + cashDis + '>Cashout €' + this.fmt(totalCashout) + '</button>' +
+                '</div>';
+        }
+
         // wheels — only the active wheel is shown at a time
         const finished = this.state === GAME_STATES.RESOLVED || this.state === GAME_STATES.CASHED_OUT;
         let wheelsHtml = '';
@@ -668,32 +695,6 @@ const DoubleCrashGame = {
                     cashoutTxt + statusTxt + '</div>';
             });
             html += '<div class="crash-panel crash-bets"><div class="crash-panel-title">Your Bets</div>' + betsHtml + '</div>';
-        }
-
-        // actions panel — each of the four buttons advances the spin
-        if (this.isDecisionPhase()) {
-            const totalCashout = this.floorTo2(this.calculateTotalCashout());
-            const boostCost = this.boostCost();
-            const swapInfo = this.swapInfo();
-
-            const boostDis = (boostCost === null || boostCost <= 0 || this.balance < boostCost) ? ' disabled' : '';
-            const swapDis = (!swapInfo || swapInfo.net > this.balance) ? ' disabled' : '';
-            const cashDis = totalCashout <= 0 ? ' disabled' : '';
-
-            const boostLabel = boostCost === null ? 'x2' : 'x2 &middot; €' + this.fmt(boostCost);
-            let swapLabel = 'Swap';
-            if (swapInfo) {
-                swapLabel = swapInfo.net >= 0
-                    ? 'Swap &middot; €' + this.fmt(swapInfo.net)
-                    : 'Swap &middot; +€' + this.fmt(-swapInfo.net);
-            }
-
-            html += '<div class="crash-panel crash-actions">' +
-                '<button id="crash-hold" class="crash-action-btn">Hold</button>' +
-                '<button id="crash-boost" class="crash-action-btn"' + boostDis + '>' + boostLabel + '</button>' +
-                '<button id="crash-swap" class="crash-action-btn"' + swapDis + '>' + swapLabel + '</button>' +
-                '<button id="crash-cashout" class="crash-action-btn"' + cashDis + '>Cashout €' + this.fmt(totalCashout) + '</button>' +
-                '</div>';
         }
 
         // result panel
