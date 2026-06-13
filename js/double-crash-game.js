@@ -24,7 +24,7 @@ const REVEAL_PLAN = [8, 7, 7, 7, 7];
 const RTP = 0.98;
 const CASHOUT_PENALTY = 0.95;
 const START_BALANCE = 1000;
-const MIN_BET = 1;
+const MIN_BET = 0.1;
 const MAX_BET = 100;
 
 const DoubleCrashGame = {
@@ -32,7 +32,7 @@ const DoubleCrashGame = {
     state: GAME_STATES.IDLE,
     round: null,
     logEntries: [],
-    pendingStake: 10,
+    pendingStake: 0.1,
     pendingSide: 'HIGHER',
     showDebug: false,
     showRules: false,
@@ -42,7 +42,7 @@ const DoubleCrashGame = {
     start() {
         this.balance = START_BALANCE;
         this.logEntries = [];
-        this.pendingStake = 10;
+        this.pendingStake = 0.1;
         this.pendingSide = 'HIGHER';
         this.showDebug = false;
         this.showRules = false;
@@ -612,7 +612,7 @@ const DoubleCrashGame = {
             html += '<div class="crash-panel crash-betting">' +
                 '<div class="crash-tagline">Two wheels. One final score. Bet Higher or Lower.</div>' +
                 '<label class="crash-bet-row">Bet Amount €' +
-                    '<input id="crash-stake" type="number" min="' + MIN_BET + '" max="' + MAX_BET + '" step="1" value="' + this.pendingStake + '">' +
+                    '<input id="crash-stake" type="number" min="' + MIN_BET + '" max="' + MAX_BET + '" step="0.1" value="' + this.pendingStake + '">' +
                 '</label>' +
                 '<div class="crash-side-buttons">' +
                     '<button class="crash-side-btn higher' + (this.pendingSide === 'HIGHER' ? ' active' : '') + '" data-side="HIGHER">' +
