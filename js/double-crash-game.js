@@ -92,7 +92,7 @@ const DoubleCrashGame = {
         let count = 0;
         for (const n1 of remainingWheel1) {
             for (const n2 of remainingWheel2) {
-                const score = (n1 + n2) / 2;
+                const score = n1 + n2;
                 if (side === 'HIGHER' && score > threshold) count++;
                 if (side === 'LOWER' && score < threshold) count++;
             }
@@ -104,7 +104,7 @@ const DoubleCrashGame = {
         let count = 0;
         for (const n1 of remainingWheel1) {
             for (const n2 of remainingWheel2) {
-                if ((n1 + n2) / 2 === threshold) count++;
+                if (n1 + n2 === threshold) count++;
             }
         }
         return count;
@@ -133,7 +133,7 @@ const DoubleCrashGame = {
     },
 
     startNewRound() {
-        const threshold = this.randomInt(10, 25);
+        const threshold = this.randomInt(21, 51);
         const wheel1Final = this.randomInt(0, 36);
         const wheel2Final = this.randomInt(0, 36);
 
@@ -206,7 +206,9 @@ const DoubleCrashGame = {
         this.round.currentPhase = this.state;
         this.log('Player bet €' + this.fmt(stake) + ' on ' + side + ' at x' + odds + '.');
         this.log('Wheel 1 started.');
-        this.updateUI();
+        // nothing is revealed yet, so there is no real decision to make —
+        // advance the first reveal automatically before asking the player
+        this.nextReveal();
     },
 
     nextReveal() {
@@ -278,7 +280,7 @@ const DoubleCrashGame = {
     },
 
     calculateFinalScore() {
-        return (this.round.wheel1Final + this.round.wheel2Final) / 2;
+        return this.round.wheel1Final + this.round.wheel2Final;
     },
 
     logLiveOdds() {
@@ -529,8 +531,9 @@ const DoubleCrashGame = {
             this.state === GAME_STATES.CASHED_OUT;
     },
 
-    // class for a single number cell, optionally colored by side when the
-    // other wheel is already locked
+    // class for a single number cell — colored green/red by how good this
+    // number is for the player's chosen side, given the other wheel's
+    // remaining numbers (so the player can read their odds at a glance)
     numClass(wheelNumber, n) {
         const r = this.round;
         const remaining = wheelNumber === 1 ? r.remainingWheel1 : r.remainingWheel2;
@@ -542,12 +545,20 @@ const DoubleCrashGame = {
         if (!isRemaining) return 'crash-num eliminated';
 
         let cls = 'crash-num';
-        // color the still-spinning wheel once the other wheel is locked
-        if (wheelNumber === 2 && this.wheel1Locked()) {
-            const score = (r.wheel1Final + n) / 2;
-            if (score > r.threshold) cls += ' higher';
-            else if (score < r.threshold) cls += ' lower';
-            else cls += ' center';
+        const side = this.getCurrentMainSide();
+        const other = wheelNumber === 1 ? r.remainingWheel2 : r.remainingWheel1;
+        if (other.length > 0) {
+            // chance the player wins if this wheel lands on n
+            let win = 0;
+            for (const m of other) {
+                const score = n + m;
+                if (side === 'HIGHER' && score > r.threshold) win++;
+                else if (side === 'LOWER' && score < r.threshold) win++;
+            }
+            const p = win / other.length;
+            if (p > 0.5) cls += ' good';
+            else if (p < 0.5) cls += ' bad';
+            else cls += ' even';
         }
         if (isFinalLocked) cls += ' final';
         return cls;
@@ -717,11 +728,11 @@ const DoubleCrashGame = {
             '<div class="crash-rules-card">' +
                 '<div class="crash-rules-title">How to play</div>' +
                 '<p><b>Goal.</b> Bet whether the final score will be <b>Higher</b> or ' +
-                    '<b>Lower</b> than a random <b>threshold</b> (10–25).</p>' +
+                    '<b>Lower</b> than a random <b>threshold</b> (21–51).</p>' +
                 '<p><b>Two wheels.</b> Two independent roulette wheels (0–36) spin. The ' +
-                    'final score is their average: <i>(Wheel 1 + Wheel 2) / 2</i>. ' +
-                    'Averaging pulls results toward the middle (~18), so extremes are rare ' +
-                    'and the outcome stays tense to the very end.</p>' +
+                    'final score is their sum: <i>Wheel 1 + Wheel 2</i> (0–72). ' +
+                    'Adding two wheels pulls results toward the middle (~36), so extremes are ' +
+                    'rare and the outcome stays tense to the very end.</p>' +
                 '<p><b>Win conditions.</b> Higher wins if the final score is above the ' +
                     'threshold; Lower wins if it is below. If it lands <b>exactly</b> on the ' +
                     'threshold it is <b>Center</b> — both sides lose (like zero in roulette).</p>' +

@@ -1092,17 +1092,17 @@ input, textarea {
     transition: opacity 0.3s, background 0.3s;
 }
 
-.crash-num.higher {
-    background: #66bb6a;
+.crash-num.good {
+    background: #43a047;
     color: #fff;
 }
 
-.crash-num.lower {
-    background: #ef5350;
+.crash-num.bad {
+    background: #e53935;
     color: #fff;
 }
 
-.crash-num.center {
+.crash-num.even {
     background: #f5c542;
     color: #222;
 }
