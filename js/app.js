@@ -69,6 +69,7 @@ const App = {
                 gameBody.classList.remove('uno-game-body');
                 gameBody.classList.remove('dice-recognition-layout');
                 gameBody.classList.remove('geo-game-layout');
+                gameBody.classList.remove('time-game-layout');
                 const choices = document.getElementById('choices-container');
                 if (choices) choices.style.gridTemplateColumns = '';
             }
