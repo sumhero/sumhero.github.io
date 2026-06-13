@@ -794,6 +794,29 @@ input, textarea {
     line-height: 1;
 }
 
+/* Guess time day/night themes (applied to <body> for the whole screen) */
+body.time-theme-day {
+    background: linear-gradient(135deg, #6dd5ed 0%, #b3e5fc 100%);
+}
+
+body.time-theme-day .score,
+body.time-theme-day .time-daynight {
+    color: #15384a;
+}
+
+body.time-theme-day .btn-small {
+    background: rgba(0,0,0,0.18);
+    color: #15384a;
+}
+
+body.time-theme-day .progress-bar {
+    background: rgba(0,0,0,0.15);
+}
+
+body.time-theme-night {
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 60%, #2c5364 100%);
+}
+
 /* Dice entrance animation */
 .dice-enter {
     animation: dice-roll 0.5s ease-out;
