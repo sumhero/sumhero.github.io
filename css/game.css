@@ -757,6 +757,43 @@ input, textarea {
     margin-top: 8px;
 }
 
+/* Guess time game layout */
+.time-game-layout {
+    flex-direction: column !important;
+}
+
+.time-game-layout .dice-container {
+    flex-direction: column;
+    flex: 1;
+    gap: 8px;
+}
+
+.time-game-layout .choices-container {
+    grid-template-columns: 1fr 1fr !important;
+    grid-template-rows: repeat(2, 1fr) !important;
+    flex: 1 !important;
+    align-content: end !important;
+}
+
+.time-game-layout .choice-btn {
+    aspect-ratio: auto !important;
+    font-size: min(9vw, 6vh) !important;
+    padding: 8px 12px;
+}
+
+.clock-svg {
+    max-height: 70%;
+    max-width: 90%;
+    width: min(70vw, 45vh) !important;
+    height: auto !important;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
+
+.time-daynight {
+    font-size: min(14vw, 11vh);
+    line-height: 1;
+}
+
 /* Dice entrance animation */
 .dice-enter {
     animation: dice-roll 0.5s ease-out;
@@ -860,6 +897,32 @@ input, textarea {
 
     .geo-game-layout .choice-btn {
         font-size: min(2.5vw, 4vh) !important;
+    }
+
+    /* Guess time landscape */
+    .time-game-layout {
+        flex-direction: row !important;
+    }
+
+    .time-game-layout .dice-container {
+        flex: 2;
+    }
+
+    .time-game-layout .choices-container {
+        flex: 1 !important;
+        align-content: center !important;
+    }
+
+    .clock-svg {
+        width: min(40vw, 75vh) !important;
+    }
+
+    .time-daynight {
+        font-size: min(6vw, 9vh);
+    }
+
+    .time-game-layout .choice-btn {
+        font-size: min(3.5vw, 6vh) !important;
     }
 
     /* Auth landscape */

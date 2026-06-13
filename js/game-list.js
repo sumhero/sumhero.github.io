@@ -29,6 +29,11 @@ const GAMES = [
         nameKey: 'capitals',
         emoji: '\uD83C\uDFDB\uFE0F',
     },
+    {
+        type: 'guess_time',
+        nameKey: 'guessTime',
+        emoji: '\uD83D\uDD50',
+    },
 ];
 
 const DIFFICULTY_LEVELS = [
@@ -84,6 +89,8 @@ const GameList = {
                     CountriesGame.start(this.getDifficulty());
                 } else if (this.selectedGame === 'capitals') {
                     CapitalsGame.start(this.getDifficulty());
+                } else if (this.selectedGame === 'guess_time') {
+                    GuessTimeGame.start(this.getDifficulty());
                 } else {
                     this.showPicker();
                 }
