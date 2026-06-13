@@ -149,6 +149,7 @@ const DoubleCrashGame = {
             wheel2RevealIndex: 0,
             currentPhase: GAME_STATES.BETTING,
             initialStake: 0,
+            startBalance: this.balance,
             bets: [],
             isResolved: false,
             result: null,
@@ -297,42 +298,78 @@ const DoubleCrashGame = {
         return this.pendingSide;
     },
 
-    hold() {
-        if (this.getOpenBets().length === 0) return;
-        this.log('Player used Hold.');
-        this.updateUI();
+    // total potential payout of the currently open position (all open bets
+    // are on the same side)
+    currentOpenPayout() {
+        return this.getOpenBets().reduce((sum, b) => sum + b.stake * b.lockedOdds, 0);
     },
 
-    boost() {
+    // cash needed to double the current potential payout, priced at the
+    // current fair odds — null when boosting is impossible
+    boostCost() {
         const side = this.getCurrentMainSide();
-        const boostStake = this.round.initialStake;
         const odds = this.calculateOdds(
             side, this.round.threshold,
             this.round.remainingWheel1, this.round.remainingWheel2,
         );
-        if (odds === null) {
+        if (odds === null) return null;
+        const payout = this.currentOpenPayout();
+        if (payout <= 0) return null;
+        return this.floorTo2(payout / odds);
+    },
+
+    // info needed to switch sides keeping an equivalent potential payout:
+    // we refund the fair value of the current position and buy the same
+    // potential payout on the other side at its current fair odds
+    swapInfo() {
+        const main = this.getCurrentMainSide();
+        const other = main === 'HIGHER' ? 'LOWER' : 'HIGHER';
+        const r = this.round;
+        const oddsOther = this.calculateOdds(other, r.threshold, r.remainingWheel1, r.remainingWheel2);
+        if (oddsOther === null) return null;
+        const payout = this.currentOpenPayout();
+        if (payout <= 0) return null;
+        const probMain = this.calculateProbability(main, r.threshold, r.remainingWheel1, r.remainingWheel2);
+        const newStake = this.floorTo2(payout / oddsOther);
+        const credit = this.floorTo2(payout * probMain);
+        const net = this.floorTo2(newStake - credit);
+        return { main: main, other: other, oddsOther: oddsOther, payout: payout, newStake: newStake, credit: credit, net: net };
+    },
+
+    hold() {
+        this.log('Player used Hold.');
+        return true;
+    },
+
+    boost() {
+        const side = this.getCurrentMainSide();
+        const odds = this.calculateOdds(
+            side, this.round.threshold,
+            this.round.remainingWheel1, this.round.remainingWheel2,
+        );
+        const cost = this.boostCost();
+        if (odds === null || cost === null) {
             this.log('Boost unavailable: no winning pairs for ' + side + '.');
-            this.updateUI();
-            return;
+            return false;
         }
-        if (this.balance < boostStake) {
+        if (cost <= 0 || this.balance < cost) {
             this.log('Boost unavailable: insufficient balance.');
-            this.updateUI();
-            return;
+            return false;
         }
-        this.balance -= boostStake;
+        this.balance -= cost;
         this.round.bets.push({
             id: this.generateId(),
             type: 'BOOST',
             side: side,
-            stake: boostStake,
+            stake: cost,
             lockedOdds: odds,
             status: 'OPEN',
             payout: 0,
             createdAtPhase: this.round.currentPhase,
         });
-        this.log('Boost x2: €' + this.fmt(boostStake) + ' on ' + side + ' at x' + odds + '.');
-        this.updateUI();
+        this.log('Boost x2: added €' + this.fmt(cost) + ' on ' + side +
+            ' (potential payout now €' + this.fmt(this.currentOpenPayout()) + ').');
+        return true;
     },
 
     calculateBetCashout(bet) {
@@ -379,22 +416,14 @@ const DoubleCrashGame = {
     },
 
     swap() {
-        const currentSide = this.getCurrentMainSide();
-        const newSide = currentSide === 'HIGHER' ? 'LOWER' : 'HIGHER';
-        const cashoutAmount = this.floorTo2(this.calculateTotalCashout());
-        if (cashoutAmount <= 0) {
-            this.log('Swap unavailable: cashout amount is zero.');
-            this.updateUI();
-            return;
+        const info = this.swapInfo();
+        if (!info) {
+            this.log('Swap unavailable: other side has no winning pairs.');
+            return false;
         }
-        const newOdds = this.calculateOdds(
-            newSide, this.round.threshold,
-            this.round.remainingWheel1, this.round.remainingWheel2,
-        );
-        if (newOdds === null) {
-            this.log('Swap unavailable: ' + newSide + ' has no winning pairs.');
-            this.updateUI();
-            return;
+        if (info.net > this.balance) {
+            this.log('Swap unavailable: insufficient balance.');
+            return false;
         }
         for (const bet of this.round.bets) {
             if (bet.status === 'OPEN') {
@@ -402,18 +431,22 @@ const DoubleCrashGame = {
                 bet.payout = 0;
             }
         }
+        // refund the fair value of the old position, pay for the new one
+        this.balance += info.credit;
+        this.balance -= info.newStake;
         this.round.bets.push({
             id: this.generateId(),
             type: 'SWAP',
-            side: newSide,
-            stake: cashoutAmount,
-            lockedOdds: newOdds,
+            side: info.other,
+            stake: info.newStake,
+            lockedOdds: info.oddsOther,
             status: 'OPEN',
             payout: 0,
             createdAtPhase: this.round.currentPhase,
         });
-        this.log('Swap: cashed out €' + this.fmt(cashoutAmount) + ', new bet on ' + newSide + ' at x' + newOdds + '.');
-        this.updateUI();
+        const netTxt = info.net >= 0 ? 'paid €' + this.fmt(info.net) : 'received €' + this.fmt(-info.net);
+        this.log('Swap to ' + info.other + ': equivalent payout €' + this.fmt(info.payout) + ' (' + netTxt + ').');
+        return true;
     },
 
     // ---- resolution ----
@@ -618,26 +651,29 @@ const DoubleCrashGame = {
             html += '<div class="crash-panel crash-bets"><div class="crash-panel-title">Your Bets</div>' + betsHtml + '</div>';
         }
 
-        // actions panel
+        // actions panel — each of the four buttons advances the spin
         if (this.isDecisionPhase()) {
-            const open = this.getOpenBets();
-            const side = this.getCurrentMainSide();
             const totalCashout = this.floorTo2(this.calculateTotalCashout());
-            const oddsSide = this.calculateOdds(side, r.threshold, r.remainingWheel1, r.remainingWheel2);
-            const newSide = side === 'HIGHER' ? 'LOWER' : 'HIGHER';
-            const oddsNew = this.calculateOdds(newSide, r.threshold, r.remainingWheel1, r.remainingWheel2);
+            const boostCost = this.boostCost();
+            const swapInfo = this.swapInfo();
 
-            const holdDis = open.length === 0 ? ' disabled' : '';
-            const boostDis = (open.length === 0 || oddsSide === null || this.balance < r.initialStake) ? ' disabled' : '';
-            const swapDis = (totalCashout <= 0 || oddsNew === null) ? ' disabled' : '';
+            const boostDis = (boostCost === null || boostCost <= 0 || this.balance < boostCost) ? ' disabled' : '';
+            const swapDis = (!swapInfo || swapInfo.net > this.balance) ? ' disabled' : '';
             const cashDis = totalCashout <= 0 ? ' disabled' : '';
 
+            const boostLabel = boostCost === null ? 'x2' : 'x2 &middot; €' + this.fmt(boostCost);
+            let swapLabel = 'Swap';
+            if (swapInfo) {
+                swapLabel = swapInfo.net >= 0
+                    ? 'Swap &middot; €' + this.fmt(swapInfo.net)
+                    : 'Swap &middot; +€' + this.fmt(-swapInfo.net);
+            }
+
             html += '<div class="crash-panel crash-actions">' +
-                '<button id="crash-hold" class="crash-action-btn"' + holdDis + '>Hold</button>' +
-                '<button id="crash-boost" class="crash-action-btn"' + boostDis + '>Boost x2</button>' +
-                '<button id="crash-swap" class="crash-action-btn"' + swapDis + '>Swap</button>' +
+                '<button id="crash-hold" class="crash-action-btn">Hold</button>' +
+                '<button id="crash-boost" class="crash-action-btn"' + boostDis + '>' + boostLabel + '</button>' +
+                '<button id="crash-swap" class="crash-action-btn"' + swapDis + '>' + swapLabel + '</button>' +
                 '<button id="crash-cashout" class="crash-action-btn"' + cashDis + '>Cashout €' + this.fmt(totalCashout) + '</button>' +
-                '<button id="crash-next" class="crash-action-btn primary">Next Reveal</button>' +
                 '</div>';
         }
 
@@ -669,7 +705,6 @@ const DoubleCrashGame = {
         const r = this.round;
         const fs = r.finalScore !== null ? r.finalScore : this.calculateFinalScore();
         const resolved = r.bets.filter(b => b.status === 'WON' || b.status === 'LOST');
-        const totalStake = resolved.reduce((s, b) => s + b.stake, 0);
         const totalPayout = resolved.reduce((s, b) => s + b.payout, 0);
 
         let body = '<div class="crash-result-row">Threshold: <b>' + r.threshold + '</b></div>' +
@@ -691,10 +726,10 @@ const DoubleCrashGame = {
         } else {
             body += '<div class="crash-result-row">Winning side: <b>' + winningSide + '</b></div>';
         }
-        const net = totalPayout - totalStake;
+        // net is the real round P&L: balance change since the round started
+        const net = this.floorTo2(this.balance - r.startBalance);
         const netStr = (net >= 0 ? '+' : '-') + '€' + this.fmt(Math.abs(net));
-        body += '<div class="crash-result-row">Total stake: €' + this.fmt(totalStake) + '</div>' +
-            '<div class="crash-result-row">Total payout: €' + this.fmt(totalPayout) + '</div>' +
+        body += '<div class="crash-result-row">Total payout: €' + this.fmt(totalPayout) + '</div>' +
             '<div class="crash-result-row crash-net ' + (net >= 0 ? 'win' : 'loss') + '">Net result: ' + netStr + '</div>';
 
         const cls = net > 0 ? 'win' : (net < 0 ? 'loss' : 'even');
@@ -764,12 +799,12 @@ const DoubleCrashGame = {
             this.startBet(this.pendingSide, this.pendingStake);
         });
 
-        // actions
-        bind('crash-hold', () => this.hold());
-        bind('crash-boost', () => this.boost());
-        bind('crash-swap', () => this.swap());
+        // actions — Hold / Boost / Swap perform their action and advance the
+        // spin; Cashout ends the round
+        bind('crash-hold', () => { this.hold(); this.nextReveal(); });
+        bind('crash-boost', () => { if (this.boost()) this.nextReveal(); else this.updateUI(); });
+        bind('crash-swap', () => { if (this.swap()) this.nextReveal(); else this.updateUI(); });
         bind('crash-cashout', () => this.cashout());
-        bind('crash-next', () => this.nextReveal());
         bind('crash-newround', () => this.startNewRound());
 
         // debug
