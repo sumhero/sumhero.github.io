@@ -61,17 +61,24 @@ const DoubleCrashGame = {
     // ---- math helpers ----
     // Cent rounding always favours the house: amounts the player RECEIVES
     // (payouts, cashout, refunds) round down; amounts the player PAYS
-    // (boost cost, flip stake) round up. Matters most at small stakes.
+    // (boost cost, flip stake) round up. A tiny epsilon absorbs floating-point
+    // noise so e.g. 0.10 never creeps up to 0.11.
     floorTo2(value) {
-        return Math.floor(value * 100) / 100;
+        return Math.floor(value * 100 + 1e-9) / 100;
     },
 
     ceilTo2(value) {
-        return Math.ceil(value * 100) / 100;
+        return Math.ceil(value * 100 - 1e-9) / 100;
+    },
+
+    // round to nearest cent — used for net P&L (can be negative, so flooring
+    // would otherwise inflate a loss, e.g. -0.10 -> -0.11)
+    roundTo2(value) {
+        return Math.round(value * 100) / 100;
     },
 
     floorTo3(value) {
-        return Math.floor(value * 1000) / 1000;
+        return Math.floor(value * 1000 + 1e-9) / 1000;
     },
 
     shuffle(array) {
@@ -161,6 +168,7 @@ const DoubleCrashGame = {
             startBalance: this.balance,
             bets: [],
             chanceHistory: [],
+            autoHeld: false,
             isResolved: false,
             result: null,
         };
@@ -259,6 +267,7 @@ const DoubleCrashGame = {
             this.recordChance('W1 R' + this.round.wheel1RevealIndex);
         }
         this.round.currentPhase = this.state;
+        if (this.autoHoldIfDecided()) return;
         this.updateUI();
     },
 
@@ -282,8 +291,30 @@ const DoubleCrashGame = {
             this.state = GAME_STATES.WHEEL_2_DECISION;
             this.recordChance('W2 R' + this.round.wheel2RevealIndex);
             this.round.currentPhase = this.state;
+            if (this.autoHoldIfDecided()) return;
             this.updateUI();
         }
+    },
+
+    // once one side is guaranteed, the outcome is decided — there is no real
+    // decision left, so auto-hold (advance) straight through to the result
+    isDecided() {
+        const r = this.round;
+        const possible = this.countPossiblePairs(r.remainingWheel1, r.remainingWheel2);
+        if (possible === 0) return false;
+        const hi = this.countWinningPairs('HIGHER', r.threshold, r.remainingWheel1, r.remainingWheel2);
+        const lo = this.countWinningPairs('LOWER', r.threshold, r.remainingWheel1, r.remainingWheel2);
+        return hi === possible || lo === possible;
+    },
+
+    autoHoldIfDecided() {
+        if (!this.isDecided()) return false;
+        if (!this.round.autoHeld) {
+            this.round.autoHeld = true;
+            this.log('Outcome already decided — auto-holding to the result.');
+        }
+        this.nextReveal();
+        return true;
     },
 
     lockWheel2() {
@@ -703,7 +734,7 @@ const DoubleCrashGame = {
 
             const sideOdds = this.calculateOdds(this.getCurrentMainSide(), r.threshold, r.remainingWheel1, r.remainingWheel2);
             const boostLabel = boostCost === null
-                ? (sideOdds !== null && sideOdds <= 1.0 ? 'Boost<br><small>decided</small>' : 'Boost')
+                ? (sideOdds !== null && sideOdds <= 1.0 ? 'Boost<br><small>no upside</small>' : 'Boost')
                 : 'Boost<br><small>+€' + this.fmt(addedWin) + ' win · €' + this.fmt(boostCost) + '</small>';
             let flipLabel = 'Flip';
             if (swapInfo) {
@@ -840,7 +871,8 @@ const DoubleCrashGame = {
                     'while the target RTP is controlled by dynamic pricing.</p>' +
                 '<p><b>The reveal.</b> Each wheel narrows down over <b>5 steps</b>: numbers that ' +
                     'can no longer come up are burned away until only the result remains. ' +
-                    'Wheel 1 settles first, then Wheel 2.</p>' +
+                    'Wheel 1 settles first, then Wheel 2. Once one side is already guaranteed, ' +
+                    'the round auto-plays to the result.</p>' +
                 '<p><b>Your moves</b> between steps:</p>' +
                 '<ul>' +
                     '<li><b>Hold</b> — keep your position and reveal the next step.</li>' +
@@ -891,7 +923,7 @@ const DoubleCrashGame = {
             body += '<div class="crash-result-row">Winning side: <b>' + winningSide + '</b></div>';
         }
         // net is the real round P&L: balance change since the round started
-        const net = this.floorTo2(this.balance - r.startBalance);
+        const net = this.roundTo2(this.balance - r.startBalance);
         const netStr = (net >= 0 ? '+' : '-') + '€' + this.fmt(Math.abs(net));
         body += '<div class="crash-result-row">Total payout: €' + this.fmt(totalPayout) + '</div>' +
             '<div class="crash-result-row crash-net ' + (net >= 0 ? 'win' : 'loss') + '">Net result: ' + netStr + '</div>';
