@@ -59,8 +59,15 @@ const DoubleCrashGame = {
     },
 
     // ---- math helpers ----
+    // Cent rounding always favours the house: amounts the player RECEIVES
+    // (payouts, cashout, refunds) round down; amounts the player PAYS
+    // (boost cost, flip stake) round up. Matters most at small stakes.
     floorTo2(value) {
         return Math.floor(value * 100) / 100;
+    },
+
+    ceilTo2(value) {
+        return Math.ceil(value * 100) / 100;
     },
 
     floorTo3(value) {
@@ -323,7 +330,8 @@ const DoubleCrashGame = {
     },
 
     // cash needed to double the current potential payout, priced at the
-    // current fair odds — null when boosting is impossible
+    // current fair odds — null when boosting is impossible. Player pays this,
+    // so it rounds up (house-favourable).
     boostCost() {
         const side = this.getCurrentMainSide();
         const odds = this.calculateOdds(
@@ -333,7 +341,7 @@ const DoubleCrashGame = {
         if (odds === null) return null;
         const payout = this.currentOpenPayout();
         if (payout <= 0) return null;
-        return this.floorTo2(payout / odds);
+        return this.ceilTo2(payout / odds);
     },
 
     // info needed to switch sides keeping an equivalent potential payout:
@@ -348,7 +356,8 @@ const DoubleCrashGame = {
         const payout = this.currentOpenPayout();
         if (payout <= 0) return null;
         const probMain = this.calculateProbability(main, r.threshold, r.remainingWheel1, r.remainingWheel2);
-        const newStake = this.floorTo2(payout / oddsOther);
+        // player pays the new stake (round up), receives the credit (round down)
+        const newStake = this.ceilTo2(payout / oddsOther);
         const credit = this.floorTo2(payout * probMain);
         const net = this.floorTo2(newStake - credit);
         return { main: main, other: other, oddsOther: oddsOther, payout: payout, newStake: newStake, credit: credit, net: net };
