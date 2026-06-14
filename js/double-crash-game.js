@@ -331,14 +331,16 @@ const DoubleCrashGame = {
 
     // cash needed to double the current potential payout, priced at the
     // current fair odds — null when boosting is impossible. Player pays this,
-    // so it rounds up (house-favourable).
+    // so it rounds up (house-favourable). Boost is unavailable once the odds
+    // drop to <= 1.0: the side is essentially decided and a "win" there would
+    // pay back less than it costs, so there is no real upside to buy.
     boostCost() {
         const side = this.getCurrentMainSide();
         const odds = this.calculateOdds(
             side, this.round.threshold,
             this.round.remainingWheel1, this.round.remainingWheel2,
         );
-        if (odds === null) return null;
+        if (odds === null || odds <= 1.0) return null;
         const payout = this.currentOpenPayout();
         if (payout <= 0) return null;
         return this.ceilTo2(payout / odds);
@@ -376,7 +378,9 @@ const DoubleCrashGame = {
         );
         const cost = this.boostCost();
         if (odds === null || cost === null) {
-            this.log('Boost unavailable: no winning pairs for ' + side + '.');
+            this.log(odds !== null && odds <= 1.0
+                ? 'Boost unavailable: ' + side + ' is already decided.'
+                : 'Boost unavailable: no winning pairs for ' + side + '.');
             return false;
         }
         if (cost <= 0 || this.balance < cost) {
@@ -697,8 +701,9 @@ const DoubleCrashGame = {
             const swapDis = (!swapInfo || swapInfo.net > this.balance) ? ' disabled' : '';
             const cashDis = totalCashout <= 0 ? ' disabled' : '';
 
+            const sideOdds = this.calculateOdds(this.getCurrentMainSide(), r.threshold, r.remainingWheel1, r.remainingWheel2);
             const boostLabel = boostCost === null
-                ? 'Boost'
+                ? (sideOdds !== null && sideOdds <= 1.0 ? 'Boost<br><small>decided</small>' : 'Boost')
                 : 'Boost<br><small>+€' + this.fmt(addedWin) + ' win · €' + this.fmt(boostCost) + '</small>';
             let flipLabel = 'Flip';
             if (swapInfo) {
@@ -842,7 +847,8 @@ const DoubleCrashGame = {
                     '<li><b>Boost</b> — increases your possible win at the current live price. ' +
                         'The Boost cost changes as numbers disappear and probabilities change. ' +
                         'Boost never reuses your original odds — it is always priced using the ' +
-                        'current live position.</li>' +
+                        'current live position. Once your side is already decided (odds ≤ 1.0) ' +
+                        'Boost locks: there is no upside left to buy.</li>' +
                     '<li><b>Flip</b> — sells your current position and buys the opposite side at ' +
                         'the current live price. Depending on the live prices, flipping may cost ' +
                         'extra or return part of the position value.</li>' +
