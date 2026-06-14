@@ -153,6 +153,7 @@ const DoubleCrashGame = {
             initialStake: 0,
             startBalance: this.balance,
             bets: [],
+            chanceHistory: [],
             isResolved: false,
             result: null,
         };
@@ -206,6 +207,7 @@ const DoubleCrashGame = {
         this.round.currentPhase = this.state;
         this.log('Player bet €' + this.fmt(stake) + ' on ' + side + ' at x' + odds + '.');
         this.log('Wheel 1 started.');
+        this.recordChance('Start');
         // nothing is revealed yet, so there is no real decision to make —
         // advance the first reveal automatically before asking the player
         this.nextReveal();
@@ -244,8 +246,10 @@ const DoubleCrashGame = {
         if (this.round.wheel1EliminationOrder.length === 0) {
             this.lockWheel1();
             this.state = GAME_STATES.WHEEL_2_SPINNING;
+            this.recordChance('W1 Final');
         } else {
             this.state = GAME_STATES.WHEEL_1_DECISION;
+            this.recordChance('W1 R' + this.round.wheel1RevealIndex);
         }
         this.round.currentPhase = this.state;
         this.updateUI();
@@ -265,9 +269,11 @@ const DoubleCrashGame = {
 
         if (this.round.wheel2EliminationOrder.length === 0) {
             this.lockWheel2();
+            this.recordChance('W2 Final');
             this.resolveRound();
         } else {
             this.state = GAME_STATES.WHEEL_2_DECISION;
+            this.recordChance('W2 R' + this.round.wheel2RevealIndex);
             this.round.currentPhase = this.state;
             this.updateUI();
         }
@@ -288,6 +294,14 @@ const DoubleCrashGame = {
         const hi = this.calculateOdds('HIGHER', r.threshold, r.remainingWheel1, r.remainingWheel2);
         const lo = this.calculateOdds('LOWER', r.threshold, r.remainingWheel1, r.remainingWheel2);
         this.log('Live odds: HIGHER ' + (hi === null ? '—' : 'x' + hi) + ', LOWER ' + (lo === null ? '—' : 'x' + lo) + '.');
+    },
+
+    // record the current side's win probability for the chance-history tracker
+    recordChance(label) {
+        const r = this.round;
+        const side = this.getCurrentMainSide();
+        const probability = this.calculateProbability(side, r.threshold, r.remainingWheel1, r.remainingWheel2);
+        r.chanceHistory.push({ side: side, probability: probability, label: label });
     },
 
     // ---- player actions ----
@@ -371,8 +385,10 @@ const DoubleCrashGame = {
             payout: 0,
             createdAtPhase: this.round.currentPhase,
         });
-        this.log('Boost x2: added €' + this.fmt(cost) + ' on ' + side +
-            ' (potential payout now €' + this.fmt(this.currentOpenPayout()) + ').');
+        const addedWin = this.floorTo2(cost * odds);
+        this.log('Boost: spent €' + this.fmt(cost) + ' on ' + side +
+            ' for +€' + this.fmt(addedWin) + ' possible win (potential payout now €' +
+            this.fmt(this.currentOpenPayout()) + ').');
         return true;
     },
 
@@ -392,6 +408,20 @@ const DoubleCrashGame = {
 
     calculateTotalCashout() {
         return this.getOpenBets().reduce((sum, bet) => sum + this.calculateBetCashout(bet), 0);
+    },
+
+    // fair value of a position before the cashout penalty/cap
+    positionValue(bet) {
+        if (bet.status !== 'OPEN') return 0;
+        const probability = this.calculateProbability(
+            bet.side, this.round.threshold,
+            this.round.remainingWheel1, this.round.remainingWheel2,
+        );
+        return bet.stake * bet.lockedOdds * probability;
+    },
+
+    totalPositionValue() {
+        return this.getOpenBets().reduce((sum, bet) => sum + this.positionValue(bet), 0);
     },
 
     cashout() {
@@ -419,14 +449,16 @@ const DoubleCrashGame = {
         this.updateUI();
     },
 
+    // Flip: sell the current position and buy the opposite side at the
+    // current live price (keeping an equivalent potential payout)
     swap() {
         const info = this.swapInfo();
         if (!info) {
-            this.log('Swap unavailable: other side has no winning pairs.');
+            this.log('Flip unavailable: other side has no winning pairs.');
             return false;
         }
         if (info.net > this.balance) {
-            this.log('Swap unavailable: insufficient balance.');
+            this.log('Flip unavailable: insufficient balance.');
             return false;
         }
         for (const bet of this.round.bets) {
@@ -435,12 +467,12 @@ const DoubleCrashGame = {
                 bet.payout = 0;
             }
         }
-        // refund the fair value of the old position, pay for the new one
+        // sell the old position at its fair value, buy the new one
         this.balance += info.credit;
         this.balance -= info.newStake;
         this.round.bets.push({
             id: this.generateId(),
-            type: 'SWAP',
+            type: 'FLIP',
             side: info.other,
             stake: info.newStake,
             lockedOdds: info.oddsOther,
@@ -448,8 +480,12 @@ const DoubleCrashGame = {
             payout: 0,
             createdAtPhase: this.round.currentPhase,
         });
-        const netTxt = info.net >= 0 ? 'paid €' + this.fmt(info.net) : 'received €' + this.fmt(-info.net);
-        this.log('Swap to ' + info.other + ': equivalent payout €' + this.fmt(info.payout) + ' (' + netTxt + ').');
+        this.log('Sold ' + info.main + ' position: +€' + this.fmt(info.credit) + '.');
+        this.log('Bought ' + info.other + ' position: -€' + this.fmt(info.newStake) + '.');
+        this.log(info.net >= 0
+            ? 'Flip cost: €' + this.fmt(info.net) + '.'
+            : 'Flip refund: +€' + this.fmt(-info.net) + '.');
+        this.recordChance('Flip to ' + info.other);
         return true;
     },
 
@@ -626,15 +662,15 @@ const DoubleCrashGame = {
             const hiOdds = this.calculateOdds('HIGHER', r.threshold, r.remainingWheel1, r.remainingWheel2);
             const loOdds = this.calculateOdds('LOWER', r.threshold, r.remainingWheel1, r.remainingWheel2);
             html += '<div class="crash-panel crash-betting">' +
-                '<div class="crash-tagline">Two wheels. One final score. Bet Higher or Lower.</div>' +
+                '<div class="crash-tagline">Two wheels. One target. Watch your position change.</div>' +
                 '<label class="crash-bet-row">Bet Amount €' +
                     '<input id="crash-stake" type="number" min="' + MIN_BET + '" max="' + MAX_BET + '" step="0.1" value="' + this.pendingStake + '">' +
                 '</label>' +
                 '<div class="crash-side-buttons">' +
                     '<button class="crash-side-btn higher' + (this.pendingSide === 'HIGHER' ? ' active' : '') + '" data-side="HIGHER">' +
-                        'Higher<br><small>x' + (hiOdds === null ? '—' : hiOdds) + '</small></button>' +
+                        'Higher<br><small>&gt; ' + r.threshold + ' · x' + (hiOdds === null ? '—' : hiOdds) + '</small></button>' +
                     '<button class="crash-side-btn lower' + (this.pendingSide === 'LOWER' ? ' active' : '') + '" data-side="LOWER">' +
-                        'Lower<br><small>x' + (loOdds === null ? '—' : loOdds) + '</small></button>' +
+                        'Lower<br><small>&lt; ' + r.threshold + ' · x' + (loOdds === null ? '—' : loOdds) + '</small></button>' +
                 '</div>' +
                 '<button id="crash-start" class="crash-action-btn primary">Start Round</button>' +
                 '</div>';
@@ -645,25 +681,29 @@ const DoubleCrashGame = {
         if (this.isDecisionPhase()) {
             const totalCashout = this.floorTo2(this.calculateTotalCashout());
             const boostCost = this.boostCost();
+            const addedWin = this.floorTo2(this.currentOpenPayout());
             const swapInfo = this.swapInfo();
 
             const boostDis = (boostCost === null || boostCost <= 0 || this.balance < boostCost) ? ' disabled' : '';
             const swapDis = (!swapInfo || swapInfo.net > this.balance) ? ' disabled' : '';
             const cashDis = totalCashout <= 0 ? ' disabled' : '';
 
-            const boostLabel = boostCost === null ? 'x2' : 'x2 &middot; €' + this.fmt(boostCost);
-            let swapLabel = 'Swap';
+            const boostLabel = boostCost === null
+                ? 'Boost'
+                : 'Boost<br><small>+€' + this.fmt(addedWin) + ' win · €' + this.fmt(boostCost) + '</small>';
+            let flipLabel = 'Flip';
             if (swapInfo) {
-                swapLabel = swapInfo.net >= 0
-                    ? 'Swap &middot; €' + this.fmt(swapInfo.net)
-                    : 'Swap &middot; +€' + this.fmt(-swapInfo.net);
+                const flipTo = 'Flip to ' + swapInfo.other;
+                flipLabel = swapInfo.net >= 0
+                    ? flipTo + '<br><small>Cost €' + this.fmt(swapInfo.net) + '</small>'
+                    : flipTo + '<br><small>Refund €' + this.fmt(-swapInfo.net) + '</small>';
             }
 
             html += '<div class="crash-panel crash-actions">' +
                 '<button id="crash-hold" class="crash-action-btn">Hold</button>' +
                 '<button id="crash-boost" class="crash-action-btn"' + boostDis + '>' + boostLabel + '</button>' +
-                '<button id="crash-swap" class="crash-action-btn"' + swapDis + '>' + swapLabel + '</button>' +
-                '<button id="crash-cashout" class="crash-action-btn"' + cashDis + '>Cashout €' + this.fmt(totalCashout) + '</button>' +
+                '<button id="crash-flip" class="crash-action-btn"' + swapDis + '>' + flipLabel + '</button>' +
+                '<button id="crash-cashout" class="crash-action-btn"' + cashDis + '>Cashout<br><small>€' + this.fmt(totalCashout) + '</small></button>' +
                 '</div>';
         }
 
@@ -717,22 +757,37 @@ const DoubleCrashGame = {
             '</div>' +
             '</div>';
 
-        // bets panel
+        // your position panel — shows fair Position Value alongside Cashout Now
         if (r.bets.length > 0) {
+            const openBets = this.getOpenBets();
+            let posHtml = '';
+            if (openBets.length > 0) {
+                const side = this.getCurrentMainSide();
+                const totalStake = openBets.reduce((s, b) => s + b.stake, 0);
+                const potential = this.currentOpenPayout();
+                const posValue = this.totalPositionValue();
+                const cashNow = this.calculateTotalCashout();
+                posHtml +=
+                    '<div class="crash-pos-row">Side: <b>' + side + '</b></div>' +
+                    '<div class="crash-pos-row">Total Stake: <b>€' + this.fmt(totalStake) + '</b></div>' +
+                    '<div class="crash-pos-row">Potential Payout: <b>€' + this.fmt(potential) + '</b></div>' +
+                    '<div class="crash-pos-row">Position Value: <b>€' + this.fmt(posValue) + '</b></div>' +
+                    '<div class="crash-pos-row cashnow">Cashout Now: <b>€' + this.fmt(cashNow) + '</b></div>';
+            }
             let betsHtml = '';
             r.bets.forEach((bet, i) => {
-                const cashoutTxt = bet.status === 'OPEN'
-                    ? ' · Cashout €' + this.fmt(this.calculateBetCashout(bet))
-                    : '';
-                const statusTxt = bet.status === 'OPEN' ? '' : ' · ' + bet.status +
+                const statusTxt = bet.status === 'OPEN' ? 'open' : bet.status.toLowerCase() +
                     (bet.status === 'WON' ? ' €' + this.fmt(bet.payout) : '');
                 betsHtml += '<div class="crash-bet ' + bet.status.toLowerCase() + '">' +
                     '#' + (i + 1) + ' ' + bet.type + ' · ' + bet.side +
-                    ' · €' + this.fmt(bet.stake) + ' @ x' + bet.lockedOdds +
-                    cashoutTxt + statusTxt + '</div>';
+                    ' · €' + this.fmt(bet.stake) + ' @ x' + bet.lockedOdds + ' · ' + statusTxt + '</div>';
             });
-            html += '<div class="crash-panel crash-bets"><div class="crash-panel-title">Your Bets</div>' + betsHtml + '</div>';
+            html += '<div class="crash-panel crash-bets"><div class="crash-panel-title">Your Position</div>' +
+                posHtml + betsHtml + '</div>';
         }
+
+        // chance history tracker
+        if (r.chanceHistory.length > 0) html += this.renderChanceHistory();
 
         // log
         let logHtml = '';
@@ -759,31 +814,38 @@ const DoubleCrashGame = {
         return '<div class="crash-rules-overlay">' +
             '<div class="crash-rules-card">' +
                 '<div class="crash-rules-title">How to play</div>' +
-                '<p><b>Goal.</b> Bet whether the final score will be <b>Higher</b> or ' +
-                    '<b>Lower</b> than a random <b>threshold</b> (21–51).</p>' +
-                '<p><b>Two wheels.</b> Two independent roulette wheels (0–36) spin. The ' +
-                    'final score is their sum: <i>Wheel 1 + Wheel 2</i> (0–72). ' +
-                    'Adding two wheels pulls results toward the middle (~36), so extremes are ' +
-                    'rare and the outcome stays tense to the very end.</p>' +
-                '<p><b>Win conditions.</b> Higher wins if the final score is above the ' +
-                    'threshold; Lower wins if it is below. If it lands <b>exactly</b> on the ' +
-                    'threshold it is <b>Center</b> — both sides lose (like zero in roulette).</p>' +
-                '<p><b>The reveal.</b> Each wheel narrows down over <b>5 steps</b>: numbers ' +
-                    'that can no longer come up are burned away until only the result remains. ' +
-                    'Wheel 1 settles first, then Wheel 2. You watch your odds shift live.</p>' +
+                '<p class="crash-rules-tag">Two wheels. One target. Watch your position change. ' +
+                    'Boost, flip, or cash out before the final number lands.</p>' +
+                '<p>Two wheels spin. The final score is <b>Wheel 1 + Wheel 2</b> (0–72). ' +
+                    'Bet whether the final score will be <b>Higher</b> or <b>Lower</b> than the ' +
+                    'target. As numbers disappear, your chance changes. You can Hold, Boost, ' +
+                    'Flip, or Cashout before the final result.</p>' +
+                '<p><b>Center.</b> If the final score equals the target, both Higher and Lower ' +
+                    'lose — this is called <b>Center</b>. Center is a losing outcome for both ' +
+                    'sides, similar to zero in roulette. It is included in the odds calculation, ' +
+                    'while the target RTP is controlled by dynamic pricing.</p>' +
+                '<p><b>The reveal.</b> Each wheel narrows down over <b>5 steps</b>: numbers that ' +
+                    'can no longer come up are burned away until only the result remains. ' +
+                    'Wheel 1 settles first, then Wheel 2.</p>' +
                 '<p><b>Your moves</b> between steps:</p>' +
                 '<ul>' +
                     '<li><b>Hold</b> — keep your position and reveal the next step.</li>' +
-                    '<li><b>x2</b> — double your potential payout. The button shows the cash it ' +
-                        'costs at the current fair price.</li>' +
-                    '<li><b>Swap</b> — flip to the other side, keeping an equivalent potential ' +
-                        'payout. The button shows the net cash to switch.</li>' +
+                    '<li><b>Boost</b> — increases your possible win at the current live price. ' +
+                        'The Boost cost changes as numbers disappear and probabilities change. ' +
+                        'Boost never reuses your original odds — it is always priced using the ' +
+                        'current live position.</li>' +
+                    '<li><b>Flip</b> — sells your current position and buys the opposite side at ' +
+                        'the current live price. Depending on the live prices, flipping may cost ' +
+                        'extra or return part of the position value.</li>' +
                     '<li><b>Cashout</b> — take your position\'s current value (with a small ' +
                         'penalty) and end the round early.</li>' +
                 '</ul>' +
-                '<p><b>Fairness.</b> Every price is recalculated live from the remaining ' +
-                    'numbers at a <b>98% RTP</b>, so boosting or swapping is always priced ' +
-                    'fairly — no exploit, math always under control.</p>' +
+                '<p><b>Position Value vs Cashout.</b> Position Value is the current fair value ' +
+                    'of your open position; Cashout Now is what you actually receive after the ' +
+                    'penalty.</p>' +
+                '<p><b>Fairness.</b> Every price is recalculated live from the remaining numbers ' +
+                    'at a <b>98% RTP</b>, so Boost and Flip are always priced fairly — no ' +
+                    'exploit, math always under control.</p>' +
                 '<button id="crash-rules-close" class="crash-action-btn primary">Got it</button>' +
             '</div>' +
             '</div>';
@@ -808,7 +870,8 @@ const DoubleCrashGame = {
         const winningSide = r.result ? r.result.winningSide : 'CENTER';
         if (winningSide === 'CENTER') {
             body += '<div class="crash-result-row">Result: <b>CENTER</b></div>' +
-                '<div class="crash-result-row">Both Higher and Lower lose.</div>';
+                '<div class="crash-result-row">Both Higher and Lower lose.</div>' +
+                '<div class="crash-result-row">Center is included in the odds calculation.</div>';
         } else {
             body += '<div class="crash-result-row">Winning side: <b>' + winningSide + '</b></div>';
         }
@@ -820,6 +883,36 @@ const DoubleCrashGame = {
 
         const cls = net > 0 ? 'win' : (net < 0 ? 'loss' : 'even');
         return '<div class="crash-panel crash-result ' + cls + '"><div class="crash-result-title">Round Result</div>' + body + '</div>';
+    },
+
+    // small tracker of how the selected side's win chance changed this round
+    renderChanceHistory() {
+        const h = this.round.chanceHistory;
+        let items = '';
+        h.forEach((entry, i) => {
+            let trend = 'neutral';
+            let arrow = '';
+            if (i > 0) {
+                const prev = h[i - 1];
+                if (entry.side !== prev.side) {
+                    trend = 'flip';
+                    arrow = '⇄';
+                } else if (entry.probability > prev.probability + 1e-9) {
+                    trend = 'up';
+                    arrow = '▲';
+                } else if (entry.probability < prev.probability - 1e-9) {
+                    trend = 'down';
+                    arrow = '▼';
+                }
+            }
+            const pct = (entry.probability * 100).toFixed(1) + '%';
+            items += '<span class="crash-chance ' + trend + '">' +
+                '<span class="crash-chance-label">' + entry.label + '</span>' +
+                '<span class="crash-chance-pct">' + (arrow ? arrow + ' ' : '') + pct + '</span></span>';
+        });
+        return '<div class="crash-panel crash-chance-wrap">' +
+            '<div class="crash-panel-title">Chance History</div>' +
+            '<div class="crash-chance-row">' + items + '</div></div>';
     },
 
     renderDebug() {
@@ -885,11 +978,11 @@ const DoubleCrashGame = {
             this.startBet(this.pendingSide, this.pendingStake);
         });
 
-        // actions — Hold / Boost / Swap perform their action and advance the
+        // actions — Hold / Boost / Flip perform their action and advance the
         // spin; Cashout ends the round
         bind('crash-hold', () => { this.hold(); this.nextReveal(); });
         bind('crash-boost', () => { if (this.boost()) this.nextReveal(); else this.updateUI(); });
-        bind('crash-swap', () => { if (this.swap()) this.nextReveal(); else this.updateUI(); });
+        bind('crash-flip', () => { if (this.swap()) this.nextReveal(); else this.updateUI(); });
         bind('crash-cashout', () => this.cashout());
         bind('crash-newround', () => this.startNewRound());
 
