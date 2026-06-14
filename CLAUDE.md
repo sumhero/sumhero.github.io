@@ -87,3 +87,11 @@ js/
 - Wrong-answer pattern: mark the button `.wrong`, set `dataset.wrongChoice`,
   play `Sound.play('wrong')`, and let the player retry; advance on the correct
   choice.
+
+## Workflow
+
+- This repo is **not production**. After making edits, **automatically commit and
+  push to `main`** (no PR, no branch, no asking) — the owner wants every change
+  landed on `main` right away.
+- When game assets (JS/CSS/HTML/sw) change, bump `CACHE_VERSION` in `sw.js` so
+  clients pick up the update.
