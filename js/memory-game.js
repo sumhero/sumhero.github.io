@@ -32,7 +32,7 @@ const MemoryGame = {
             difficulty: difficulty,
             config: config,
             totalExercises: config.boards,
-            colors: this.pickColors(),
+            colors: [],
             board: [],
         };
         this.currentExercise = 0;
@@ -43,7 +43,7 @@ const MemoryGame = {
         App.showScreen('game');
     },
 
-    // Three random colors for the whole session.
+    // Three random colors, rerolled fresh for each board.
     pickColors() {
         const pool = MEMORY_COLORS.slice();
         for (let i = pool.length - 1; i > 0; i--) {
@@ -86,6 +86,7 @@ const MemoryGame = {
         this.clearTimers();
         this.activeColor = null;
         this.solvedCount = 0;
+        this.session.colors = this.pickColors();
         this.session.board = this.generateBoard();
 
         const gameBody = document.querySelector('.game-body');
