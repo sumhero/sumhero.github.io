@@ -39,6 +39,11 @@ const GAMES = [
         nameKey: 'doubleCrash',
         emoji: '\uD83C\uDFA1',
     },
+    {
+        type: 'memory',
+        nameKey: 'memory',
+        emoji: '\uD83E\uDDE0',
+    },
 ];
 
 const DIFFICULTY_LEVELS = [
@@ -98,6 +103,8 @@ const GameList = {
                     GuessTimeGame.start(this.getDifficulty());
                 } else if (this.selectedGame === 'double_crash') {
                     DoubleCrashGame.start(this.getDifficulty());
+                } else if (this.selectedGame === 'memory') {
+                    MemoryGame.start(this.getDifficulty());
                 } else {
                     this.showPicker();
                 }
