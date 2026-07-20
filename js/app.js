@@ -73,6 +73,7 @@ const App = {
                 gameBody.classList.remove('time-game-layout');
                 gameBody.classList.remove('crash-game-layout');
                 gameBody.classList.remove('memory-game-layout');
+                gameBody.classList.remove('chess-game-layout');
                 const choices = document.getElementById('choices-container');
                 if (choices) choices.style.gridTemplateColumns = '';
             }

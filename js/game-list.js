@@ -44,6 +44,11 @@ const GAMES = [
         nameKey: 'memory',
         emoji: '\uD83E\uDDE0',
     },
+    {
+        type: 'chess',
+        nameKey: 'chess',
+        emoji: '\u265F\uFE0F',
+    },
 ];
 
 const DIFFICULTY_LEVELS = [
@@ -105,6 +110,8 @@ const GameList = {
                     DoubleCrashGame.start(this.getDifficulty());
                 } else if (this.selectedGame === 'memory') {
                     MemoryGame.start(this.getDifficulty());
+                } else if (this.selectedGame === 'chess') {
+                    ChessGame.start(this.getDifficulty());
                 } else {
                     this.showPicker();
                 }

@@ -1357,6 +1357,86 @@ input, textarea {
     opacity: 0.85;
 }
 
+/* Mini chess layout */
+.chess-game-layout {
+    flex-direction: column !important;
+}
+
+.chess-game-layout .dice-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    overflow: hidden;
+}
+
+.chess-game-layout .choices-container {
+    display: none !important;
+}
+
+.chess-caption {
+    font-size: min(7vw, 5vh);
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+.chess-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    width: min(80vw, 52vh);
+    aspect-ratio: 1;
+    border: 4px solid #2b2b2b;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+}
+
+.chess-cell {
+    border: none;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+    transition: background 0.15s;
+}
+
+.chess-light {
+    background: #efe6d0;
+}
+
+.chess-dark {
+    background: #b58863;
+}
+
+.chess-cell:active {
+    filter: brightness(0.9);
+}
+
+.chess-piece {
+    font-size: min(18vw, 12vh);
+    line-height: 1;
+    color: #1a1a1a;
+    text-shadow: 0 2px 3px rgba(255,255,255,0.4);
+}
+
+.chess-cell.chess-correct {
+    background: #4CAF50;
+    animation: pulse 0.4s ease;
+}
+
+.chess-cell.wrong {
+    background: #f44336;
+    animation: shake 0.4s ease;
+}
+
 /* Memory game layout */
 .memory-game-layout {
     flex-direction: column !important;
