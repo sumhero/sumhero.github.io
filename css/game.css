@@ -1421,7 +1421,7 @@ input, textarea {
 }
 
 .chess-piece {
-    font-size: min(18vw, 12vh);
+    font-size: min(36vw, 24vh);
     line-height: 1;
     color: #1a1a1a;
     text-shadow: 0 2px 3px rgba(255,255,255,0.4);
