@@ -6,11 +6,12 @@ import { UnoGame } from './uno-game.js';
 import { DiceRecognitionGame } from './dice-recognition-game.js';
 import { CountriesGame } from './countries-game.js';
 import { CapitalsGame } from './capitals-game.js';
-import { DiceGame } from './dice-game.js';
 import { GuessTimeGame } from './guess-time-game.js';
 import { DoubleCrashGame } from './double-crash-game.js';
 import { MemoryGame } from './memory-game.js';
 import { ChessGame } from './chess-game.js';
+import { GameEngine } from './engine/game-engine.js';
+import { DiceAdditionGame } from './games/dice-addition.js';
 
 export const GAMES = [
     {
@@ -159,7 +160,7 @@ export const GameList = {
             const btn = document.createElement('button');
             btn.className = 'picker-btn';
             btn.textContent = i;
-            btn.addEventListener('click', () => DiceGame.start(this.selectedGame, i, this.getDifficulty()));
+            btn.addEventListener('click', () => GameEngine.start(DiceAdditionGame, { difficulty: this.getDifficulty(), count: i }));
             container.appendChild(btn);
         }
         App.showScreen('picker');

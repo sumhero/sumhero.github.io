@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { I18n } from '../js/i18n/i18n.js';
 import { TRANSLATIONS, LANGUAGES } from '../js/i18n/translations.js';
-import { DiceRenderer } from '../js/dice-renderer.js';
+import { DiceRenderer } from '../js/render/dice.js';
 import { GAMES } from '../js/game-list.js';
 
 describe('ES module conversion', () => {
