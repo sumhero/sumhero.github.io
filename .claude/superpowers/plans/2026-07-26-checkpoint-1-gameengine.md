@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Extract a shared `GameEngine` from six duplicated game files, convert the app to ES modules, and migrate all six existing games onto the engine with no user-visible behaviour change.
+**Goal:** Extract a shared `GameEngine` from nine duplicated game files, convert the app to ES modules, and migrate nine of the ten existing games onto the engine with no user-visible behaviour change. `double_crash` keeps its own loop as a documented `legacy` registry entry.
 
 **Architecture:** A game becomes a plain object exposing a pure `generate(difficulty, ctx)` that returns exercise data, plus optional `renderPrompt`/`renderChoices` hooks for the games that aren't simple multiple-choice. The engine owns the session loop, scoring, celebration, speech, and result persistence. `showScreen` moves into its own module so the engine can call it without an import cycle.
 
@@ -15,7 +15,9 @@
 - **All five languages** stay in sync: `en`, `fr`, `de`, `uk`, `ru`. A new key means five entries.
 - **Diacritics are mandatory** in `fr` and `de` strings. Never write `Parametres` for `Paramètres` or `zahlen` for `zählen`.
 - **`generate()` is pure**: no DOM, no `Date`, no `Math.random`, no module-scope reads. Everything arrives via `ctx`.
-- **Behaviour must not change in this checkpoint.** All six games play identically when it lands. New games come in checkpoints 2–4.
+- **Behaviour must not change in this checkpoint.** All ten games play identically when it lands. New games come in checkpoints 2–4.
+- **`double_crash` internals are off limits.** Only its imports and registry fields change. Do not refactor 1046 lines of betting logic while extracting an engine.
+- **The upstream baseline is `origin/main`, not a local checkout.** This plan was rewritten after discovering four games (`guess_time`, `memory`, `chess`, `double_crash`) that a stale working copy did not contain.
 - **Every new file under `js/` or `css/` must reach `sw.js`** or the app breaks offline.
 
 ---
@@ -842,11 +844,28 @@ The heart of the checkpoint. Owns the session loop that six files currently dupl
 
 **Interfaces:**
 - Consumes: `showScreen`, `setLayoutClass` (Task 5); `saveResult` (Task 6); `Speech` (Task 7); `I18n` (Task 3); `Sound`, `Animation` (Task 2).
-- Produces: `GameEngine.start(game, options)`, `GameEngine.resolveCount(game, difficulty, requested)`, `GameEngine.buildContext(difficulty, options)`, and the overridable seams `GameEngine.now`, `GameEngine.advanceDelayMs`.
+- Produces: `GameEngine.start(game, options)`, `GameEngine.resolveCount(game, difficulty, requested)`, `GameEngine.buildContext(difficulty, options)`, `GameEngine.isCorrect(value, exercise)`, `GameEngine.applyBodyClass(className)`, and the overridable seams `GameEngine.now`, `GameEngine.advanceDelayMs`.
 
-  A game object is `{ id, nameKey, emoji, domain, rounds, layoutClass?, choiceClass?, setup?, generate(difficulty, ctx), renderPrompt?(el, ex), renderChoices?(el, ex, submit) }`.
+  A game object is:
 
-  An exercise is `{ promptHtml?, speak?, choices, correctAnswer }`. A choice is a number, a string, or `{ html, value }`.
+  ```
+  {
+    id, nameKey, emoji, domain, rounds,
+    layoutClass?,     // class on .game-body for the whole game
+    choiceClass?,     // extra class on each default-rendered choice button
+    correctClass?,    // class marking a right answer, default 'correct'
+    setup?,           // 'category' to show the object-category pre-screen
+    legacy?,          // true = not engine-driven; game list calls its own start()
+    generate(difficulty, ctx),
+    isCorrect?(value, exercise),          // default: value === exercise.correctAnswer
+    renderPrompt?(el, exercise, submit),
+    renderChoices?(el, exercise, submit),
+  }
+  ```
+
+  An exercise is `{ promptHtml?, speak?, bodyClass?, choices, correctAnswer }`. A
+  choice is a number, a string, or `{ html, value }`. A game using `isCorrect`
+  need not set `correctAnswer` at all.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -855,6 +874,7 @@ Create `test/engine/game-engine.test.js`:
 ```js
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GameEngine } from '../../js/engine/game-engine.js';
+import { showScreen } from '../../js/engine/screens.js';
 import { loadResults } from '../../js/engine/results.js';
 
 function mountDom() {
@@ -1040,6 +1060,87 @@ describe('GameEngine', () => {
     expect(seen).toEqual([0.5]);
   });
 
+  it('accepts a game-supplied isCorrect predicate with many valid answers', () => {
+    const manyAnswers = {
+      ...stubGame,
+      isCorrect: (value, ex) => ex.targets.includes(value),
+      generate: () => [{ promptHtml: '', choices: ['1,2', '3,4', '9,9'], targets: ['1,2', '3,4'] }],
+    };
+    GameEngine.start(manyAnswers, { difficulty: 'easy' });
+
+    document.querySelector('[data-value="3,4"]').click();
+    expect(GameEngine.wrongAttempts).toBe(0);
+  });
+
+  it('counts a wrong answer under a custom isCorrect predicate', () => {
+    GameEngine.start({
+      ...stubGame,
+      isCorrect: (value, ex) => ex.targets.includes(value),
+      generate: () => [{ promptHtml: '', choices: ['1,2', '9,9'], targets: ['1,2'] }],
+    }, { difficulty: 'easy' });
+
+    document.querySelector('[data-value="9,9"]').click();
+    expect(GameEngine.wrongAttempts).toBe(1);
+  });
+
+  it('honours a game-supplied correctClass', () => {
+    GameEngine.start({ ...stubGame, correctClass: 'chess-correct' }, { difficulty: 'easy' });
+    const btn = clickChoice(2);
+    expect(btn.classList.contains('chess-correct')).toBe(true);
+    expect(btn.classList.contains('correct')).toBe(false);
+  });
+
+  it('applies a per-exercise bodyClass', () => {
+    GameEngine.start({
+      ...stubGame,
+      generate: () => [{ promptHtml: '', choices: [1], correctAnswer: 1, bodyClass: 'time-theme-night' }],
+    }, { difficulty: 'easy' });
+    expect(document.body.classList.contains('time-theme-night')).toBe(true);
+  });
+
+  it('swaps the bodyClass between exercises rather than stacking them', () => {
+    GameEngine.start({
+      ...stubGame,
+      generate: () => [
+        { promptHtml: '', choices: [1], correctAnswer: 1, bodyClass: 'time-theme-day' },
+        { promptHtml: '', choices: [1], correctAnswer: 1, bodyClass: 'time-theme-night' },
+      ],
+    }, { difficulty: 'easy' });
+
+    document.querySelector('[data-value="1"]').click();
+    vi.runAllTimers();
+
+    expect(document.body.classList.contains('time-theme-day')).toBe(false);
+    expect(document.body.classList.contains('time-theme-night')).toBe(true);
+  });
+
+  it('clears the bodyClass when leaving the game screen', () => {
+    GameEngine.start({
+      ...stubGame,
+      generate: () => [{ promptHtml: '', choices: [1], correctAnswer: 1, bodyClass: 'time-theme-night' }],
+    }, { difficulty: 'easy' });
+
+    showScreen('games');
+    expect(document.body.classList.contains('time-theme-night')).toBe(false);
+  });
+
+  it('passes submit to renderPrompt so a game can wire its own board', () => {
+    GameEngine.start({
+      ...stubGame,
+      renderPrompt(el, exercise, submit) {
+        el.innerHTML = '<button id="cell">c</button>';
+        el.querySelector('#cell').addEventListener('click', (e) => submit(2, e.target));
+      },
+      renderChoices(el) {
+        el.innerHTML = '';
+      },
+    }, { difficulty: 'easy' });
+
+    document.getElementById('cell').click();
+    expect(GameEngine.wrongAttempts).toBe(0);
+    expect(document.getElementById('choices-container').innerHTML).toBe('');
+  });
+
   it('uses a game-supplied renderChoices hook', () => {
     GameEngine.start({
       ...stubGame,
@@ -1063,7 +1164,7 @@ Expected: FAIL — cannot resolve `../../js/engine/game-engine.js`.
 Create `js/engine/game-engine.js`:
 
 ```js
-import { showScreen, setLayoutClass } from './screens.js';
+import { showScreen, setLayoutClass, onScreenChange } from './screens.js';
 import { saveResult } from './results.js';
 import { Speech } from './speech.js';
 import { I18n } from '../i18n/i18n.js';
@@ -1077,6 +1178,7 @@ export const GameEngine = {
   wrongAttempts: 0,
   startTime: 0,
   difficulty: 'easy',
+  activeBodyClass: null,
 
   now: () => Date.now(),
   advanceDelayMs: 600,
@@ -1085,6 +1187,22 @@ export const GameEngine = {
     if (game.rounds === 'ask') return requested;
 
     return game.rounds[difficulty];
+  },
+
+  isCorrect(value, exercise) {
+    if (this.game.isCorrect) return this.game.isCorrect(value, exercise);
+
+    return value === exercise.correctAnswer;
+  },
+
+  applyBodyClass(className) {
+    if (this.activeBodyClass) {
+      document.body.classList.remove(this.activeBodyClass);
+    }
+    if (className) {
+      document.body.classList.add(className);
+    }
+    this.activeBodyClass = className;
   },
 
   buildContext(difficulty, options) {
@@ -1117,15 +1235,18 @@ export const GameEngine = {
     const exercise = this.exercises[this.index];
     if (!exercise) return;
 
+    const submit = (value, btn) => this.answer(value, btn);
+
+    this.applyBodyClass(exercise.bodyClass || null);
+
     const promptEl = document.getElementById('dice-container');
     if (this.game.renderPrompt) {
-      this.game.renderPrompt(promptEl, exercise);
+      this.game.renderPrompt(promptEl, exercise, submit);
     } else {
       promptEl.innerHTML = exercise.promptHtml || '';
     }
 
     const choicesEl = document.getElementById('choices-container');
-    const submit = (value, btn) => this.answer(value, btn);
 
     if (this.game.renderChoices) {
       this.game.renderChoices(choicesEl, exercise, submit);
@@ -1182,8 +1303,8 @@ export const GameEngine = {
 
     const exercise = this.exercises[this.index];
 
-    if (value === exercise.correctAnswer) {
-      if (btn) btn.classList.add('correct');
+    if (this.isCorrect(value, exercise)) {
+      if (btn) btn.classList.add(this.game.correctClass || 'correct');
       Sound.play('correct');
       Speech.cancel();
 
@@ -1243,9 +1364,24 @@ export const GameEngine = {
     showScreen('celebration');
   },
 };
+
+onScreenChange(name => {
+  if (name !== 'game' && name !== 'celebration') {
+    GameEngine.applyBodyClass(null);
+  }
+});
 ```
 
 Add `'/js/engine/game-engine.js'` to `sw.js` and bump `CACHE_VERSION`.
+
+> The four optional fields `isCorrect`, `correctClass`, `bodyClass`, and the
+> `submit` argument to `renderPrompt` exist for exactly two games. `chess` has a
+> *set* of valid target cells rather than one answer, marks success with
+> `.chess-correct`, and wires its click handlers on the board it paints into
+> `#dice-container`. `guess_time` themes `document.body` day or night per
+> exercise. Both were previously impossible to express, and the `onScreenChange`
+> subscription fixes a pre-existing bug where the day/night theme survived
+> leaving the game.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -1288,10 +1424,10 @@ describe('registry', () => {
       .toEqual(['nombres', 'mesures', 'geometrie', 'logique', 'monde']);
   });
 
-  it('registers the six existing games', () => {
+  it('registers all ten existing games', () => {
     expect(GAMES.map(g => g.id).sort()).toEqual([
-      'capitals', 'count_objects', 'countries',
-      'dice_addition', 'dice_recognition', 'uno',
+      'capitals', 'chess', 'count_objects', 'countries', 'dice_addition',
+      'dice_recognition', 'double_crash', 'guess_time', 'memory', 'uno',
     ]);
   });
 
@@ -1302,19 +1438,33 @@ describe('registry', () => {
     }
   });
 
-  it('gives every game the fields the engine requires', () => {
-    for (const game of GAMES) {
+  it('gives every engine-driven game the fields the engine requires', () => {
+    for (const game of GAMES.filter(g => !g.legacy)) {
       expect(typeof game.generate).toBe('function');
       expect(game.nameKey).toBeTruthy();
       expect(game.emoji).toBeTruthy();
     }
   });
 
+  it('marks exactly one game legacy, and it supplies its own start()', () => {
+    const legacy = GAMES.filter(g => g.legacy);
+    expect(legacy.map(g => g.id)).toEqual(['double_crash']);
+    expect(typeof legacy[0].start).toBe('function');
+  });
+
   it('groups games under their domain, skipping empty domains', () => {
     const grouped = gamesByDomain();
-    expect(grouped.map(g => g.domain.key)).toEqual(['nombres', 'logique', 'monde']);
+    expect(grouped.map(g => g.domain.key))
+      .toEqual(['nombres', 'mesures', 'logique', 'monde']);
     expect(grouped[0].games.map(g => g.id))
       .toEqual(['dice_addition', 'count_objects', 'dice_recognition']);
+    expect(grouped[1].games.map(g => g.id)).toEqual(['guess_time']);
+    expect(grouped[2].games.map(g => g.id))
+      .toEqual(['uno', 'memory', 'chess', 'double_crash']);
+  });
+
+  it('leaves geometrie empty until Tier 3 adds shapes', () => {
+    expect(gamesByDomain().map(g => g.domain.key)).not.toContain('geometrie');
   });
 });
 ```
@@ -1335,6 +1485,10 @@ import { DiceRecognitionGame } from '../games/dice-recognition.js';
 import { UnoGame } from '../games/uno.js';
 import { CountriesGame } from '../games/countries.js';
 import { CapitalsGame } from '../games/capitals.js';
+import { GuessTimeGame } from '../games/guess-time.js';
+import { MemoryGame } from '../games/memory.js';
+import { ChessGame } from '../games/chess.js';
+import { DoubleCrashGame } from '../games/double-crash.js';
 
 export const DOMAINS = [
   { key: 'nombres', labelKey: 'domainNombres', emoji: '🔢' },
@@ -1348,7 +1502,11 @@ export const GAMES = [
   DiceAdditionGame,
   CountObjectsGame,
   DiceRecognitionGame,
+  GuessTimeGame,
   UnoGame,
+  MemoryGame,
+  ChessGame,
+  DoubleCrashGame,
   CountriesGame,
   CapitalsGame,
 ];
@@ -1384,7 +1542,9 @@ load() {
       const game = GAMES.find(g => g.id === card.dataset.id);
       this.selectedGame = game;
 
-      if (game.setup === 'category') {
+      if (game.legacy) {
+        game.start(this.getDifficulty());
+      } else if (game.setup === 'category') {
         this.showCategoryPicker();
       } else if (game.rounds === 'ask') {
         this.showPicker();
@@ -1460,7 +1620,7 @@ Add to `css/game.css`:
 
 Update `sw.js` paths and bump `CACHE_VERSION`.
 
-> This task does not pass its tests until Tasks 10–14 create the six game modules it imports. Implement it now, leave it red, and expect green at Task 14. This is the one deliberate exception to the red-green rule in this plan.
+> This task does not pass its tests until Tasks 10–18 create the ten game modules it imports. Implement it now, leave it red, and expect green at Task 18. This is the one deliberate exception to the red-green rule in this plan.
 
 - [ ] **Step 4: Commit**
 
@@ -2303,7 +2463,7 @@ git commit -m "refactor: migrate uno onto GameEngine"
 
 ### Task 14: Migrate countries and capitals
 
-Last two games. Turns the registry green.
+The two geography games. Proves `choiceClass` on a real game.
 
 **Files:**
 - Create: `js/games/countries.js`, `js/games/capitals.js`
@@ -2552,10 +2712,10 @@ export const CapitalsGame = {
 
 Delete `js/countries-game.js` and `js/capitals-game.js`. Update `sw.js` and bump `CACHE_VERSION`.
 
-- [ ] **Step 4: Run the whole suite**
+- [ ] **Step 4: Run the game suites**
 
-Run: `npm test`
-Expected: PASS — every suite including `test/engine/registry.test.js`, red since Task 9, now green.
+Run: `npx vitest run test/games/`
+Expected: PASS. `test/engine/registry.test.js` stays red until Task 18 — four game modules are still missing.
 
 - [ ] **Step 5: Commit**
 
@@ -2567,7 +2727,659 @@ git commit -m "refactor: migrate countries and capitals onto GameEngine"
 
 ---
 
-### Task 15: Remove dead auth code
+### Task 15: Migrate guess_time
+
+Proves `bodyClass` and `choiceClass`. Extracts the reusable `ClockRenderer`.
+
+**Files:**
+- Create: `js/games/guess-time.js`
+- Create: `js/render/clock.js` (the `ClockRenderer` object from `js/guess-time-game.js:1-60`)
+- Delete: `js/guess-time-game.js`
+- Test: `test/games/guess-time.test.js`
+
+**Interfaces:**
+- Consumes: `bodyClass`, `choiceClass` (Task 8).
+- Produces: `GuessTimeGame`, `ClockRenderer.render(hour, minute, size)`.
+
+- [ ] **Step 1: Write the failing test**
+
+Create `test/games/guess-time.test.js`:
+
+```js
+import { describe, it, expect } from 'vitest';
+import { GuessTimeGame } from '../../js/games/guess-time.js';
+import { ClockRenderer } from '../../js/render/clock.js';
+
+function ctx(count, rng = Math.random) {
+  return { rng, t: k => k, lang: 'fr', count, category: null };
+}
+
+describe('ClockRenderer', () => {
+  it('renders an svg clock face', () => {
+    const svg = ClockRenderer.render(3, 30);
+    expect(svg).toContain('<svg');
+    expect(svg).toContain('<text');
+  });
+});
+
+describe('GuessTimeGame', () => {
+  it('sits in the measures domain', () => {
+    expect(GuessTimeGame.id).toBe('guess_time');
+    expect(GuessTimeGame.domain).toBe('mesures');
+    expect(GuessTimeGame.layoutClass).toBe('time-game-layout');
+    expect(GuessTimeGame.choiceClass).toBe('time-choice-btn');
+  });
+
+  it('uses whole hours only on easy', () => {
+    for (const ex of GuessTimeGame.generate('easy', ctx(15))) {
+      expect(ex.time.minute).toBe(0);
+      expect(ex.time.hour).toBeGreaterThanOrEqual(1);
+      expect(ex.time.hour).toBeLessThanOrEqual(12);
+    }
+  });
+
+  it('uses half hours on normal', () => {
+    for (const ex of GuessTimeGame.generate('normal', ctx(20))) {
+      expect([0, 30]).toContain(ex.time.minute);
+    }
+  });
+
+  it('uses quarter hours on hard', () => {
+    for (const ex of GuessTimeGame.generate('hard', ctx(20))) {
+      expect([0, 15, 30, 45]).toContain(ex.time.minute);
+    }
+  });
+
+  it('formats the answer as zero-padded HH:MM', () => {
+    for (const ex of GuessTimeGame.generate('hard', ctx(10))) {
+      expect(ex.correctAnswer).toMatch(/^\d{2}:\d{2}$/);
+    }
+  });
+
+  it('offers four unique choices including the answer', () => {
+    for (const ex of GuessTimeGame.generate('normal', ctx(10))) {
+      expect(ex.choices).toHaveLength(4);
+      expect(new Set(ex.choices).size).toBe(4);
+      expect(ex.choices).toContain(ex.correctAnswer);
+    }
+  });
+
+  it('never repeats a time consecutively', () => {
+    const times = GuessTimeGame.generate('hard', ctx(20)).map(e => e.correctAnswer);
+    for (let i = 1; i < times.length; i++) {
+      expect(times[i]).not.toBe(times[i - 1]);
+    }
+  });
+
+  it('sets a day or night bodyClass above easy', () => {
+    for (const ex of GuessTimeGame.generate('normal', ctx(10))) {
+      expect(['time-theme-day', 'time-theme-night']).toContain(ex.bodyClass);
+      const expected = ex.time.hour >= 6 && ex.time.hour < 18 ? 'day' : 'night';
+      expect(ex.bodyClass).toBe('time-theme-' + expected);
+    }
+  });
+
+  it('sets no bodyClass on easy', () => {
+    for (const ex of GuessTimeGame.generate('easy', ctx(10))) {
+      expect(ex.bodyClass).toBeNull();
+    }
+  });
+
+  it('shows a sun or moon above easy but not on easy', () => {
+    expect(GuessTimeGame.generate('normal', ctx(1))[0].promptHtml).toContain('time-daynight');
+    expect(GuessTimeGame.generate('easy', ctx(1))[0].promptHtml).not.toContain('time-daynight');
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run test/games/guess-time.test.js`
+Expected: FAIL — cannot resolve `../../js/games/guess-time.js`.
+
+- [ ] **Step 3: Implement**
+
+Move the `ClockRenderer` object from `js/guess-time-game.js:1-60` into `js/render/clock.js` unchanged, as `export const ClockRenderer`.
+
+Create `js/games/guess-time.js`:
+
+```js
+import { ClockRenderer } from '../render/clock.js';
+
+const CHOICE_COUNT = 4;
+const MINUTES = { normal: [0, 30], hard: [0, 15, 30, 45] };
+
+export const GuessTimeGame = {
+  id: 'guess_time',
+  nameKey: 'guessTime',
+  emoji: '🕐',
+  domain: 'mesures',
+  rounds: { easy: 5, normal: 10, hard: 20 },
+  layoutClass: 'time-game-layout',
+  choiceClass: 'time-choice-btn',
+
+  generate(difficulty, ctx) {
+    const { rng, count } = ctx;
+    const exercises = [];
+    let previous = null;
+
+    for (let i = 0; i < count; i++) {
+      let time, formatted;
+      let guard = 0;
+      do {
+        time = randomTime(difficulty, rng);
+        formatted = formatTime(time);
+        guard++;
+      } while (formatted === previous && guard < 200);
+      previous = formatted;
+
+      const themed = difficulty !== 'easy';
+      const day = isDaytime(time);
+
+      exercises.push({
+        time,
+        correctAnswer: formatted,
+        bodyClass: themed ? (day ? 'time-theme-day' : 'time-theme-night') : null,
+        promptHtml:
+          (themed ? '<div class="time-daynight">' + (day ? '☀️' : '🌙') + '</div>' : '') +
+          ClockRenderer.render(time.hour, time.minute),
+        choices: buildChoices(formatted, difficulty, rng),
+      });
+    }
+
+    return exercises;
+  },
+};
+
+function pad2(n) {
+  return n < 10 ? '0' + n : '' + n;
+}
+
+function formatTime(t) {
+  return pad2(t.hour) + ':' + pad2(t.minute);
+}
+
+function isDaytime(t) {
+  return t.hour >= 6 && t.hour < 18;
+}
+
+function randomTime(difficulty, rng) {
+  if (difficulty === 'easy') {
+    return { hour: Math.floor(rng() * 12) + 1, minute: 0 };
+  }
+
+  const minutes = MINUTES[difficulty];
+
+  return {
+    hour: Math.floor(rng() * 24),
+    minute: minutes[Math.floor(rng() * minutes.length)],
+  };
+}
+
+function buildChoices(correct, difficulty, rng) {
+  const seen = new Set([correct]);
+  const choices = [correct];
+  let guard = 0;
+
+  while (choices.length < CHOICE_COUNT && guard < 500) {
+    guard++;
+    const candidate = formatTime(randomTime(difficulty, rng));
+    if (seen.has(candidate)) continue;
+    seen.add(candidate);
+    choices.push(candidate);
+  }
+
+  for (let i = choices.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [choices[i], choices[j]] = [choices[j], choices[i]];
+  }
+
+  return choices;
+}
+```
+
+Delete `js/guess-time-game.js`. Update `sw.js` and bump `CACHE_VERSION`.
+
+> `bodyClass` is `null` rather than absent on easy so the engine clears any theme left by a previous game.
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run test/games/guess-time.test.js`
+Expected: PASS — 11 tests.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add js/games/guess-time.js js/render/clock.js sw.js test/games/guess-time.test.js
+git rm js/guess-time-game.js
+git commit -m "refactor: migrate guess time onto GameEngine"
+```
+
+---
+
+### Task 16: Migrate chess
+
+Proves `isCorrect`, `correctClass`, and `submit` inside `renderPrompt`.
+
+**Files:**
+- Create: `js/games/chess.js`
+- Delete: `js/chess-game.js`
+- Test: `test/games/chess.test.js`
+
+**Interfaces:**
+- Consumes: `isCorrect`, `correctClass`, `renderPrompt(el, ex, submit)` (Task 8).
+- Produces: `ChessGame`, and `ChessMoves.targets(piece, r, c)` re-exported for tests.
+
+- [ ] **Step 1: Write the failing test**
+
+Create `test/games/chess.test.js`:
+
+```js
+import { describe, it, expect, vi } from 'vitest';
+import { ChessGame, ChessMoves, CHESS_SIZE } from '../../js/games/chess.js';
+
+function ctx(count, rng = Math.random) {
+  return { rng, t: k => k, lang: 'fr', count, category: null };
+}
+
+describe('ChessMoves', () => {
+  it('gives a rook a full rank and file from a corner', () => {
+    expect(ChessMoves.targets('rook', 0, 0)).toHaveLength((CHESS_SIZE - 1) * 2);
+  });
+
+  it('gives a knight two moves from a corner', () => {
+    expect(ChessMoves.targets('knight', 0, 0)).toHaveLength(2);
+  });
+});
+
+describe('ChessGame', () => {
+  it('sits in the logic domain with its own correct class', () => {
+    expect(ChessGame.id).toBe('chess');
+    expect(ChessGame.domain).toBe('logique');
+    expect(ChessGame.layoutClass).toBe('chess-game-layout');
+    expect(ChessGame.correctClass).toBe('chess-correct');
+  });
+
+  it('generates the difficulty round count', () => {
+    expect(ChessGame.generate('easy', ctx(5))).toHaveLength(5);
+  });
+
+  it('never generates a piece with no legal move', () => {
+    for (const ex of ChessGame.generate('hard', ctx(20))) {
+      expect(ex.targets.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('keeps every target on the board', () => {
+    for (const ex of ChessGame.generate('hard', ctx(20))) {
+      for (const target of ex.targets) {
+        const [r, c] = target.split(',').map(Number);
+        expect(r).toBeGreaterThanOrEqual(0);
+        expect(r).toBeLessThan(CHESS_SIZE);
+        expect(c).toBeGreaterThanOrEqual(0);
+        expect(c).toBeLessThan(CHESS_SIZE);
+      }
+    }
+  });
+
+  it('never repeats the same piece and square consecutively', () => {
+    const keys = ChessGame.generate('hard', ctx(20)).map(e => e.piece + e.row + e.col);
+    for (let i = 1; i < keys.length; i++) {
+      expect(keys[i]).not.toBe(keys[i - 1]);
+    }
+  });
+
+  it('accepts any legal target and rejects the rest', () => {
+    const ex = ChessGame.generate('easy', ctx(1))[0];
+    expect(ChessGame.isCorrect(ex.targets[0], ex)).toBe(true);
+    expect(ChessGame.isCorrect(ex.row + ',' + ex.col, ex)).toBe(false);
+  });
+
+  it('renders a full board and wires submit on every cell', () => {
+    document.body.innerHTML = '<div id="prompt"></div>';
+    const el = document.getElementById('prompt');
+    const ex = ChessGame.generate('easy', ctx(1))[0];
+    const submit = vi.fn();
+
+    ChessGame.renderPrompt(el, ex, submit);
+
+    const cells = el.querySelectorAll('.chess-cell');
+    expect(cells).toHaveLength(CHESS_SIZE * CHESS_SIZE);
+    expect(el.querySelectorAll('.chess-piece')).toHaveLength(1);
+
+    el.querySelector('[data-cell="' + ex.targets[0] + '"]').click();
+    expect(submit).toHaveBeenCalledWith(ex.targets[0], expect.anything());
+  });
+
+  it('leaves the choices container empty', () => {
+    document.body.innerHTML = '<div id="choices">stale</div>';
+    const el = document.getElementById('choices');
+    ChessGame.renderChoices(el, ChessGame.generate('easy', ctx(1))[0], vi.fn());
+    expect(el.innerHTML).toBe('');
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run test/games/chess.test.js`
+Expected: FAIL — cannot resolve `../../js/games/chess.js`.
+
+- [ ] **Step 3: Implement**
+
+Create `js/games/chess.js`. Port `CHESS_SIZE`, `CHESS_PIECES`, `CHESS_PIECE_KEYS`, and the entire `ChessMoves` object from `js/chess-game.js:1-58` **unchanged**, adding `export` to each. Then:
+
+```js
+import { I18n } from '../i18n/i18n.js';
+
+export const ChessGame = {
+  id: 'chess',
+  nameKey: 'chess',
+  emoji: '♟️',
+  domain: 'logique',
+  rounds: { easy: 5, normal: 10, hard: 20 },
+  layoutClass: 'chess-game-layout',
+  correctClass: 'chess-correct',
+
+  isCorrect(value, exercise) {
+    return exercise.targets.includes(value);
+  },
+
+  generate(difficulty, ctx) {
+    const { rng, count } = ctx;
+    const exercises = [];
+    let previousKey = null;
+
+    for (let i = 0; i < count; i++) {
+      let piece, row, col, targets, key;
+      let guard = 0;
+      do {
+        guard++;
+        piece = CHESS_PIECE_KEYS[Math.floor(rng() * CHESS_PIECE_KEYS.length)];
+        row = Math.floor(rng() * CHESS_SIZE);
+        col = Math.floor(rng() * CHESS_SIZE);
+        targets = ChessMoves.targets(piece, row, col);
+        key = piece + row + col;
+      } while ((targets.length === 0 || key === previousKey) && guard < 500);
+      previousKey = key;
+
+      exercises.push({
+        piece,
+        row,
+        col,
+        targets: targets.map(t => t.r + ',' + t.c),
+      });
+    }
+
+    return exercises;
+  },
+
+  renderPrompt(el, exercise, submit) {
+    let cells = '';
+    for (let r = 0; r < CHESS_SIZE; r++) {
+      for (let c = 0; c < CHESS_SIZE; c++) {
+        const dark = (r + c) % 2 === 1;
+        const isPiece = r === exercise.row && c === exercise.col;
+        cells += '<button class="chess-cell ' + (dark ? 'chess-dark' : 'chess-light') +
+          (isPiece ? ' chess-piece-cell' : '') + '" data-cell="' + r + ',' + c + '">' +
+          (isPiece ? '<span class="chess-piece">' + CHESS_PIECES[exercise.piece] + '</span>' : '') +
+        '</button>';
+      }
+    }
+
+    el.innerHTML =
+      '<div class="chess-caption">' + I18n.t('chessPrompt') + '</div>' +
+      '<div class="chess-board">' + cells + '</div>';
+
+    el.querySelectorAll('.chess-cell').forEach(btn => {
+      btn.addEventListener('click', () => submit(btn.dataset.cell, btn));
+    });
+  },
+
+  renderChoices(el) {
+    el.innerHTML = '';
+  },
+};
+```
+
+Delete `js/chess-game.js`. Update `sw.js` and bump `CACHE_VERSION`.
+
+> Chess is the only game that sets no `correctAnswer`. Its `isCorrect` consults
+> `targets`, which is why the engine must not assume `correctAnswer` exists.
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run test/games/chess.test.js`
+Expected: PASS — 11 tests.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add js/games/chess.js sw.js test/games/chess.test.js
+git rm js/chess-game.js
+git commit -m "refactor: migrate chess onto GameEngine"
+```
+
+---
+
+### Task 17: Migrate memory
+
+The most stateful migration. The board, the memorise timers, and `peek` all live inside `renderPrompt`; the engine sees one exercise per board.
+
+**Files:**
+- Create: `js/games/memory.js`
+- Delete: `js/memory-game.js`
+- Test: `test/games/memory.test.js`
+
+**Interfaces:**
+- Consumes: `renderPrompt(el, ex, submit)`, `isCorrect` (Task 8).
+- Produces: `MemoryGame`.
+
+- [ ] **Step 1: Write the failing test**
+
+Create `test/games/memory.test.js`:
+
+```js
+import { describe, it, expect } from 'vitest';
+import { MemoryGame } from '../../js/games/memory.js';
+
+function ctx(count, rng = Math.random) {
+  return { rng, t: k => k, lang: 'fr', count, category: null };
+}
+
+describe('MemoryGame', () => {
+  it('sits in the logic domain', () => {
+    expect(MemoryGame.id).toBe('memory');
+    expect(MemoryGame.domain).toBe('logique');
+  });
+
+  it('generates one board per round', () => {
+    expect(MemoryGame.generate('easy', ctx(4))).toHaveLength(4);
+  });
+
+  it('gives every board an even number of tiles', () => {
+    for (const ex of MemoryGame.generate('normal', ctx(5))) {
+      expect(ex.board.length % 2).toBe(0);
+    }
+  });
+
+  it('pairs every colour exactly twice on a board', () => {
+    for (const ex of MemoryGame.generate('normal', ctx(5))) {
+      const counts = {};
+      for (const tile of ex.board) {
+        counts[tile] = (counts[tile] || 0) + 1;
+      }
+      for (const colour of Object.keys(counts)) {
+        expect(counts[colour]).toBe(2);
+      }
+    }
+  });
+
+  it('grows the board with difficulty', () => {
+    const easy = MemoryGame.generate('easy', ctx(1))[0].board.length;
+    const hard = MemoryGame.generate('hard', ctx(1))[0].board.length;
+    expect(hard).toBeGreaterThan(easy);
+  });
+
+  it('treats a solved board as the correct answer', () => {
+    const ex = MemoryGame.generate('easy', ctx(1))[0];
+    expect(MemoryGame.isCorrect('solved', ex)).toBe(true);
+    expect(MemoryGame.isCorrect('wrong-tile', ex)).toBe(false);
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run test/games/memory.test.js`
+Expected: FAIL — cannot resolve `../../js/games/memory.js`.
+
+- [ ] **Step 3: Implement**
+
+Create `js/games/memory.js`. `generate` becomes pure — it produces the board only, using `ctx.rng` in place of `Math.random` in the existing `pickColors` and `generateBoard` (`js/memory-game.js:47-75`):
+
+```js
+export const MemoryGame = {
+  id: 'memory',
+  nameKey: 'memory',
+  emoji: '🧠',
+  domain: 'logique',
+  rounds: { easy: 5, normal: 10, hard: 20 },
+  layoutClass: 'memory-game-layout',
+
+  isCorrect(value) {
+    return value === 'solved';
+  },
+
+  generate(difficulty, ctx) {
+    const { rng, count } = ctx;
+
+    return Array.from({ length: count }, () => ({
+      board: generateBoard(difficulty, rng),
+    }));
+  },
+
+  renderPrompt(el, exercise, submit) {
+    startRound(el, exercise, submit);
+  },
+
+  renderChoices(el) {
+    el.innerHTML = '';
+  },
+};
+```
+
+Port `pickColors`, `generateBoard`, `startMemorize`, `hideBoard`, `tileClick`, `solveTile`, `renderMemorizeStatus`, `renderPeekButton`, `peek`, and `clearTimers` from `js/memory-game.js` into module-local functions, threaded through a single `startRound(el, exercise, submit)` that owns the round's mutable state in a closure. Two rules for the port:
+
+- A wrong tile tap calls `submit('wrong-tile', btn)`, so the engine counts it in `wrongAttempts` and applies `.wrong` exactly as before.
+- The last matched pair calls `submit('solved', null)`, which advances the engine to the next board.
+
+`clearTimers` must run before `submit('solved', null)` so a pending memorise timer cannot fire against a torn-down board.
+
+Delete `js/memory-game.js`. Update `sw.js` and bump `CACHE_VERSION`.
+
+> If threading the timers through the closure turns out to fight the engine,
+> stop and mark `MemoryGame` with `legacy: true` instead — the spec permits this
+> fallback explicitly. Do not add lifecycle hooks to the engine for one game.
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run test/games/memory.test.js`
+Expected: PASS — 6 tests.
+
+- [ ] **Step 5: Verify in a browser**
+
+Run: `python3 -m http.server 8000` and play Memory at each difficulty. Confirm the memorise phase counts down, tiles hide, matches stick, wrong taps shake and count, `peek` works, and the round advances on solve.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add js/games/memory.js sw.js test/games/memory.test.js
+git rm js/memory-game.js
+git commit -m "refactor: migrate memory onto GameEngine"
+```
+
+---
+
+### Task 18: Wrap double_crash as a legacy registry entry
+
+`double_crash` is 1046 lines with no exercises, no difficulty, no wrong-attempt count, and no celebration. It keeps its own loop; only its registration changes.
+
+**Files:**
+- Create: `js/games/double-crash.js` (moved from `js/double-crash-game.js`)
+- Delete: `js/double-crash-game.js`
+- Test: `test/games/double-crash.test.js`
+
+**Interfaces:**
+- Consumes: the `legacy` field honoured by `GameList.load()` (Task 9).
+- Produces: `DoubleCrashGame` with `legacy: true` and its existing `start()`.
+
+- [ ] **Step 1: Write the failing test**
+
+Create `test/games/double-crash.test.js`:
+
+```js
+import { describe, it, expect } from 'vitest';
+import { DoubleCrashGame } from '../../js/games/double-crash.js';
+
+describe('DoubleCrashGame', () => {
+  it('is registered as a legacy game', () => {
+    expect(DoubleCrashGame.id).toBe('double_crash');
+    expect(DoubleCrashGame.legacy).toBe(true);
+    expect(DoubleCrashGame.domain).toBe('logique');
+  });
+
+  it('supplies its own start, not a generate', () => {
+    expect(typeof DoubleCrashGame.start).toBe('function');
+    expect(DoubleCrashGame.generate).toBeUndefined();
+  });
+
+  it('keeps the card metadata the game list needs', () => {
+    expect(DoubleCrashGame.nameKey).toBe('doubleCrash');
+    expect(DoubleCrashGame.emoji).toBeTruthy();
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run test/games/double-crash.test.js`
+Expected: FAIL — cannot resolve `../../js/games/double-crash.js`.
+
+- [ ] **Step 3: Implement**
+
+`git mv js/double-crash-game.js js/games/double-crash.js`. Add `export` to the object, fix its relative imports (`../i18n/i18n.js`, `../sound.js`, `../engine/screens.js` in place of `App.showScreen`), and add the four registry fields at the top of the object:
+
+```js
+export const DoubleCrashGame = {
+  id: 'double_crash',
+  nameKey: 'doubleCrash',
+  emoji: '🎡',
+  domain: 'logique',
+  legacy: true,
+
+  // ...the existing 1046 lines, unchanged apart from imports
+};
+```
+
+Its internal logic is not touched. Update `sw.js` and bump `CACHE_VERSION`.
+
+- [ ] **Step 4: Run the whole suite**
+
+Run: `npm test`
+Expected: PASS — `test/engine/registry.test.js`, red since Task 9, is now green because all ten game modules exist.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add js/games/double-crash.js sw.js test/games/double-crash.test.js
+git rm js/double-crash-game.js
+git commit -m "refactor: register double crash as a legacy game"
+```
+
+---
+
+### Task 19: Remove dead auth code
 
 **Files:**
 - Modify: `index.html:19-26` — remove `auth-container` markup
@@ -2635,7 +3447,7 @@ git commit -m "chore: remove dead auth markup and translation keys"
 
 ---
 
-### Task 16: Generate the service worker asset list
+### Task 20: Generate the service worker asset list
 
 **Files:**
 - Create: `tools/build-sw.js`
@@ -2809,10 +3621,132 @@ git commit -m "build: generate service worker asset list"
 
 ---
 
+---
+
+### Task 21: Rewrite CLAUDE.md for the new architecture
+
+The repository's `CLAUDE.md` documents the architecture this checkpoint replaces. Leaving it stale would send the next agent down the old path.
+
+**Files:**
+- Modify: `CLAUDE.md`
+- Test: `test/docs/claude-md.test.js`
+
+**Interfaces:**
+- Consumes: the final file layout from Tasks 1–20.
+- Produces: nothing executable.
+
+- [ ] **Step 1: Write the failing test**
+
+Create `test/docs/claude-md.test.js`:
+
+```js
+import { describe, it, expect } from 'vitest';
+import { readFileSync, existsSync } from 'node:fs';
+
+const doc = readFileSync('CLAUDE.md', 'utf8');
+
+describe('CLAUDE.md', () => {
+  it('no longer claims there are no tests', () => {
+    expect(doc).not.toContain('no tests to run');
+  });
+
+  it('no longer describes implicit globals and script load order', () => {
+    expect(doc).not.toContain('All globals are attached implicitly');
+    expect(doc).not.toContain('load order in `index.html` matters');
+  });
+
+  it('documents the test command', () => {
+    expect(doc).toContain('npm test');
+  });
+
+  it('documents the engine and the registry', () => {
+    expect(doc).toContain('js/engine/game-engine.js');
+    expect(doc).toContain('js/engine/registry.js');
+  });
+
+  it('documents the generated service worker', () => {
+    expect(doc).toContain('npm run build:sw');
+  });
+
+  it('documents the legacy escape hatch', () => {
+    expect(doc).toContain('legacy');
+  });
+
+  it('references files that actually exist', () => {
+    const paths = [...doc.matchAll(/`(js\/[\w./-]+)`/g)].map(m => m[1]);
+    expect(paths.length).toBeGreaterThan(3);
+    for (const path of paths) {
+      expect(existsSync(path), path + ' referenced but missing').toBe(true);
+    }
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run test/docs/claude-md.test.js`
+Expected: FAIL — `expected doc not to contain 'no tests to run'`.
+
+- [ ] **Step 3: Rewrite the affected sections**
+
+Four sections need replacing. Keep the rest of the file as-is.
+
+**Running locally** — replace "There are no dependencies to install and no tests to run" with:
+
+```markdown
+Install dev dependencies once with `npm install` (Vitest + jsdom; runtime has no
+dependencies). Run `npm test` before committing. Verification is tests plus
+playing the changed game in the browser and checking the console.
+```
+
+**Layout** — replace the `js/` tree with the real one: `engine/`, `render/`, `games/`, `i18n/`, `data/`, plus `tools/build-sw.js` and `test/`.
+
+**Architecture** — replace the "Game object shape" and "Game registry" bullets with the engine contract: a game is a plain object with a pure `generate(difficulty, ctx)` returning exercises; `GameEngine` owns the session loop, scoring, celebration, speech, and result persistence; the optional seams are `renderPrompt`, `renderChoices`, `isCorrect`, `layoutClass`, `choiceClass`, `correctClass`, `bodyClass`, `setup`, and `legacy`. Note that `double_crash` is the sole `legacy: true` game.
+
+**Adding a new game** — replace the seven manual steps with:
+
+```markdown
+1. Create `js/games/<id>.js` exporting a game object with a pure
+   `generate(difficulty, ctx)`. Mirror `js/games/dice-addition.js`.
+2. Add it to `GAMES` in `js/engine/registry.js` with a `domain`.
+3. Add the game-name key to all five language blocks in
+   `js/i18n/translations.js`.
+4. Write `test/games/<id>.test.js` asserting the answer range per difficulty,
+   that `choices` contains `correctAnswer`, and that a seeded rng is stable.
+5. Add any styles to `css/game.css`.
+6. Run `npm test`, then `npm run build:sw`.
+```
+
+**Workflow** — keep the push-to-`main` intent but gate it:
+
+```markdown
+- Run `npm test` and `npm run build:sw` before pushing. Do not push a red suite.
+- Multi-task work (anything following a plan in `.claude/superpowers/plans/`)
+  runs on a branch in a worktree and merges to `main` once green, so `main`
+  never holds a half-migrated app. Single small edits still go straight to
+  `main`.
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npm test`
+Expected: PASS — every suite.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add CLAUDE.md test/docs/claude-md.test.js
+git commit -m "docs: rewrite CLAUDE.md for the GameEngine architecture"
+```
+
+---
+
 ## Done When
 
 - `npm test` is green across every suite.
-- All six games play identically to before, offline included.
+- All ten games play identically to before, offline included.
 - `js/` contains no `*-game.js` files at the top level — every game lives in `js/games/`.
-- No file in `js/` duplicates `answer`, `updateProgress`, or `completeGame`.
+- No file in `js/` duplicates `answer`, `updateProgress`, or `completeGame`, except `double_crash`, which is marked `legacy: true` and documented as the sole exception.
 - Adding a game requires exactly two edits: a new file in `js/games/`, and one line in `js/engine/registry.js`.
+- `CLAUDE.md` describes the architecture that now exists.
+- The worktree branch merges cleanly into `main` and is pushed.
