@@ -5,6 +5,10 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['test/**/*.test.js'],
     restoreMocks: true,
-    setupFiles: ['vitest.setup.js'],
+    poolOptions: {
+      forks: {
+        execArgv: ['--no-experimental-webstorage'],
+      },
+    },
   },
 });
