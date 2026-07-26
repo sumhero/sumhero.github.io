@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GameEngine } from '../../js/engine/game-engine.js';
 import { showScreen } from '../../js/engine/screens.js';
 import { loadResults } from '../../js/engine/results.js';
+import { Speech } from '../../js/engine/speech.js';
 
 function mountDom() {
   document.body.className = '';
@@ -54,6 +55,14 @@ function spyingGame(overrides) {
   };
 
   return { game, seen };
+}
+
+// One exercise whose prompt is meant to be read aloud.
+function speakingGame() {
+  return {
+    ...stubGame,
+    generate: () => [{ promptHtml: '<p>listen</p>', speak: 'trois', choices: [1], correctAnswer: 1 }],
+  };
 }
 
 function clickChoice(value) {
@@ -171,6 +180,15 @@ describe('GameEngine', () => {
     clickChoice(2); vi.runAllTimers();
     clickChoice(2); vi.runAllTimers();
     expect(document.getElementById('celebration-title').textContent).toBe('Perfect Score!');
+  });
+
+  // The boundary: wrongAttempts === total is still "greatJob"; total + 1 is "wellDone".
+  it('titles a run with exactly as many errors as exercises "greatJob"', () => {
+    GameEngine.start(stubGame, { difficulty: 'easy' });
+    clickChoice(1); clickChoice(2); vi.runAllTimers();
+    clickChoice(3); clickChoice(2); vi.runAllTimers();
+    expect(GameEngine.wrongAttempts).toBe(2);
+    expect(document.getElementById('celebration-title').textContent).toBe('Great Job!');
   });
 
   it('titles a run with many errors "wellDone"', () => {
@@ -317,7 +335,36 @@ describe('GameEngine', () => {
     expect(document.body.classList.contains('time-theme-night')).toBe(true);
   });
 
+  // Deliberately uses a class screens.js knows nothing about. screens.js strips
+  // time-theme-day/night on any non-game screen by itself, so a test using those
+  // would pass even with the engine's onScreenChange subscription deleted.
   it('clears the bodyClass when leaving the game screen', () => {
+    GameEngine.start({
+      ...stubGame,
+      generate: () => [{ promptHtml: '', choices: [1], correctAnswer: 1, bodyClass: 'probe-theme' }],
+    }, { difficulty: 'easy' });
+    expect(document.body.classList.contains('probe-theme')).toBe(true);
+
+    showScreen('games');
+
+    expect(document.body.classList.contains('probe-theme')).toBe(false);
+    expect(GameEngine.activeBodyClass).toBeNull();
+  });
+
+  it('keeps the bodyClass while moving to the celebration screen', () => {
+    GameEngine.start({
+      ...stubGame,
+      generate: () => [{ promptHtml: '', choices: [1], correctAnswer: 1, bodyClass: 'probe-theme' }],
+    }, { difficulty: 'easy' });
+
+    document.querySelector('[data-value="1"]').click();
+    vi.runAllTimers();
+
+    expect(document.getElementById('screen-celebration').classList.contains('active')).toBe(true);
+    expect(document.body.classList.contains('probe-theme')).toBe(true);
+  });
+
+  it('clears the real day/night theme when leaving the game screen', () => {
     GameEngine.start({
       ...stubGame,
       generate: () => [{ promptHtml: '', choices: [1], correctAnswer: 1, bodyClass: 'time-theme-night' }],
@@ -362,14 +409,52 @@ describe('GameEngine', () => {
   });
 
   it('speaks a prompt and offers a replay button', () => {
-    GameEngine.start({
-      ...stubGame,
-      generate: () => [{ promptHtml: '<p>listen</p>', speak: 'trois', choices: [1], correctAnswer: 1 }],
-    }, { difficulty: 'easy' });
+    GameEngine.start(speakingGame(), { difficulty: 'easy' });
 
     const replay = document.querySelector('#dice-container .speak-btn');
     expect(replay).not.toBeNull();
     expect(replay.textContent).toBe('🔊');
+    expect(replay.type).toBe('button');
+  });
+
+  it('speaks the prompt text in the active language', () => {
+    localStorage.setItem('game_language', 'fr');
+    const speak = vi.spyOn(Speech, 'speak');
+
+    GameEngine.start(speakingGame(), { difficulty: 'easy' });
+
+    expect(speak).toHaveBeenCalledTimes(1);
+    expect(speak).toHaveBeenCalledWith('trois', 'fr');
+  });
+
+  it('says nothing and shows no replay button when an exercise has no speak text', () => {
+    const speak = vi.spyOn(Speech, 'speak');
+
+    GameEngine.start(stubGame, { difficulty: 'easy' });
+
+    expect(speak).not.toHaveBeenCalled();
+    expect(document.querySelector('.speak-btn')).toBeNull();
+  });
+
+  it('repeats the prompt when the replay button is clicked', () => {
+    const speak = vi.spyOn(Speech, 'speak');
+    GameEngine.start(speakingGame(), { difficulty: 'easy' });
+    speak.mockClear();
+
+    document.querySelector('.speak-btn').click();
+
+    expect(speak).toHaveBeenCalledTimes(1);
+    expect(speak).toHaveBeenCalledWith('trois', 'en');
+  });
+
+  it('cancels a speaking prompt on a correct answer so it cannot talk over the next one', () => {
+    const cancel = vi.spyOn(Speech, 'cancel');
+    GameEngine.start(speakingGame(), { difficulty: 'easy' });
+    cancel.mockClear();
+
+    document.querySelector('[data-value="1"]').click();
+
+    expect(cancel).toHaveBeenCalled();
   });
 
   it('builds a context carrying count, translator and category', () => {
