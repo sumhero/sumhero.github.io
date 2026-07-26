@@ -1,4 +1,8 @@
-const App = {
+import { GameList } from './game-list.js';
+import { Animation } from './animation.js';
+import { I18n } from './translations.js';
+
+export const App = {
     init() {
         GameList.init();
         Animation.loadDotLottie();

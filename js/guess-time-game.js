@@ -1,4 +1,9 @@
-const ClockRenderer = {
+import { App } from './app.js';
+import { I18n } from './translations.js';
+import { Sound } from './sound.js';
+import { Animation } from './animation.js';
+
+export const ClockRenderer = {
     render(hour, minute, size = 200) {
         const cx = size / 2;
         const cy = size / 2;
@@ -53,7 +58,7 @@ const ClockRenderer = {
     },
 };
 
-const GuessTimeGame = {
+export const GuessTimeGame = {
     session: null,
     currentExercise: 0,
     wrongAttempts: 0,

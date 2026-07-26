@@ -1,4 +1,17 @@
-const GAMES = [
+import { App } from './app.js';
+import { I18n, LANGUAGES } from './translations.js';
+import { OBJECT_CATEGORIES, CountObjectsGame } from './count-objects-game.js';
+import { UnoGame } from './uno-game.js';
+import { DiceRecognitionGame } from './dice-recognition-game.js';
+import { CountriesGame } from './countries-game.js';
+import { CapitalsGame } from './capitals-game.js';
+import { DiceGame } from './dice-game.js';
+import { GuessTimeGame } from './guess-time-game.js';
+import { DoubleCrashGame } from './double-crash-game.js';
+import { MemoryGame } from './memory-game.js';
+import { ChessGame } from './chess-game.js';
+
+export const GAMES = [
     {
         type: 'dice_addition',
         nameKey: 'diceAddition',
@@ -51,13 +64,13 @@ const GAMES = [
     },
 ];
 
-const DIFFICULTY_LEVELS = [
+export const DIFFICULTY_LEVELS = [
     { key: 'easy', labelKey: 'easy' },
     { key: 'normal', labelKey: 'normal' },
     { key: 'hard', labelKey: 'hard' },
 ];
 
-const GameList = {
+export const GameList = {
     selectedGame: null,
     selectedCategory: null,
 

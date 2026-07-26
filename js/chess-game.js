@@ -1,6 +1,11 @@
-const CHESS_SIZE = 3;
+import { App } from './app.js';
+import { I18n } from './translations.js';
+import { Sound } from './sound.js';
+import { Animation } from './animation.js';
 
-const CHESS_PIECES = {
+export const CHESS_SIZE = 3;
+
+export const CHESS_PIECES = {
     king: '♚',
     rook: '♜',
     bishop: '♝',
@@ -8,9 +13,9 @@ const CHESS_PIECES = {
     knight: '♞',
 };
 
-const CHESS_PIECE_KEYS = ['king', 'rook', 'bishop', 'queen', 'knight'];
+export const CHESS_PIECE_KEYS = ['king', 'rook', 'bishop', 'queen', 'knight'];
 
-const ChessMoves = {
+export const ChessMoves = {
     inBounds(r, c) {
         return r >= 0 && r < CHESS_SIZE && c >= 0 && c < CHESS_SIZE;
     },
@@ -50,7 +55,7 @@ const ChessMoves = {
     },
 };
 
-const ChessGame = {
+export const ChessGame = {
     session: null,
     currentExercise: 0,
     wrongAttempts: 0,

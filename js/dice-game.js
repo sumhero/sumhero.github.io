@@ -1,4 +1,10 @@
-const DiceGame = {
+import { App } from './app.js';
+import { I18n } from './translations.js';
+import { Sound } from './sound.js';
+import { Animation } from './animation.js';
+import { DiceRenderer } from './dice-renderer.js';
+
+export const DiceGame = {
     session: null,
     currentExercise: 0,
     wrongAttempts: 0,

@@ -1,4 +1,4 @@
-const TRANSLATIONS = {
+export const TRANSLATIONS = {
     en: {
         appName: 'SumHero',
         username: 'Username',
@@ -291,7 +291,7 @@ const TRANSLATIONS = {
     },
 };
 
-const LANGUAGES = [
+export const LANGUAGES = [
     { code: 'en', label: 'English', flag: '\uD83C\uDDEC\uD83C\uDDE7' },
     { code: 'fr', label: 'Francais', flag: '\uD83C\uDDEB\uD83C\uDDF7' },
     { code: 'de', label: 'Deutsch', flag: '\uD83C\uDDE9\uD83C\uDDEA' },
@@ -299,7 +299,7 @@ const LANGUAGES = [
     { code: 'ru', label: 'Русский', flag: '\uD83C\uDDF7\uD83C\uDDFA' },
 ];
 
-const I18n = {
+export const I18n = {
     getLanguage() {
         return localStorage.getItem('game_language') || 'en';
     },

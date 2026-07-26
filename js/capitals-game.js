@@ -1,4 +1,10 @@
-const CapitalsGame = {
+import { App } from './app.js';
+import { I18n } from './translations.js';
+import { Sound } from './sound.js';
+import { Animation } from './animation.js';
+import { getCountryPool, getCountryName, getCapitalName } from './countries-data.js';
+
+export const CapitalsGame = {
     session: null,
     currentExercise: 0,
     wrongAttempts: 0,

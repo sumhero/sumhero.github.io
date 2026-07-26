@@ -1,4 +1,4 @@
-const DiceRenderer = {
+export const DiceRenderer = {
     dotPositions: {
         1: [[50, 50]],
         2: [[25, 25], [75, 75]],

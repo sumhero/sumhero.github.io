@@ -1,3 +1,8 @@
+import { App } from './app.js';
+import { I18n } from './translations.js';
+import { Sound } from './sound.js';
+import { Animation } from './animation.js';
+
 const UNO_COLORS = ['red', 'blue', 'green', 'yellow'];
 
 const UNO_COLOR_VALUES = {
@@ -20,7 +25,7 @@ const UNO_NUMBER_ANIMALS = {
     9: '\uD83D\uDC35', // monkey
 };
 
-const UnoGame = {
+export const UnoGame = {
     session: null,
     currentExercise: 0,
     wrongAttempts: 0,

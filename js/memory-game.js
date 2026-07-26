@@ -1,4 +1,9 @@
-const MEMORY_COLORS = [
+import { App } from './app.js';
+import { I18n } from './translations.js';
+import { Sound } from './sound.js';
+import { Animation } from './animation.js';
+
+export const MEMORY_COLORS = [
     { key: 'green', hex: '#4CAF50' },
     { key: 'red', hex: '#f44336' },
     { key: 'blue', hex: '#4a90d9' },
@@ -7,13 +12,13 @@ const MEMORY_COLORS = [
     { key: 'violet', hex: '#9b59b6' },
 ];
 
-const MEMORY_CONFIG = {
+export const MEMORY_CONFIG = {
     easy: { cols: 3, rows: 2, boards: 3, memMs: 5000 },
     normal: { cols: 3, rows: 3, boards: 4, memMs: 6000 },
     hard: { cols: 4, rows: 3, boards: 5, memMs: 7000 },
 };
 
-const MemoryGame = {
+export const MemoryGame = {
     session: null,
     currentExercise: 0,
     wrongAttempts: 0,

@@ -1,4 +1,9 @@
-const OBJECT_CATEGORIES = [
+import { App } from './app.js';
+import { I18n } from './translations.js';
+import { Sound } from './sound.js';
+import { Animation } from './animation.js';
+
+export const OBJECT_CATEGORIES = [
     {
         key: 'animals',
         labelKey: 'animals',
@@ -61,7 +66,7 @@ const OBJECT_CATEGORIES = [
     },
 ];
 
-const CountObjectsGame = {
+export const CountObjectsGame = {
     session: null,
     currentExercise: 0,
     wrongAttempts: 0,
