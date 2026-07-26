@@ -41,4 +41,14 @@ describe('results', () => {
     localStorage.setItem(RESULTS_KEY, 'not json');
     expect(loadResults()).toEqual([]);
   });
+
+  it('ignores valid JSON that is not an array', () => {
+    localStorage.setItem(RESULTS_KEY, '{"a":1}');
+    expect(loadResults()).toEqual([]);
+  });
+
+  it('ignores stored JSON null', () => {
+    localStorage.setItem(RESULTS_KEY, 'null');
+    expect(loadResults()).toEqual([]);
+  });
 });
