@@ -19,6 +19,7 @@
 - **`double_crash` internals are off limits.** Only its imports and registry fields change. Do not refactor 1046 lines of betting logic while extracting an engine.
 - **The upstream baseline is `origin/main`, not a local checkout.** This plan was rewritten after discovering four games (`guess_time`, `memory`, `chess`, `double_crash`) that a stale working copy did not contain.
 - **Every new file under `js/` or `css/` must reach `sw.js`** or the app breaks offline.
+- **Indent: 2 spaces** in all new and migrated code — `js/engine/`, `js/games/`, `js/render/`, `js/i18n/`, `js/data/`, `tools/`, `test/`. Single quotes, string-concatenated HTML. The legacy top-level `js/*-game.js` files are 4-space and stay that way until their migration task rewrites them, at which point they become 2-space. `js/engine/screens.js` was written 4-space by mistake and is reformatted in Task 9.
 
 ---
 
