@@ -1,12 +1,17 @@
 import { GameList } from './game-list.js';
 import { Animation } from './animation.js';
 import { I18n } from './i18n/i18n.js';
+import { showScreen, onScreenChange } from './engine/screens.js';
 
 export const App = {
     init() {
         GameList.init();
         Animation.loadDotLottie();
         this.initOfflineIndicator();
+
+        onScreenChange(name => {
+            if (name === 'games') GameList.load();
+        });
 
         document.getElementById('btn-exit-game').addEventListener('click', () => App.showScreen('games'));
 
@@ -53,40 +58,7 @@ export const App = {
         }
     },
 
-    showScreen(name) {
-        const current = document.querySelector('.screen.active');
-        const next = document.getElementById('screen-' + name);
-
-        if (current && current !== next) {
-            current.classList.add('screen-out');
-            current.classList.remove('active');
-            current.addEventListener('animationend', () => {
-                current.classList.remove('screen-out');
-            }, {once: true});
-        }
-
-        next.classList.add('active');
-
-        if (name !== 'game') {
-            document.body.classList.remove('time-theme-day', 'time-theme-night');
-            const gameBody = document.querySelector('.game-body');
-            if (gameBody) {
-                gameBody.classList.remove('uno-game-body');
-                gameBody.classList.remove('dice-recognition-layout');
-                gameBody.classList.remove('geo-game-layout');
-                gameBody.classList.remove('time-game-layout');
-                gameBody.classList.remove('crash-game-layout');
-                gameBody.classList.remove('memory-game-layout');
-                gameBody.classList.remove('chess-game-layout');
-                const choices = document.getElementById('choices-container');
-                if (choices) choices.style.gridTemplateColumns = '';
-            }
-        }
-
-        if (name === 'games') {
-            GameList.load();
-        }
-    },
+    showScreen,
 
     applyTranslations() {
         document.getElementById('page-title').textContent = I18n.t('appName');
