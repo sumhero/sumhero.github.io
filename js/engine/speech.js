@@ -19,10 +19,10 @@ export const Speech = {
   speak(text, lang) {
     if (!this.isAvailable() || !text) return;
 
+    this.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = this.LANG_TAGS[lang] || this.LANG_TAGS.en;
     utterance.rate = 0.9;
     speechSynthesis.speak(utterance);
-    this.cancel();
   },
 };
