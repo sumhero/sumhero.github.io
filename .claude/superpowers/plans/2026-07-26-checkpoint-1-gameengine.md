@@ -125,7 +125,7 @@ Mechanical conversion only. No logic changes, no file moves, no renames. The app
 
 **Files:**
 - Modify: every file in `js/` — add `export`, add `import`
-- Modify: `index.html:99-111` — replace 13 script tags with one module entry
+- Modify: `index.html` — replace all 17 script tags with one module entry
 - Modify: `sw.js:1` — bump `CACHE_VERSION`
 - Test: `test/modules.test.js`
 
@@ -157,10 +157,10 @@ describe('ES module conversion', () => {
     expect(DiceRenderer.render(3)).toContain('<svg');
   });
 
-  it('exports the six existing games', () => {
+  it('exports all ten existing games', () => {
     expect(GAMES.map(g => g.type)).toEqual([
-      'dice_addition', 'count_objects', 'uno',
-      'dice_recognition', 'countries', 'capitals',
+      'dice_addition', 'count_objects', 'uno', 'dice_recognition',
+      'countries', 'capitals', 'guess_time', 'double_crash', 'memory', 'chess',
     ]);
   });
 });
@@ -181,15 +181,25 @@ For every file in `js/`, prefix each top-level `const X = {` / `const X = [` dec
 | `sound.js` | `Sound` | — |
 | `dice-renderer.js` | `DiceRenderer` | — |
 | `animation.js` | `Animation` | — |
-| `countries-data.js` | `COUNTRIES`, `getCountryPool`, `getCountryName` | `I18n` |
+| `countries-data.js` | `COUNTRIES`, `getCountryPool`, `getCountryName`, `getCapitalName` | `I18n` |
 | `count-objects-game.js` | `OBJECT_CATEGORIES`, `CountObjectsGame` | `App`, `I18n`, `Sound`, `Animation` |
 | `uno-game.js` | `UnoGame` | `App`, `I18n`, `Sound`, `Animation` |
 | `dice-recognition-game.js` | `DiceRecognitionGame` | `App`, `I18n`, `Sound`, `Animation`, `DiceRenderer` |
 | `countries-game.js` | `CountriesGame` | `App`, `I18n`, `Sound`, `Animation`, `getCountryPool`, `getCountryName` |
 | `capitals-game.js` | `CapitalsGame` | `App`, `I18n`, `Sound`, `Animation`, `getCountryPool`, `getCountryName` |
 | `dice-game.js` | `DiceGame` | `App`, `I18n`, `Sound`, `Animation`, `DiceRenderer` |
-| `game-list.js` | `GAMES`, `DIFFICULTY_LEVELS`, `GameList` | `App`, `I18n`, `LANGUAGES`, and all six game objects, `OBJECT_CATEGORIES` |
+| `guess-time-game.js` | `ClockRenderer`, `GuessTimeGame` | `App`, `I18n`, `Sound`, `Animation` |
+| `memory-game.js` | `MEMORY_COLORS`, `MEMORY_CONFIG`, `MemoryGame` | `App`, `I18n`, `Sound`, `Animation` |
+| `chess-game.js` | `CHESS_SIZE`, `CHESS_PIECES`, `CHESS_PIECE_KEYS`, `ChessMoves`, `ChessGame` | `App`, `I18n`, `Sound`, `Animation` |
+| `double-crash-game.js` | `DoubleCrashGame` | `App` |
+| `game-list.js` | `GAMES`, `DIFFICULTY_LEVELS`, `GameList` | `App`, `I18n`, `LANGUAGES`, all ten game objects, `OBJECT_CATEGORIES` |
 | `app.js` | `App` | `GameList`, `Animation`, `I18n` |
+
+All 17 files in `js/` are converted, and `index.html` currently carries 17
+`<script src="/js/…">` tags. Converting a subset would leave the unconverted
+games unreachable, because the single module entry replaces every tag at once.
+`double-crash-game.js` references only `App`; its own eight top-level constants
+stay module-local and need no `export`.
 
 Example — the head of `js/dice-game.js` becomes:
 
@@ -205,7 +215,7 @@ export const DiceGame = {
 
 `app.js` and `game-list.js` import each other. This cycle is safe because every use is inside a function body that runs after load, not at module scope. Task 4 removes the cycle properly.
 
-Replace `index.html:99-111` (the 13 `<script>` tags, keeping the service-worker registration block that follows) with:
+Replace all 17 `<script src="/js/…">` tags in `index.html` (keeping the service-worker registration block that follows) with:
 
 ```html
     <script type="module" src="/js/app.js"></script>
@@ -221,7 +231,7 @@ Expected: PASS — smoke tests plus 4 module tests.
 - [ ] **Step 5: Verify in a browser**
 
 Run: `python3 -m http.server 8000`
-Open `http://localhost:8000`, play one round of each of the six games. Confirm the game list renders, a game runs to the celebration screen, and the console is free of errors.
+Open `http://localhost:8000`, play one round of each of the ten games. Confirm the game list renders, a game runs to the celebration screen, and the console is free of errors.
 
 - [ ] **Step 6: Commit**
 
@@ -3610,7 +3620,7 @@ Expected: PASS — every suite.
 
 Run: `python3 -m http.server 8000`
 
-Play one full round of all six games at each difficulty. Confirm: the game list shows three domain groups; dice addition still asks how many exercises; count objects still asks for a category; uno cards and country flags render; every game reaches the celebration screen; the console is clean. Then open DevTools → Application → Service Worker, tick "Offline", reload, and confirm the app still loads and plays.
+Play one full round of all ten games at each difficulty. Confirm: the game list shows three domain groups; dice addition still asks how many exercises; count objects still asks for a category; uno cards and country flags render; every game reaches the celebration screen; the console is clean. Then open DevTools → Application → Service Worker, tick "Offline", reload, and confirm the app still loads and plays.
 
 - [ ] **Step 6: Commit**
 

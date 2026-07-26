@@ -1,4 +1,4 @@
-# GameEngine extraction + 13 CP math games
+# GameEngine extraction + 12 CP math games
 
 **Date:** 2026-07-26
 **Status:** Approved design, ready for planning
@@ -126,7 +126,7 @@ stub `t` so generator assertions never depend on translation content.
 
 ### Engine responsibilities
 
-Everything currently copy-pasted across the six game files:
+Everything currently copy-pasted across the nine engine-driven game files:
 
 - Session state and exercise advancement
 - Progress bar and score display
@@ -144,7 +144,7 @@ These games need custom interaction and will override `renderChoices`:
 - **Plus grand, plus petit** — three buttons (`<`, `=`, `>`) instead of five
 - **Ranger dans l'ordre** — tap numbers in sequence, submit on completion
 - **Uno** — renders cards, not numerals
-- **Chess** — renders an 8×8 board; a cell tap is the answer
+- **Chess** — renders a 3×3 board; a cell tap is the answer
 - **Memory** — owns a tile board plus a timed memorise phase; a wrong tile tap
   calls `submit(wrongValue, btn)` so the engine still counts it
 
