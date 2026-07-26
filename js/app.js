@@ -1,6 +1,6 @@
 import { GameList } from './game-list.js';
 import { Animation } from './animation.js';
-import { I18n } from './translations.js';
+import { I18n } from './i18n/i18n.js';
 
 export const App = {
     init() {

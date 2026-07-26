@@ -1,5 +1,6 @@
 import { App } from './app.js';
-import { I18n, LANGUAGES } from './translations.js';
+import { I18n } from './i18n/i18n.js';
+import { LANGUAGES } from './i18n/translations.js';
 import { OBJECT_CATEGORIES, CountObjectsGame } from './count-objects-game.js';
 import { UnoGame } from './uno-game.js';
 import { DiceRecognitionGame } from './dice-recognition-game.js';

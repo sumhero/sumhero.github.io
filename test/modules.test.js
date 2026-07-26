@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { I18n, TRANSLATIONS, LANGUAGES } from '../js/translations.js';
+import { I18n } from '../js/i18n/i18n.js';
+import { TRANSLATIONS, LANGUAGES } from '../js/i18n/translations.js';
 import { DiceRenderer } from '../js/dice-renderer.js';
 import { GAMES } from '../js/game-list.js';
 

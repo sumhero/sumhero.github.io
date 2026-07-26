@@ -1,4 +1,4 @@
-import { I18n } from './translations.js';
+import { I18n } from './i18n/i18n.js';
 
 export const COUNTRIES_EUROPE = [
     {name: 'Albania', flag: 'al', capital: 'Tirana', t: {fr: {name: 'Albanie', capital: 'Tirana'}, de: {name: 'Albanien', capital: 'Tirana'}, uk: {name: 'Албанія', capital: 'Тирана'}, ru: {name: 'Албания', capital: 'Тирана'}}},

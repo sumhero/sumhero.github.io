@@ -298,18 +298,3 @@ export const LANGUAGES = [
     { code: 'uk', label: 'Українська', flag: '\uD83C\uDDFA\uD83C\uDDE6' },
     { code: 'ru', label: 'Русский', flag: '\uD83C\uDDF7\uD83C\uDDFA' },
 ];
-
-export const I18n = {
-    getLanguage() {
-        return localStorage.getItem('game_language') || 'en';
-    },
-
-    setLanguage(lang) {
-        localStorage.setItem('game_language', lang);
-    },
-
-    t(key) {
-        const lang = this.getLanguage();
-        return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS.en[key] || key;
-    },
-};

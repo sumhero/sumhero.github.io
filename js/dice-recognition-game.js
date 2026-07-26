@@ -1,5 +1,5 @@
 import { App } from './app.js';
-import { I18n } from './translations.js';
+import { I18n } from './i18n/i18n.js';
 import { Sound } from './sound.js';
 import { Animation } from './animation.js';
 import { DiceRenderer } from './dice-renderer.js';
