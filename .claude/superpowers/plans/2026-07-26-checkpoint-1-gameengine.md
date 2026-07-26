@@ -1,8 +1,8 @@
 # GameEngine Extraction (Checkpoint 1) Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **22 tasks.** **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Extract a shared `GameEngine` from nine duplicated game files, convert the app to ES modules, and migrate nine of the ten existing games onto the engine with no user-visible behaviour change. `double_crash` keeps its own loop as a documented `legacy` registry entry.
+**Goal:** In 22 tasks, extract a shared `GameEngine` from nine duplicated game files, convert the app to ES modules, and migrate nine of the ten existing games onto the engine with no user-visible behaviour change. `double_crash` keeps its own loop as a documented `legacy` registry entry.
 
 **Architecture:** A game becomes a plain object exposing a pure `generate(difficulty, ctx)` that returns exercise data, plus optional `renderPrompt`/`renderChoices` hooks for the games that aren't simple multiple-choice. The engine owns the session loop, scoring, celebration, speech, and result persistence. `showScreen` moves into its own module so the engine can call it without an import cycle.
 
@@ -19,6 +19,7 @@
 - **`double_crash` internals are off limits.** Only its imports and registry fields change. Do not refactor 1046 lines of betting logic while extracting an engine.
 - **The upstream baseline is `origin/main`, not a local checkout.** This plan was rewritten after discovering four games (`guess_time`, `memory`, `chess`, `double_crash`) that a stale working copy did not contain.
 - **Every new file under `js/` or `css/` must reach `sw.js`** or the app breaks offline.
+- **The app must load and play after every single task.** Tasks 10–18 each migrate one game into `js/games/` and delete its old top-level file, so each of those tasks must also update the existing `js/game-list.js` dispatch chain to route that game through `GameEngine.start(...)` (or, for `double_crash`, its own `start()`). This transitional wiring is retired in Task 19, when the chooser switches to the registry. A task that leaves the app unable to load has failed, regardless of its tests.
 - **Indent: 2 spaces** in all new and migrated code — `js/engine/`, `js/games/`, `js/render/`, `js/i18n/`, `js/data/`, `tools/`, `test/`. Single quotes, string-concatenated HTML. The legacy top-level `js/*-game.js` files are 4-space and stay that way until their migration task rewrites them, at which point they become 2-space. `js/engine/screens.js` was written 4-space by mistake and is reformatted in Task 9.
 
 ---
@@ -1417,14 +1418,20 @@ git commit -m "feat: add GameEngine session loop"
 
 ---
 
-### Task 9: Registry and domain-grouped game list
+### Task 9: Registry module, domain labels, and styles
+
+Creates the registry as a **standalone module that nothing in the app imports yet**. `js/game-list.js` is deliberately left untouched.
+
+> **Why the app must not import the registry yet.** `registry.js` statically imports ten `js/games/*.js` modules that Tasks 10–18 create. If `game-list.js` imported it now, module resolution would fail and the app would serve a blank page for nine tasks — losing the per-task browser verification that has already caught real bugs. Because only `test/engine/registry.test.js` imports it, the broken imports cannot reach the running app. The registry test stays red until Task 18; that is the plan's one deliberate red-green exception. Task 19 rewires `game-list.js` once all ten game modules exist.
 
 **Files:**
 - Create: `js/engine/registry.js`
-- Modify: `js/game-list.js` → `js/engine/game-list.js`
+- Modify: `js/i18n/translations.js` — five domain labels × five languages
 - Modify: `css/game.css` — add `.game-group` styles
+- Modify: `js/engine/screens.js` — reformat from 4-space to 2-space, no logic change
 - Modify: `sw.js`
 - Test: `test/engine/registry.test.js`
+- **Do NOT modify:** `js/game-list.js`, `js/app.js`
 
 **Interfaces:**
 - Consumes: `GameEngine` (Task 8), `I18n` (Task 3).
@@ -1538,45 +1545,9 @@ export function gamesByDomain() {
 }
 ```
 
-Move `game-list.js` to `js/engine/game-list.js` and replace `load()` and the dispatch chain:
+**Do not touch `js/game-list.js` in this task.** Rewiring the chooser to the registry, moving it to `js/engine/game-list.js`, and deleting the old dispatch chain all happen in Task 19, once every game module exists. Until then the app keeps running on the existing `GAMES`/if-else chooser, and each migration task in Tasks 10–18 updates that chain for its own game so the app stays playable after every task.
 
-```js
-load() {
-  const container = document.getElementById('game-list');
-  container.innerHTML = gamesByDomain().map(({ domain, games }) =>
-    '<section class="game-group">' +
-      '<h3 class="game-group-title">' + domain.emoji + ' ' + I18n.t(domain.labelKey) + '</h3>' +
-      '<div class="game-group-cards">' +
-        games.map(game =>
-          '<div class="game-card" data-id="' + game.id + '">' +
-            '<span class="game-card-emoji">' + game.emoji + '</span>' +
-            '<span class="game-card-name">' + I18n.t(game.nameKey) + '</span>' +
-          '</div>'
-        ).join('') +
-      '</div>' +
-    '</section>'
-  ).join('');
-
-  container.querySelectorAll('.game-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const game = GAMES.find(g => g.id === card.dataset.id);
-      this.selectedGame = game;
-
-      if (game.legacy) {
-        game.start(this.getDifficulty());
-      } else if (game.setup === 'category') {
-        this.showCategoryPicker();
-      } else if (game.rounds === 'ask') {
-        this.showPicker();
-      } else {
-        GameEngine.start(game, { difficulty: this.getDifficulty() });
-      }
-    });
-  });
-},
-```
-
-`showCategoryPicker` calls `GameEngine.start(this.selectedGame, { difficulty, category })`; `showPicker` calls `GameEngine.start(this.selectedGame, { difficulty, count: i })`.
+Also reformat `js/engine/screens.js` from 4-space to 2-space indentation. No logic change — the resulting `git diff -w` for that file must be empty, which is the check that proves you only touched whitespace. It was written 4-space by mistake while the rest of `js/engine/` is 2-space.
 
 Add the five domain labels to all five language blocks in `js/i18n/translations.js`:
 
@@ -1638,11 +1609,17 @@ Add to `css/game.css`:
 }
 ```
 
-Update `sw.js` paths and bump `CACHE_VERSION`.
+Add `'/js/engine/registry.js'` to `sw.js` `ASSETS` and bump `CACHE_VERSION`.
 
-> This task does not pass its tests until Tasks 10–18 create the ten game modules it imports. Implement it now, leave it red, and expect green at Task 18. This is the one deliberate exception to the red-green rule in this plan.
+> This task does not pass `test/engine/registry.test.js` until Tasks 10–18 create the ten game modules it imports. Implement it now, leave that one suite red, and expect green at Task 18. This is the plan's one deliberate exception to the red-green rule. **Every other suite must stay green**, and the app must still load and play — which it will, because nothing the app imports reaches `registry.js`.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: Verify the app still works**
+
+Run `npm test`. Expect: every suite green except `test/engine/registry.test.js`, which fails on unresolved imports. Record the exact failure so Task 18 can confirm the same suite turns green.
+
+Serve the site and load it with **audio muted** (`--mute-audio` or mute the tab). The game list must still render all ten cards and the console must be clean — this task changed nothing the app imports, so any breakage means `game-list.js` or `app.js` was touched when it should not have been.
+
+- [ ] **Step 5: Commit**
 
 ```bash
 git add js/ css/game.css sw.js test/engine/registry.test.js
@@ -3399,7 +3376,178 @@ git commit -m "refactor: register double crash as a legacy game"
 
 ---
 
-### Task 19: Remove dead auth code
+### Task 19: Rewire the chooser to the registry
+
+All ten game modules now exist, so the chooser can finally read from `registry.js`. This is the task that turns `test/engine/registry.test.js` green and retires the transitional dispatch chain that Tasks 10–18 have been maintaining.
+
+**Files:**
+- Modify: `js/game-list.js` → `js/engine/game-list.js` (use `git mv`)
+- Modify: `js/app.js` — update its `GameList` import path
+- Modify: `js/engine/screens.js` — delete `KNOWN_LAYOUT_CLASSES` and its removal call
+- Modify: `sw.js`
+- Test: `test/engine/game-list.test.js`
+
+**Interfaces:**
+- Consumes: `DOMAINS`, `GAMES`, `gamesByDomain` (Task 9); `GameEngine.start` (Task 8); the ten game modules (Tasks 10–18).
+- Produces: `GameList` with a registry-driven `load()`. Removes the exported `GAMES` array that used `type` keys.
+
+- [ ] **Step 1: Write the failing test**
+
+Create `test/engine/game-list.test.js`:
+
+```js
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { GameList } from '../../js/engine/game-list.js';
+import { GAMES } from '../../js/engine/registry.js';
+import { GameEngine } from '../../js/engine/game-engine.js';
+
+function mountDom() {
+  document.body.innerHTML = `
+    <div id="screen-games" class="screen active"><div id="game-list"></div></div>
+    <div id="screen-game" class="screen"><div class="game-body">
+      <div id="dice-container"></div><div id="choices-container"></div>
+    </div></div>
+    <div id="screen-picker" class="screen"><div id="exercise-picker"></div></div>
+    <div id="screen-category" class="screen"><div id="category-picker"></div></div>
+  `;
+}
+
+describe('GameList.load', () => {
+  beforeEach(() => {
+    mountDom();
+    localStorage.clear();
+  });
+
+  it('renders one group section per non-empty domain', () => {
+    GameList.load();
+    expect(document.querySelectorAll('.game-group')).toHaveLength(4);
+  });
+
+  it('renders a card for every registered game', () => {
+    GameList.load();
+    expect(document.querySelectorAll('.game-card')).toHaveLength(GAMES.length);
+  });
+
+  it('labels each group with its domain emoji and name', () => {
+    GameList.load();
+    expect(document.querySelector('.game-group-title').textContent).toContain('🔢');
+  });
+
+  it('puts guess_time under mesures, not nombres', () => {
+    GameList.load();
+    const groups = [...document.querySelectorAll('.game-group')];
+    const mesures = groups.find(g => g.querySelector('[data-id="guess_time"]'));
+    expect(mesures.querySelector('[data-id="dice_addition"]')).toBeNull();
+  });
+
+  it('starts an engine-driven game through GameEngine', () => {
+    const spy = vi.spyOn(GameEngine, 'start').mockImplementation(() => {});
+    GameList.load();
+    document.querySelector('[data-id="dice_recognition"]').click();
+    expect(spy).toHaveBeenCalledOnce();
+    expect(spy.mock.calls[0][0].id).toBe('dice_recognition');
+  });
+
+  it('starts the legacy game through its own start, not the engine', () => {
+    const engineSpy = vi.spyOn(GameEngine, 'start').mockImplementation(() => {});
+    const legacy = GAMES.find(g => g.legacy);
+    const legacySpy = vi.spyOn(legacy, 'start').mockImplementation(() => {});
+    GameList.load();
+    document.querySelector('[data-id="double_crash"]').click();
+    expect(legacySpy).toHaveBeenCalledOnce();
+    expect(engineSpy).not.toHaveBeenCalled();
+  });
+
+  it('shows the exercise picker for a rounds:ask game instead of starting it', () => {
+    const spy = vi.spyOn(GameEngine, 'start').mockImplementation(() => {});
+    GameList.load();
+    document.querySelector('[data-id="dice_addition"]').click();
+    expect(document.getElementById('screen-picker').classList.contains('active')).toBe(true);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('shows the category picker for a setup:category game instead of starting it', () => {
+    const spy = vi.spyOn(GameEngine, 'start').mockImplementation(() => {});
+    GameList.load();
+    document.querySelector('[data-id="count_objects"]').click();
+    expect(document.getElementById('screen-category').classList.contains('active')).toBe(true);
+    expect(spy).not.toHaveBeenCalled();
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run test/engine/game-list.test.js`
+Expected: FAIL — cannot resolve `../../js/engine/game-list.js`.
+
+- [ ] **Step 3: Implement**
+
+`git mv js/game-list.js js/engine/game-list.js`. Delete its old `GAMES` array and `DIFFICULTY_LEVELS` if the registry now owns them, fix its import depths (it moved one level deeper), and replace `load()` and the dispatch chain:
+
+```js
+load() {
+  const container = document.getElementById('game-list');
+  container.innerHTML = gamesByDomain().map(({ domain, games }) =>
+    '<section class="game-group">' +
+      '<h3 class="game-group-title">' + domain.emoji + ' ' + I18n.t(domain.labelKey) + '</h3>' +
+      '<div class="game-group-cards">' +
+        games.map(game =>
+          '<div class="game-card" data-id="' + game.id + '">' +
+            '<span class="game-card-emoji">' + game.emoji + '</span>' +
+            '<span class="game-card-name">' + I18n.t(game.nameKey) + '</span>' +
+          '</div>'
+        ).join('') +
+      '</div>' +
+    '</section>'
+  ).join('');
+
+  container.querySelectorAll('.game-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const game = GAMES.find(g => g.id === card.dataset.id);
+      this.selectedGame = game;
+
+      if (game.legacy) {
+        game.start(this.getDifficulty());
+      } else if (game.setup === 'category') {
+        this.showCategoryPicker();
+      } else if (game.rounds === 'ask') {
+        this.showPicker();
+      } else {
+        GameEngine.start(game, { difficulty: this.getDifficulty() });
+      }
+    });
+  });
+},
+```
+
+`showCategoryPicker` calls `GameEngine.start(this.selectedGame, { difficulty: this.getDifficulty(), category })`; `showPicker` calls `GameEngine.start(this.selectedGame, { difficulty: this.getDifficulty(), count: i })`.
+
+Update `js/app.js`'s import to `./engine/game-list.js`.
+
+Now delete the transitional code from `js/engine/screens.js`: the `KNOWN_LAYOUT_CLASSES` array, its removal call in `showScreen`, and the `TEMPORARY` comment. Every game now declares `layoutClass` and the engine routes it through `setLayoutClass`, so single-slot tracking is finally sufficient. The Task 5 regression tests that asserted direct-`classList.add` cleanup must be updated to go through `setLayoutClass` instead — that is the behaviour that now exists. Do not simply delete those tests; rewrite them to assert the new mechanism.
+
+Update `sw.js` paths and bump `CACHE_VERSION`.
+
+- [ ] **Step 4: Run the whole suite**
+
+Run: `npm test`
+Expected: PASS — every suite, including `test/engine/registry.test.js`, red since Task 9 and green from Task 18 onward, plus the new game-list suite.
+
+- [ ] **Step 5: Verify in a browser**
+
+With **audio muted**, confirm the chooser now shows four labelled domain groups, that every one of the ten cards starts its game, and that the console is clean. Confirm `.game-body` carries no stale layout class after playing two different games in sequence — that is what deleting `KNOWN_LAYOUT_CLASSES` puts at risk.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add js/ sw.js test/engine/
+git commit -m "refactor: drive the chooser from the registry"
+```
+
+---
+
+### Task 20: Remove dead auth code
 
 **Files:**
 - Modify: `index.html:19-26` — remove `auth-container` markup
@@ -3467,7 +3615,7 @@ git commit -m "chore: remove dead auth markup and translation keys"
 
 ---
 
-### Task 20: Generate the service worker asset list
+### Task 21: Generate the service worker asset list
 
 **Files:**
 - Create: `tools/build-sw.js`
@@ -3643,7 +3791,7 @@ git commit -m "build: generate service worker asset list"
 
 ---
 
-### Task 21: Rewrite CLAUDE.md for the new architecture
+### Task 22: Rewrite CLAUDE.md for the new architecture
 
 The repository's `CLAUDE.md` documents the architecture this checkpoint replaces. Leaving it stale would send the next agent down the old path.
 
