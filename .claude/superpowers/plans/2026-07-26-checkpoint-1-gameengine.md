@@ -747,15 +747,19 @@ import { Speech } from '../../js/engine/speech.js';
 
 describe('Speech', () => {
   let spoken;
+  let cancels;
+  let order;
 
   beforeEach(() => {
     spoken = [];
+    cancels = 0;
+    order = [];
     vi.stubGlobal('SpeechSynthesisUtterance', class {
       constructor(text) { this.text = text; }
     });
     vi.stubGlobal('speechSynthesis', {
-      speak: u => spoken.push(u),
-      cancel: () => spoken.push('cancel'),
+      speak: (u) => { spoken.push(u); order.push('speak'); },
+      cancel: () => { cancels++; order.push('cancel'); },
     });
   });
 
@@ -776,7 +780,12 @@ describe('Speech', () => {
   it('cancels any in-flight utterance before speaking', () => {
     Speech.speak('one', 'en');
     Speech.speak('two', 'en');
-    expect(spoken.filter(s => s === 'cancel')).toHaveLength(2);
+    expect(cancels).toBe(2);
+  });
+
+  it('cancels BEFORE it speaks, never after', () => {
+    Speech.speak('one', 'en');
+    expect(order).toEqual(['cancel', 'speak']);
   });
 
   it('is a no-op when the API is missing', () => {
