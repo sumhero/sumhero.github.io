@@ -456,7 +456,7 @@ git commit -m "fix: restore French accents and German umlauts"
 
 ### Task 5: Extract screens module
 
-Breaks the `app.js` ↔ `game-list.js` import cycle before the engine is added.
+Moves `showScreen` and layout-class handling out of `app.js` so the engine can call them without importing `app.js`. The `app.js` ↔ `game-list.js` cycle itself remains and stays safe; it is removed when the registry lands in Task 9.
 
 **Files:**
 - Create: `js/engine/screens.js`
