@@ -51,3 +51,38 @@ describe('setLayoutClass', () => {
     expect(document.querySelector('.game-body').className).toBe('game-body');
   });
 });
+
+describe('showScreen game-body cleanup', () => {
+  beforeEach(mountScreens);
+
+  it('strips a layout class a game added directly, bypassing setLayoutClass', () => {
+    // Games call gameBody.classList.add(...) themselves inside showExercise; they
+    // never call setLayoutClass. showScreen must still clean this up on exit.
+    document.querySelector('.game-body').classList.add('uno-game-body');
+    showScreen('games');
+    expect(document.querySelector('.game-body').className).toBe('game-body');
+  });
+
+  it('strips other known layout classes added directly, from different games', () => {
+    document.querySelector('.game-body').classList.add('geo-game-layout');
+    showScreen('games');
+    expect(document.querySelector('.game-body').className).toBe('game-body');
+
+    document.querySelector('.game-body').classList.add('chess-game-layout');
+    showScreen('games');
+    expect(document.querySelector('.game-body').className).toBe('game-body');
+  });
+
+  it('clears time-theme-day/night from the body added directly by guess-time-game', () => {
+    document.body.classList.add('time-theme-night');
+    showScreen('games');
+    expect(document.body.classList.contains('time-theme-night')).toBe(false);
+    expect(document.body.classList.contains('time-theme-day')).toBe(false);
+  });
+
+  it('does not strip layout classes when showing the game screen itself', () => {
+    document.querySelector('.game-body').classList.add('memory-game-layout');
+    showScreen('game');
+    expect(document.querySelector('.game-body').classList.contains('memory-game-layout')).toBe(true);
+  });
+});
