@@ -181,12 +181,12 @@ For every file in `js/`, prefix each top-level `const X = {` / `const X = [` dec
 | `sound.js` | `Sound` | — |
 | `dice-renderer.js` | `DiceRenderer` | — |
 | `animation.js` | `Animation` | — |
-| `countries-data.js` | `COUNTRIES`, `getCountryPool`, `getCountryName`, `getCapitalName` | `I18n` |
+| `countries-data.js` | `COUNTRIES_EUROPE`, `COUNTRIES_TOP50`, `COUNTRIES_REST`, `getCountryPool`, `getCountryName`, `getCapitalName` | `I18n` |
 | `count-objects-game.js` | `OBJECT_CATEGORIES`, `CountObjectsGame` | `App`, `I18n`, `Sound`, `Animation` |
 | `uno-game.js` | `UnoGame` | `App`, `I18n`, `Sound`, `Animation` |
 | `dice-recognition-game.js` | `DiceRecognitionGame` | `App`, `I18n`, `Sound`, `Animation`, `DiceRenderer` |
 | `countries-game.js` | `CountriesGame` | `App`, `I18n`, `Sound`, `Animation`, `getCountryPool`, `getCountryName` |
-| `capitals-game.js` | `CapitalsGame` | `App`, `I18n`, `Sound`, `Animation`, `getCountryPool`, `getCountryName` |
+| `capitals-game.js` | `CapitalsGame` | `App`, `I18n`, `Sound`, `Animation`, `getCountryPool`, `getCountryName`, `getCapitalName` |
 | `dice-game.js` | `DiceGame` | `App`, `I18n`, `Sound`, `Animation`, `DiceRenderer` |
 | `guess-time-game.js` | `ClockRenderer`, `GuessTimeGame` | `App`, `I18n`, `Sound`, `Animation` |
 | `memory-game.js` | `MEMORY_COLORS`, `MEMORY_CONFIG`, `MemoryGame` | `App`, `I18n`, `Sound`, `Animation` |
