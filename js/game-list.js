@@ -1,7 +1,8 @@
 import { App } from './app.js';
 import { I18n } from './i18n/i18n.js';
 import { LANGUAGES } from './i18n/translations.js';
-import { OBJECT_CATEGORIES, CountObjectsGame } from './count-objects-game.js';
+import { OBJECT_CATEGORIES } from './games/object-categories.js';
+import { CountObjectsGame } from './games/count-objects.js';
 import { UnoGame } from './uno-game.js';
 import { DiceRecognitionGame } from './dice-recognition-game.js';
 import { CountriesGame } from './countries-game.js';
@@ -146,7 +147,7 @@ export const GameList = {
         container.querySelectorAll('.category-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 this.selectedCategory = btn.dataset.category;
-                CountObjectsGame.start(this.getDifficulty(), this.selectedCategory);
+                GameEngine.start(CountObjectsGame, { difficulty: this.getDifficulty(), category: this.selectedCategory });
             });
         });
 

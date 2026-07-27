@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { DiceAdditionGame } from '../../js/games/dice-addition.js';
+import { DiceRenderer } from '../../js/render/dice.js';
 
 function ctx(count, rng = Math.random) {
   return { rng, t: k => k, lang: 'fr', count, category: null };
@@ -68,8 +69,9 @@ describe('DiceAdditionGame', () => {
 
   it('renders both dice in the prompt', () => {
     const ex = DiceAdditionGame.generate('easy', ctx(1))[0];
-    expect(ex.promptHtml).toContain('<svg');
     expect(ex.promptHtml).toContain('dice-plus');
+    expect(ex.promptHtml).toContain(DiceRenderer.render(ex.operand1));
+    expect(ex.promptHtml).toContain(DiceRenderer.render(ex.operand2));
   });
 
   it('is deterministic for a fixed rng', () => {
