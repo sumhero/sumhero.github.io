@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { WordProblemsGame } from '../../js/games/word-problems.js';
+import { WordProblemsGame, MIN_TWO_STEP_TOTAL } from '../../js/games/word-problems.js';
 import { OBJECT_CATEGORIES } from '../../js/games/object-categories.js';
 import { TRANSLATIONS } from '../../js/i18n/translations.js';
 
@@ -122,11 +122,28 @@ describe('WordProblemsGame', () => {
       for (const ex of WordProblemsGame.generate('hard', ctx(20))) {
         if (ex.kind === 'addAdd') {
           sawAddAdd = true;
-          expect(ex.a + ex.b + ex.c).toBeGreaterThanOrEqual(12);
+          expect(ex.a + ex.b + ex.c).toBeGreaterThanOrEqual(MIN_TWO_STEP_TOTAL);
         }
       }
     }
     expect(sawAddAdd).toBe(true);
+  });
+
+  it('keeps hard\'s two-step subtraction genuinely harder too: the pre-subtraction sum is floored', () => {
+    // addSub's a + b used to be drawn from as low as 2 + 2 = 4 with no floor,
+    // so hard could serve e.g. 2 + 2 - 3 = 1 - arithmetically easier than a
+    // normal one-step problem. The same floor addAddStory applies to its
+    // total applies here to the pre-subtraction sum (a + b).
+    let sawAddSub = false;
+    for (let i = 0; i < 20; i++) {
+      for (const ex of WordProblemsGame.generate('hard', ctx(20))) {
+        if (ex.kind === 'addSub') {
+          sawAddSub = true;
+          expect(ex.a + ex.b).toBeGreaterThanOrEqual(MIN_TWO_STEP_TOTAL);
+        }
+      }
+    }
+    expect(sawAddSub).toBe(true);
   });
 
   it('asks one-step addition only on easy', () => {

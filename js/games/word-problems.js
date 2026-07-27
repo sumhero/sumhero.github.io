@@ -2,10 +2,13 @@ import { OBJECT_CATEGORIES } from './object-categories.js';
 
 const CHOICE_CEILING = { easy: 10, normal: 20, hard: 20 };
 const MAX_TWO_STEP = 20;
-// Every addAdd total is at least this, so hard's two-step problems are
-// genuinely harder than normal's one-step-within-20 range rather than
-// occasionally trivial (e.g. 1+1+1).
-const MIN_TWO_STEP_TOTAL = 12;
+// Every addAdd total, and every addSub pre-subtraction sum (a+b), is at least
+// this, so hard's two-step problems are genuinely harder than normal's
+// one-step-within-20 range rather than occasionally trivial (e.g. 1+1+1, or
+// 2+2-3=1 — arithmetically easier than a normal one-step problem summing to
+// 18). Exported so the test can assert against this constant rather than a
+// duplicated literal.
+export const MIN_TWO_STEP_TOTAL = 12;
 const CHOICE_COUNT = 5;
 // No quantity that is spoken aloud inside a sentence may be 1: every
 // template's verb agrees with a plural/invariant count ("il y en avait {a}",
@@ -101,14 +104,19 @@ function addAddStory(rng) {
 }
 
 function addSubStory(rng) {
-  // a + b <= MAX_TWO_STEP keeps the intermediate total inside 20; c is
-  // spoken and stays at 2 or above, capped so the final answer is at least
-  // one (c <= a + b - 1).
-  const a = MIN_SPOKEN_COUNT + Math.floor(rng() * (MAX_TWO_STEP - 2 * MIN_SPOKEN_COUNT + 1));
-  const b = MIN_SPOKEN_COUNT + Math.floor(rng() * (MAX_TWO_STEP - a - MIN_SPOKEN_COUNT + 1));
-  const c = MIN_SPOKEN_COUNT + Math.floor(rng() * (a + b - MIN_SPOKEN_COUNT));
+  // The pre-subtraction sum (a + b) is drawn first, from
+  // MIN_TWO_STEP_TOTAL..MAX_TWO_STEP — the same floor addAddStory applies to
+  // its total, so the addition step here is never trivially small either
+  // (e.g. 2 + 2, which the old unfloored version could produce). a and b are
+  // then split off that sum so both stay at 2 or above; c is spoken, stays
+  // at 2 or above, and is capped so the final answer is at least one
+  // (c <= sum - 1).
+  const sum = MIN_TWO_STEP_TOTAL + Math.floor(rng() * (MAX_TWO_STEP - MIN_TWO_STEP_TOTAL + 1));
+  const a = MIN_SPOKEN_COUNT + Math.floor(rng() * (sum - 2 * MIN_SPOKEN_COUNT + 1));
+  const b = sum - a;
+  const c = MIN_SPOKEN_COUNT + Math.floor(rng() * (sum - MIN_SPOKEN_COUNT));
 
-  return { kind: 'addSub', key: 'wpAddSub', a, b, c, answer: a + b - c, params: { a, b, c } };
+  return { kind: 'addSub', key: 'wpAddSub', a, b, c, answer: sum - c, params: { a, b, c } };
 }
 
 function buildChoices(answer, ceiling, rng) {
