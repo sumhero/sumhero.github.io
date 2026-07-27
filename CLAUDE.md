@@ -54,8 +54,14 @@ js/
     clock.js             ClockRenderer.render() — SVG clock face
     ten-frame.js         TenFrameRenderer.render(filled, capacity) — SVG
                           ten-frames (capacity 5, 10, or 20 as two frames)
+    base-ten.js          BaseTenRenderer.render(tens, units) — SVG ten-rods
+                          and unit-cubes
+    coins.js             CoinRenderer.render(denominations) — SVG euro coins
+                          and notes (whole euros only: 1, 2, 5, 10, 20)
   data/
     countries.js         Country/capital data for the geography games
+    number-words.js      numberToWords(n, lang) — 1–100 spelled out in all
+                          five languages, French irregulars included
   i18n/
     i18n.js              I18n.t(key, params) + language get/set
     translations.js      TRANSLATIONS for en/fr/de/uk/ru + LANGUAGES (en is
@@ -106,6 +112,11 @@ js/
     instead of the default `correct` (used by `chess`).
   - `bodyClass` on an individual *exercise* — a class applied only while that
     exercise is showing, e.g. `guess_time`'s day/night theming.
+  - `speak` on an individual *exercise* — plain text the engine reads aloud
+    through `Speech` on show, plus a 🔊 replay button appended to the prompt.
+    A game opts in purely by setting this string; there is no game-level flag.
+    Used by `word_problems`, and deliberately **not** by `number_words`, where
+    speaking the word would read out the answer.
   - `setup: 'category'` — routes through the category picker
     (`GameList.showCategoryPicker`) before `GameEngine.start`, passing
     `ctx.category` (used by `count_objects`).

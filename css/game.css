@@ -1980,3 +1980,188 @@ body.time-theme-night {
         font-size: min(4vw, 8vh);
     }
 }
+
+/* Tens and units: base-ten blocks. The prompt svg is tall and narrow, so it
+   has to escape the square `.dice-container svg` sizing — hence !important,
+   the same escape `.ten-frame` needs. On hard the blocks move into the choice
+   buttons, where `.dice-container svg` does not reach but `.base-ten` does. */
+.base-ten {
+    width: auto !important;
+    height: min(34vh, 34vw) !important;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
+
+.num-game-layout .tens-units-choice-btn {
+    font-size: min(6.5vw, 6.5vh);
+    padding: 6px;
+}
+
+.tens-units-choice-btn .base-ten {
+    width: auto !important;
+    height: auto !important;
+    max-width: 92%;
+    max-height: 88%;
+    filter: none;
+}
+
+@media (orientation: landscape) {
+    .base-ten {
+        height: min(52vh, 30vw) !important;
+    }
+
+    .tens-units-choice-btn {
+        font-size: min(4vw, 8vh);
+    }
+}
+
+/* Money: a purse of euro coins and notes. Like the ten-frame and the base-ten
+   blocks, the purse svg is wider than it is tall, so it has to escape the
+   square `.dice-container svg` sizing. On hard the purses move into the choice
+   buttons instead. */
+.money-game-layout .dice-container {
+    flex-direction: column;
+    flex: 1;
+    gap: min(2vh, 12px);
+}
+
+/* Hard's pay prompt is a full sentence (money.js's buildPayment), so it needs
+   the same wrap guard as `.num-game-layout .op-question` — money's layout
+   class is `money-game-layout`, not `num-game-layout`, so that rule never
+   applies here. */
+.money-game-layout .op-question {
+    max-width: 92%;
+    line-height: 1.2;
+}
+
+.coin-purse {
+    width: min(80vw, 46vh) !important;
+    height: auto !important;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
+
+.money-game-layout .money-choice-btn {
+    font-size: min(6.5vw, 6.5vh);
+    padding: 6px;
+}
+
+.money-choice-btn .coin-purse {
+    width: auto !important;
+    height: auto !important;
+    max-width: 92%;
+    max-height: 88%;
+    filter: none;
+}
+
+@media (orientation: landscape) {
+    .money-game-layout {
+        flex-direction: row !important;
+    }
+
+    .money-game-layout .dice-container {
+        flex: 2;
+    }
+
+    .coin-purse {
+        width: min(45vw, 60vh) !important;
+    }
+
+    .money-choice-btn {
+        font-size: min(4vw, 8vh);
+    }
+}
+
+/* Numbers in words: one long word — quatre-vingt-dix-neuf is 21 characters —
+   that must wrap rather than overflow, answered with numerals up to 100. */
+.number-word {
+    font-size: min(9vw, 7vh);
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    text-align: center;
+    max-width: 92%;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.num-game-layout .number-words-choice-btn {
+    font-size: min(6.5vw, 6.5vh);
+}
+
+@media (orientation: landscape) {
+    .number-word {
+        font-size: min(5vw, 9vh);
+    }
+
+    .num-game-layout .number-words-choice-btn {
+        font-size: min(4vw, 8vh);
+    }
+}
+
+/* Word problems: an object icon plus a read-aloud sentence. This is the first
+   game to set `exercise.speak`, so the 🔊 replay button the engine appends to
+   #dice-container gets its styling here — `.speak-btn` had no rule before. */
+.wp-icon {
+    font-size: min(18vw, 16vh);
+    line-height: 1;
+}
+
+.wp-sentence {
+    font-size: min(5.5vw, 4.5vh);
+    font-weight: 600;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    text-align: center;
+    max-width: 92%;
+    line-height: 1.3;
+}
+
+.speak-btn {
+    border: none;
+    border-radius: 50%;
+    width: min(16vw, 12vh);
+    height: min(16vw, 12vh);
+    font-size: min(8vw, 6vh);
+    background: rgba(255,255,255,0.95);
+    color: #333;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    cursor: pointer;
+    touch-action: manipulation;
+    flex: none;
+}
+
+.speak-btn:active {
+    transform: scale(0.9);
+}
+
+.num-game-layout .wp-choice-btn {
+    font-size: min(7vw, 7vh);
+}
+
+@media (orientation: landscape) {
+    .wp-icon {
+        font-size: min(9vw, 14vh);
+    }
+
+    .wp-sentence {
+        font-size: min(3vw, 5vh);
+    }
+
+    .speak-btn {
+        width: min(8vw, 12vh);
+        height: min(8vw, 12vh);
+        font-size: min(4vw, 6vh);
+    }
+}
+
+/* Word problems' choice-button landscape override was missing — the existing
+   landscape block above only covers `.wp-icon`, `.wp-sentence` and
+   `.speak-btn`, so `.wp-choice-btn` alone kept its portrait font-size in
+   landscape. Appended as a new block rather than edited into the one above,
+   matching every sibling num-game-layout choice button
+   (`.missing-number-choice-btn`, `.number-words-choice-btn`,
+   `.tens-units-choice-btn`). */
+@media (orientation: landscape) {
+    .num-game-layout .wp-choice-btn {
+        font-size: min(4vw, 8vh);
+    }
+}
