@@ -10,8 +10,12 @@
 // enumerates the question space and never learns anything about it.
 //
 // `keyOf(exercise)` names the exercise's identity and must return a string.
-// It is never `correctAnswer`: parity has two possible answers, compare three,
-// and chess's answer is a set of squares. Each game names its own key.
+// It is usually not `correctAnswer`: parity has two possible answers, compare
+// three, and chess's answer is a set of squares. `dice_recognition` and
+// `guess_time` are the reviewed exceptions where the identity and the answer
+// genuinely coincide — a die face and a formatted `HH:MM` time each have
+// exactly one exercise per value, so keying on `correctAnswer` there is
+// correct, not an oversight. Each game names its own key.
 //
 // Exhaustion is normal, not exceptional: dice_recognition hard has five faces
 // over twenty rounds. When a round burns its budget, the used-set is cleared
