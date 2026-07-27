@@ -68,7 +68,18 @@ describe('DiceAdditionGame', () => {
   });
 
   it('renders both dice in the prompt', () => {
-    const ex = DiceAdditionGame.generate('easy', ctx(1))[0];
+    // A single fixed value (e.g. () => 0.9) would make op1 === op2, so a bug
+    // that always renders die 1 as `render(1)` could still pass by matching
+    // die 2's markup. Cycle two distinct values instead: on easy (maxOperand
+    // 4) this deterministically yields operand1=2, operand2=4 — both non-1,
+    // both different from each other — so each die's markup can only be
+    // found where it actually belongs.
+    const values = [0.3, 0.9];
+    let i = 0;
+    const rng = () => values[i++ % values.length];
+    const ex = DiceAdditionGame.generate('easy', ctx(1, rng))[0];
+    expect(ex.operand1).toBe(2);
+    expect(ex.operand2).toBe(4);
     expect(ex.promptHtml).toContain('dice-plus');
     expect(ex.promptHtml).toContain(DiceRenderer.render(ex.operand1));
     expect(ex.promptHtml).toContain(DiceRenderer.render(ex.operand2));
