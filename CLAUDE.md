@@ -52,6 +52,8 @@ js/
   render/
     dice.js              DiceRenderer.render() — SVG dice
     clock.js             ClockRenderer.render() — SVG clock face
+    ten-frame.js         TenFrameRenderer.render(filled, capacity) — SVG
+                          ten-frames (capacity 5, 10, or 20 as two frames)
   data/
     countries.js         Country/capital data for the geography games
   i18n/
