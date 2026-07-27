@@ -8,20 +8,26 @@ const NAME_KEYS = {
   rhombus: 'shapeRhombus',
 };
 
-// Multiples of 15 degrees with every multiple of 45 removed. 0/90/180/270 leave
-// a square or rectangle axis-aligned, so the child never has to see past the
-// turn; 45/135/225/315 stand a square on its corner, where `carré` and
-// `losange` are the same picture to a six-year-old and the question stops being
-// fair. Neither belongs in the band whose whole point is invariance.
-const HARD_ROTATIONS = [
-  15, 30, 60, 75, 105, 120, 150, 165, 195, 210, 240, 255, 285, 300, 330, 345,
+// Every multiple of 15 degrees from 15 to 345 (0 excluded — the hard band
+// must actually look turned).
+const HARD_ROTATIONS_FULL = [
+  15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240,
+  255, 270, 285, 300, 315, 330, 345,
 ];
+// The square alone drops every multiple of 45: a square at 45/135/225/315
+// literally *is* a rhombus (a square is a special case of a rhombus), and
+// with `losange` sitting in the choice list the question would have two
+// defensible correct answers. No other shape has that ambiguity — a
+// triangle at 135° is unambiguously a rotated triangle — so every other
+// hard shape gets the full rotation range instead of this narrower one.
+const HARD_ROTATIONS_SQUARE = HARD_ROTATIONS_FULL.filter(r => r % 45 !== 0);
 // Never 1 — the hard band must actually rescale as well as rotate.
 const HARD_SCALES = [0.6, 0.75, 1.3, 1.5];
-// A circle is invariant under rotation by definition, so a circle round in the
-// hard band is a free point. It stays in easy and normal, where "no sides" is
-// the thing being taught.
-const HARD_SHAPES = ['square', 'rectangle', 'triangle', 'rhombus'];
+// Derived, not hand-duplicated, so it cannot drift from SHAPE_KEYS. A circle
+// is invariant under rotation by definition, so a circle round in the hard
+// band would be a free point; it stays in easy and normal, where "no sides"
+// is the thing being taught.
+const HARD_SHAPES = SHAPE_KEYS.filter(key => key !== 'circle');
 // Fixed count options. Every true answer is 0, 3 or 4, so the correct value is
 // always present and the distractors never move.
 const COUNT_CHOICES = [0, 2, 3, 4, 5];
@@ -43,11 +49,13 @@ export const ShapesGame = {
       if (difficulty === 'normal') {
         exercises.push(countExercise(rng, t));
       } else if (difficulty === 'hard') {
+        const shape = pick(HARD_SHAPES, rng);
+        const rotations = shape === 'square' ? HARD_ROTATIONS_SQUARE : HARD_ROTATIONS_FULL;
         exercises.push(nameExercise(
-          rng, t, HARD_SHAPES, pick(HARD_ROTATIONS, rng), pick(HARD_SCALES, rng)
+          rng, t, shape, pick(rotations, rng), pick(HARD_SCALES, rng)
         ));
       } else {
-        exercises.push(nameExercise(rng, t, SHAPE_KEYS, 0, 1));
+        exercises.push(nameExercise(rng, t, pick(SHAPE_KEYS, rng), 0, 1));
       }
     }
 
@@ -55,9 +63,7 @@ export const ShapesGame = {
   },
 };
 
-function nameExercise(rng, t, pool, rotate, scale) {
-  const shape = pick(pool, rng);
-
+function nameExercise(rng, t, shape, rotate, scale) {
   return {
     shape,
     rotate,

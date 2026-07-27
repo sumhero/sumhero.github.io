@@ -2177,9 +2177,9 @@ body.time-theme-night {
     gap: min(2vh, 12px);
 }
 
-.shape-figure {
-    width: min(46vw, 34vh) !important;
-    height: min(46vw, 34vh) !important;
+.shape-game-layout .shape-figure {
+    width: min(46vw, 34vh);
+    height: min(46vw, 34vh);
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
 }
 
@@ -2207,9 +2207,9 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
         flex: 2;
     }
 
-    .shape-figure {
-        width: min(30vw, 52vh) !important;
-        height: min(30vw, 52vh) !important;
+    .shape-game-layout .shape-figure {
+        width: min(30vw, 52vh);
+        height: min(30vw, 52vh);
     }
 
     .shape-game-layout .shape-choice-btn {

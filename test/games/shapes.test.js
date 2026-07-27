@@ -86,6 +86,17 @@ describe('ShapesGame', () => {
     }
   });
 
+  it('names every shape on easy over a long run', () => {
+    // Normal and hard each have their own all-shapes-over-a-long-run
+    // coverage test; easy previously had only a membership check, which
+    // would not catch a pool that silently dropped a shape.
+    const seen = new Set();
+    for (let i = 0; i < 40; i++) {
+      for (const ex of ShapesGame.generate('easy', ctx(10))) seen.add(ex.shape);
+    }
+    expect([...seen].sort()).toEqual(ALL_SHAPES.slice().sort());
+  });
+
   it('offers all five shape names, keyed in English and labelled through ctx.t', () => {
     for (const difficulty of ['easy', 'hard']) {
       for (const ex of ShapesGame.generate(difficulty, ctx(20))) {
@@ -157,19 +168,30 @@ describe('ShapesGame', () => {
   });
 
   it('never stands a square on its corner, where carré and losange are the same picture', () => {
-    // Every hard rotation is a multiple of 15 and never a multiple of 45: a
-    // multiple of 90 would not look rotated at all, and 45/135/225/315 would
-    // make a square indistinguishable from a losange for a six-year-old.
+    // Every hard rotation is a multiple of 15. Only the square additionally
+    // never lands on a multiple of 45: a square at 45/135/225/315 literally
+    // *is* a rhombus (a square is a special case of a rhombus), and with
+    // `losange` in the choice list the question would have two defensible
+    // correct answers. No other shape shares that ambiguity, so this test
+    // also requires at least one non-square shape to actually use the wider
+    // range over a long run — otherwise the exclusion could silently still
+    // apply to everyone and this test would not catch it.
+    let nonSquareHitFortyFive = false;
     for (let i = 0; i < 20; i++) {
       for (const ex of ShapesGame.generate('hard', ctx(20))) {
         expect(ex.rotate % 15).toBe(0);
-        expect(ex.rotate % 45).not.toBe(0);
         expect(ex.rotate).toBeGreaterThan(0);
         expect(ex.rotate).toBeLessThan(360);
         expect(ex.scale).toBeGreaterThanOrEqual(0.6);
         expect(ex.scale).toBeLessThanOrEqual(1.5);
+        if (ex.shape === 'square') {
+          expect(ex.rotate % 45).not.toBe(0);
+        } else if (ex.rotate % 45 === 0) {
+          nonSquareHitFortyFive = true;
+        }
       }
     }
+    expect(nonSquareHitFortyFive).toBe(true);
   });
 
   it('leaves the circle out of the hard band, since rotating it proves nothing', () => {

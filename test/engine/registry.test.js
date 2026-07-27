@@ -58,18 +58,32 @@ describe('registry', () => {
       .toEqual(['countries', 'capitals']);
   });
 
-  it('surfaces geometrie now that Tier 3 has filled it, and still filters empty domains', () => {
+  it('surfaces geometrie now that Tier 3 has filled it', () => {
     // Before this checkpoint geometrie was declared in DOMAINS but had no
     // games, and gamesByDomain() dropped it. shapes is the first and only
-    // geometry game, so the group must now appear — while the filter itself
-    // stays proven by a domain key that no game claims.
+    // geometry game, so the group must now appear.
     const grouped = gamesByDomain();
     expect(grouped.map(g => g.domain.key)).toContain('geometrie');
     expect(grouped.find(g => g.domain.key === 'geometrie').games.map(g => g.id))
       .toEqual(['shapes']);
-    expect(gamesByDomain().every(group => group.games.length > 0)).toBe(true);
-    const claimed = new Set(GAMES.map(g => g.domain));
-    for (const group of grouped) expect(claimed.has(group.domain.key)).toBe(true);
+  });
+
+  it('filters out a domain with no games, proven with a synthetic empty domain', () => {
+    // Asserting this over the live registry rotted the moment every real
+    // domain became populated (exactly what happened when shapes filled
+    // geometrie): `every(group => group.games.length > 0)` and a
+    // `claimed.has(...)` loop over live data are both vacuously true once no
+    // domain key is ever left unclaimed. A domain that no game claims has to
+    // be constructed here instead, so the guard cannot go vacuous no matter
+    // how the real registry grows.
+    const domains = [
+      { key: 'populated', labelKey: 'x', emoji: '❌' },
+      { key: 'ghost', labelKey: 'x', emoji: '👻' },
+    ];
+    const games = [{ id: 'a', domain: 'populated' }];
+    const grouped = gamesByDomain(domains, games);
+    expect(grouped.map(g => g.domain.key)).toEqual(['populated']);
+    expect(grouped.map(g => g.domain.key)).not.toContain('ghost');
   });
 
   it('gives every game at most one dispatch-selecting field, since the chooser checks them in a fixed order', () => {

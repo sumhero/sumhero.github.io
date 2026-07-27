@@ -50,8 +50,11 @@ export const GAMES = [
   ShapesGame,
 ];
 
-export function gamesByDomain() {
-  return DOMAINS
-    .map(domain => ({ domain, games: GAMES.filter(g => g.domain === domain.key) }))
+// domains/games default to the real registry; a test can pass its own
+// synthetic lists to prove the empty-domain filter without depending on the
+// live registry happening to contain an unpopulated domain.
+export function gamesByDomain(domains = DOMAINS, games = GAMES) {
+  return domains
+    .map(domain => ({ domain, games: games.filter(g => g.domain === domain.key) }))
     .filter(group => group.games.length > 0);
 }
