@@ -27,7 +27,10 @@ export const Animation = {
         this.destroyLottie();
         container.innerHTML = '';
 
-        if (!this.DotLottie) {
+        // The animation JSON lives on a CDN and is not in the service worker's
+        // cache, so offline it can never load. Go straight to the emoji
+        // celebration rather than fetching, failing, and leaving a blank canvas.
+        if (!this.DotLottie || navigator.onLine === false) {
             this.showDancingAnimalsFallback(container);
             return;
         }
@@ -39,12 +42,28 @@ export const Animation = {
         const animations = [...this.celebrationAnimations];
         const src = animations[Math.floor(Math.random() * animations.length)];
 
-        this.lottieInstance = new this.DotLottie({
-            canvas: canvas,
-            src: src,
-            loop: true,
-            autoplay: true,
-        });
+        try {
+            this.lottieInstance = new this.DotLottie({
+                canvas: canvas,
+                src: src,
+                loop: true,
+                autoplay: true,
+            });
+
+            // `onLine` only proves a network interface exists, so the fetch can
+            // still fail — a dead CDN url, a captive portal. Fall back when it
+            // does, but only if this celebration is still the current one: a
+            // late error must not overwrite a newer screen.
+            const instance = this.lottieInstance;
+            instance.addEventListener('loadError', () => {
+                if (this.lottieInstance !== instance) return;
+                this.destroyLottie();
+                this.showDancingAnimalsFallback(container);
+            });
+        } catch (e) {
+            this.destroyLottie();
+            this.showDancingAnimalsFallback(container);
+        }
     },
 
     showDancingAnimalsFallback(container) {
