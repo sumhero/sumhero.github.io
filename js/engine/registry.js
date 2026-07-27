@@ -12,6 +12,7 @@ import { ComplementsGame } from '../games/complements.js';
 import { SubtractionGame } from '../games/subtraction.js';
 import { DoublesGame } from '../games/doubles.js';
 import { CompareGame } from '../games/compare.js';
+import { MissingNumberGame } from '../games/missing-number.js';
 
 export const DOMAINS = [
   { key: 'nombres', labelKey: 'domainNombres', emoji: '🔢' },
@@ -36,6 +37,7 @@ export const GAMES = [
   SubtractionGame,
   DoublesGame,
   CompareGame,
+  MissingNumberGame,
 ];
 
 export function gamesByDomain() {

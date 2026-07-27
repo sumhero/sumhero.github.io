@@ -1943,3 +1943,40 @@ body.time-theme-night {
         font-size: min(4vw, 7vh);
     }
 }
+
+/* Missing number: a short run of a sequence with one term blanked. */
+.sequence-run {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: min(4vw, 24px);
+}
+
+.sequence-term {
+    font-size: min(11vw, 9vh);
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.sequence-term.blank {
+    color: #ffd54f;
+    border-bottom: 4px solid #ffd54f;
+    padding: 0 min(2vw, 12px);
+}
+
+/* Hard reaches 100, so three-digit choices must not overflow their button. */
+.num-game-layout .choice-btn {
+    font-size: min(6.5vw, 6.5vh);
+}
+
+@media (orientation: landscape) {
+    .sequence-term {
+        font-size: min(6vw, 11vh);
+    }
+
+    .num-game-layout .choice-btn {
+        font-size: min(4vw, 8vh);
+    }
+}
