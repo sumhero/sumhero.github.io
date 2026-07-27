@@ -1,20 +1,16 @@
 let activeLayoutClass = null;
 const listeners = [];
 
-// TEMPORARY: games still add their layout class directly via
-// `gameBody.classList.add(...)` inside showExercise (one call per exercise), bypassing
-// setLayoutClass's single-slot tracking below. Because of that, activeLayoutClass can be
-// null even though the DOM still carries a game's layout class, so setLayoutClass(null)
-// alone cannot be trusted to clean it up. Keep removing every known layout class
-// explicitly until a later task migrates those call sites to setLayoutClass itself.
+// PERMANENT: the two legacy games (memory, double_crash) add their layout class
+// directly via `gameBody.classList.add(...)` inside their own showExercise, bypassing
+// setLayoutClass's single-slot tracking below, and their internals are off limits to
+// change. Because of that, activeLayoutClass can be null even though the DOM still
+// carries one of these two classes, so setLayoutClass(null) alone cannot be trusted to
+// clean it up. Every other (engine-driven) game routes its layout class through
+// setLayoutClass, so this list only needs to cover the legacy pair.
 const KNOWN_LAYOUT_CLASSES = [
-  'uno-game-body',
-  'dice-recognition-layout',
-  'geo-game-layout',
-  'time-game-layout',
   'crash-game-layout',
   'memory-game-layout',
-  'chess-game-layout',
 ];
 
 export function onScreenChange(fn) {
@@ -50,8 +46,6 @@ export function showScreen(name) {
     setLayoutClass(null);
     const gameBody = document.querySelector('.game-body');
     if (gameBody) gameBody.classList.remove(...KNOWN_LAYOUT_CLASSES);
-    const choices = document.getElementById('choices-container');
-    if (choices) choices.style.gridTemplateColumns = '';
   }
 
   listeners.forEach(fn => fn(name));

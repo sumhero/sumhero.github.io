@@ -55,25 +55,38 @@ describe('setLayoutClass', () => {
 describe('showScreen game-body cleanup', () => {
   beforeEach(mountScreens);
 
-  it('strips a layout class a game added directly, bypassing setLayoutClass', () => {
-    // Games call gameBody.classList.add(...) themselves inside showExercise; they
-    // never call setLayoutClass. showScreen must still clean this up on exit.
-    document.querySelector('.game-body').classList.add('uno-game-body');
+  it('strips a layout class an engine-driven game set through setLayoutClass', () => {
+    // Migrated (non-legacy) games route their layout class through setLayoutClass,
+    // which showScreen clears via setLayoutClass(null) on leaving the game screen.
+    setLayoutClass('uno-game-body');
     showScreen('games');
     expect(document.querySelector('.game-body').className).toBe('game-body');
   });
 
-  it('strips other known layout classes added directly, from different games', () => {
-    document.querySelector('.game-body').classList.add('geo-game-layout');
+  it('strips other layout classes set through setLayoutClass, from different games', () => {
+    setLayoutClass('geo-game-layout');
     showScreen('games');
     expect(document.querySelector('.game-body').className).toBe('game-body');
 
-    document.querySelector('.game-body').classList.add('chess-game-layout');
+    setLayoutClass('chess-game-layout');
     showScreen('games');
     expect(document.querySelector('.game-body').className).toBe('game-body');
   });
 
-  it('clears time-theme-day/night from the body added directly by guess-time-game', () => {
+  it('strips a legacy layout class a game added directly, bypassing setLayoutClass', () => {
+    // memory and double_crash are legacy games whose own showExercise calls
+    // gameBody.classList.add(...) directly; they never call setLayoutClass. Their
+    // internals are off limits, so showScreen must still clean this up on exit.
+    document.querySelector('.game-body').classList.add('memory-game-layout');
+    showScreen('games');
+    expect(document.querySelector('.game-body').className).toBe('game-body');
+
+    document.querySelector('.game-body').classList.add('crash-game-layout');
+    showScreen('games');
+    expect(document.querySelector('.game-body').className).toBe('game-body');
+  });
+
+  it('clears time-theme-day/night from the body when leaving the game screen', () => {
     document.body.classList.add('time-theme-night');
     showScreen('games');
     expect(document.body.classList.contains('time-theme-night')).toBe(false);

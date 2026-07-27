@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { I18n } from '../js/i18n/i18n.js';
 import { TRANSLATIONS, LANGUAGES } from '../js/i18n/translations.js';
 import { DiceRenderer } from '../js/render/dice.js';
-import { GAMES } from '../js/game-list.js';
+import { GAMES } from '../js/engine/registry.js';
 
 describe('ES module conversion', () => {
   it('exports the translation table for all five languages', () => {
@@ -19,9 +19,9 @@ describe('ES module conversion', () => {
   });
 
   it('exports all ten existing games', () => {
-    expect(GAMES.map(g => g.type)).toEqual([
-      'dice_addition', 'count_objects', 'uno', 'dice_recognition',
-      'countries', 'capitals', 'guess_time', 'double_crash', 'memory', 'chess',
+    expect(GAMES.map(g => g.id).sort()).toEqual([
+      'capitals', 'chess', 'count_objects', 'countries', 'dice_addition',
+      'dice_recognition', 'double_crash', 'guess_time', 'memory', 'uno',
     ]);
   });
 });

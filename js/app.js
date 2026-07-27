@@ -1,4 +1,4 @@
-import { GameList } from './game-list.js';
+import { GameList } from './engine/game-list.js';
 import { Animation } from './animation.js';
 import { I18n } from './i18n/i18n.js';
 import { showScreen, onScreenChange } from './engine/screens.js';
