@@ -13,6 +13,7 @@ export const MissingNumberGame = {
   domain: 'nombres',
   rounds: { easy: 5, normal: 10, hard: 20 },
   layoutClass: 'num-game-layout',
+  choiceClass: 'missing-number-choice-btn',
 
   generate(difficulty, ctx) {
     const { rng, t, count } = ctx;

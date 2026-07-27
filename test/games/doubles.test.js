@@ -44,6 +44,13 @@ describe('DoublesGame', () => {
       expect(ex.operand).toBeGreaterThanOrEqual(1);
       expect(ex.operand).toBeLessThanOrEqual(10);
     }
+    // hard's double operand shares normal's ceiling (MAX_N.hard === MAX_N.normal
+    // === 10) per the design spec; pin it too so a regression there is caught.
+    for (const ex of DoublesGame.generate('hard', ctx(25))) {
+      if (ex.kind !== 'double') continue;
+      expect(ex.operand).toBeGreaterThanOrEqual(1);
+      expect(ex.operand).toBeLessThanOrEqual(10);
+    }
   });
 
   it('doubles the operand on a double exercise', () => {
