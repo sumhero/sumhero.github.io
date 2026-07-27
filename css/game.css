@@ -1822,3 +1822,33 @@ body.time-theme-night {
         width: min(45vw, 60vh) !important;
     }
 }
+
+/* Subtraction: the minuend as emoji, the subtrahend greyed and struck out. */
+.sub-objects {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: min(2vw, 12px);
+    max-width: 92%;
+}
+
+.sub-object {
+    font-size: min(11vw, 11vh);
+    line-height: 1;
+    animation: object-pop 0.4s ease-out;
+}
+
+.sub-object.removed {
+    opacity: 0.35;
+    filter: grayscale(1);
+    text-decoration: line-through;
+    text-decoration-color: #f44336;
+    text-decoration-thickness: 4px;
+}
+
+@media (orientation: landscape) {
+    .sub-object {
+        font-size: min(6vw, 9vh);
+    }
+}

@@ -9,6 +9,7 @@ import { MemoryGame } from '../games/memory.js';
 import { ChessGame } from '../games/chess.js';
 import { DoubleCrashGame } from '../games/double-crash.js';
 import { ComplementsGame } from '../games/complements.js';
+import { SubtractionGame } from '../games/subtraction.js';
 
 export const DOMAINS = [
   { key: 'nombres', labelKey: 'domainNombres', emoji: '🔢' },
@@ -30,6 +31,7 @@ export const GAMES = [
   CountriesGame,
   CapitalsGame,
   ComplementsGame,
+  SubtractionGame,
 ];
 
 export function gamesByDomain() {
