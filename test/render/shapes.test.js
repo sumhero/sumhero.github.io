@@ -53,6 +53,47 @@ function diagonals(html) {
   ];
 }
 
+// Plain arithmetic on the emitted coordinates, deliberately not reusing
+// anything from js/render/shapes.js: recomputing geometry with the module's
+// own helpers would be the same circularity as importing a constant and
+// asserting against it, just dressed up as a function call.
+function sideLengths(p) {
+  return p.map((pt, i) => {
+    const next = p[(i + 1) % p.length];
+    return Math.hypot(next[0] - pt[0], next[1] - pt[1]);
+  });
+}
+
+function adjacentDots(p) {
+  const edges = p.map((pt, i) => {
+    const next = p[(i + 1) % p.length];
+    return [next[0] - pt[0], next[1] - pt[1]];
+  });
+
+  return edges.map((e, i) => {
+    const n = edges[(i + 1) % edges.length];
+    return e[0] * n[0] + e[1] * n[1];
+  });
+}
+
+// Epsilon for side-length equality, in emitted pixels. The renderer rounds
+// every coordinate to 2 decimal places, which alone can spread an otherwise
+// equal side by up to ~0.01px (measured worst case across the whole
+// rotation/scale sweep: ~0.0093px on the rhombus). 0.05px is 5x that noise
+// floor, while a real distortion (e.g. a stray per-axis scale) moves a side
+// by whole pixels at these circumradii, so it stays easily separable.
+const SIDE_EPS = 0.05;
+
+// Epsilon for "adjacent edges are perpendicular", i.e. |dot product| ~= 0, in
+// px^2. Coordinate rounding noise on the dot product scales with side length;
+// measured worst case across the sweep was ~0.57 on the rectangle's longest
+// side. 1 is comfortably above that noise floor. The rhombus's adjacent
+// edges, which must NOT be perpendicular, measured a dot product no smaller
+// than ~800 across the whole sweep — three orders of magnitude clear of this
+// epsilon, so there is no risk of the "not perpendicular" check being
+// mistaken for noise either.
+const PERP_EPS = 1;
+
 describe('shape vocabulary tables', () => {
   it('covers exactly the five CP shapes, in display order', () => {
     expect(SHAPE_KEYS).toEqual(EXPECTED_KEYS);
@@ -193,6 +234,72 @@ describe('ShapeRenderer', () => {
       for (const rotate of ALL_ROTATIONS) {
         const [a, b] = diagonals(ShapeRenderer.render(shape, { rotate }));
         expect(a / b).toBeCloseTo(1, 2);
+      }
+    }
+  });
+
+  it('keeps the carre a real square at every rotation and scale: four equal sides, right angles', () => {
+    // Constant circumradius (asserted above) holds for any regular polygon.
+    // Equal diagonals (asserted above) holds for any rectangle, and indeed
+    // for any cyclic quadrilateral with equal diagonals. Neither pins "this
+    // is a square" on its own — only equal sides *and* right angles do, so
+    // this checks both directly, at every rotation and scale, not only at 0.
+    for (const rotate of ALL_ROTATIONS) {
+      for (const scale of ALL_SCALES) {
+        const p = points(ShapeRenderer.render('square', { rotate, scale }));
+        const sides = sideLengths(p);
+        for (const side of sides) {
+          expect(Math.abs(side - sides[0])).toBeLessThan(SIDE_EPS);
+        }
+        for (const dot of adjacentDots(p)) {
+          expect(Math.abs(dot)).toBeLessThan(PERP_EPS);
+        }
+      }
+    }
+  });
+
+  it('keeps the rectangle two distinct side lengths and right angles at every rotation and scale', () => {
+    for (const rotate of ALL_ROTATIONS) {
+      for (const scale of ALL_SCALES) {
+        const p = points(ShapeRenderer.render('rectangle', { rotate, scale }));
+        const sides = sideLengths(p);
+        expect(Math.abs(sides[0] - sides[2])).toBeLessThan(SIDE_EPS);
+        expect(Math.abs(sides[1] - sides[3])).toBeLessThan(SIDE_EPS);
+        // The two lengths must actually differ, well clear of SIDE_EPS —
+        // otherwise this "rectangle" is secretly a square.
+        expect(Math.abs(sides[0] - sides[1])).toBeGreaterThan(10);
+        for (const dot of adjacentDots(p)) {
+          expect(Math.abs(dot)).toBeLessThan(PERP_EPS);
+        }
+      }
+    }
+  });
+
+  it('keeps the triangle equilateral at every rotation and scale', () => {
+    for (const rotate of ALL_ROTATIONS) {
+      for (const scale of ALL_SCALES) {
+        const sides = sideLengths(points(ShapeRenderer.render('triangle', { rotate, scale })));
+        for (const side of sides) {
+          expect(Math.abs(side - sides[0])).toBeLessThan(SIDE_EPS);
+        }
+      }
+    }
+  });
+
+  it('keeps the losange four equal sides but never lets it square up, at every rotation and scale', () => {
+    // Equal sides alone would also describe a square standing on its corner.
+    // The distinguishing fact is that a losange's adjacent sides are NOT
+    // perpendicular, and that has to survive every rotation and scale too.
+    for (const rotate of ALL_ROTATIONS) {
+      for (const scale of ALL_SCALES) {
+        const p = points(ShapeRenderer.render('rhombus', { rotate, scale }));
+        const sides = sideLengths(p);
+        for (const side of sides) {
+          expect(Math.abs(side - sides[0])).toBeLessThan(SIDE_EPS);
+        }
+        for (const dot of adjacentDots(p)) {
+          expect(Math.abs(dot)).toBeGreaterThan(50);
+        }
       }
     }
   });
