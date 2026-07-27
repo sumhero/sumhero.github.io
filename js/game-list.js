@@ -4,7 +4,7 @@ import { LANGUAGES } from './i18n/translations.js';
 import { OBJECT_CATEGORIES } from './games/object-categories.js';
 import { CountObjectsGame } from './games/count-objects.js';
 import { UnoGame } from './uno-game.js';
-import { DiceRecognitionGame } from './dice-recognition-game.js';
+import { DiceRecognitionGame } from './games/dice-recognition.js';
 import { CountriesGame } from './countries-game.js';
 import { CapitalsGame } from './capitals-game.js';
 import { GuessTimeGame } from './guess-time-game.js';
@@ -115,7 +115,7 @@ export const GameList = {
                 } else if (this.selectedGame === 'uno') {
                     UnoGame.start(this.getDifficulty());
                 } else if (this.selectedGame === 'dice_recognition') {
-                    DiceRecognitionGame.start(this.getDifficulty());
+                    GameEngine.start(DiceRecognitionGame, { difficulty: this.getDifficulty() });
                 } else if (this.selectedGame === 'countries') {
                     CountriesGame.start(this.getDifficulty());
                 } else if (this.selectedGame === 'capitals') {
