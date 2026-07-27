@@ -10,7 +10,7 @@ import { CapitalsGame } from './games/capitals.js';
 import { GuessTimeGame } from './games/guess-time.js';
 import { DoubleCrashGame } from './double-crash-game.js';
 import { MemoryGame } from './memory-game.js';
-import { ChessGame } from './chess-game.js';
+import { ChessGame } from './games/chess.js';
 import { GameEngine } from './engine/game-engine.js';
 import { DiceAdditionGame } from './games/dice-addition.js';
 
@@ -127,7 +127,7 @@ export const GameList = {
                 } else if (this.selectedGame === 'memory') {
                     MemoryGame.start(this.getDifficulty());
                 } else if (this.selectedGame === 'chess') {
-                    ChessGame.start(this.getDifficulty());
+                    GameEngine.start(ChessGame, { difficulty: this.getDifficulty() });
                 } else {
                     this.showPicker();
                 }
