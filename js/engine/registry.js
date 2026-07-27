@@ -8,6 +8,11 @@ import { GuessTimeGame } from '../games/guess-time.js';
 import { MemoryGame } from '../games/memory.js';
 import { ChessGame } from '../games/chess.js';
 import { DoubleCrashGame } from '../games/double-crash.js';
+import { ComplementsGame } from '../games/complements.js';
+import { SubtractionGame } from '../games/subtraction.js';
+import { DoublesGame } from '../games/doubles.js';
+import { CompareGame } from '../games/compare.js';
+import { MissingNumberGame } from '../games/missing-number.js';
 
 export const DOMAINS = [
   { key: 'nombres', labelKey: 'domainNombres', emoji: '🔢' },
@@ -28,6 +33,11 @@ export const GAMES = [
   DoubleCrashGame,
   CountriesGame,
   CapitalsGame,
+  ComplementsGame,
+  SubtractionGame,
+  DoublesGame,
+  CompareGame,
+  MissingNumberGame,
 ];
 
 export function gamesByDomain() {

@@ -1,4 +1,4 @@
-const CACHE_VERSION = '2026072720';
+const CACHE_VERSION = '2026072727';
 const CACHE_NAME = `sumhero-v${CACHE_VERSION}`;
 
 const ASSETS = [
@@ -16,19 +16,25 @@ const ASSETS = [
   "/js/engine/speech.js",
   "/js/games/capitals.js",
   "/js/games/chess.js",
+  "/js/games/compare.js",
+  "/js/games/complements.js",
   "/js/games/count-objects.js",
   "/js/games/countries.js",
   "/js/games/dice-addition.js",
   "/js/games/dice-recognition.js",
   "/js/games/double-crash.js",
+  "/js/games/doubles.js",
   "/js/games/guess-time.js",
   "/js/games/memory.js",
+  "/js/games/missing-number.js",
   "/js/games/object-categories.js",
+  "/js/games/subtraction.js",
   "/js/games/uno.js",
   "/js/i18n/i18n.js",
   "/js/i18n/translations.js",
   "/js/render/clock.js",
   "/js/render/dice.js",
+  "/js/render/ten-frame.js",
   "/js/sound.js",
   "/css/game.css",
   "/images/icon-192.png",

@@ -1770,3 +1770,213 @@ body.time-theme-night {
         font-size: min(3vw, 5vh);
     }
 }
+
+/* Shared layout for the CP number games (complements, subtraction, doubles,
+   missing number): a stacked prompt above the default five-choice grid. */
+.num-game-layout .dice-container {
+    flex-direction: column;
+    flex: 1;
+    gap: min(2vh, 12px);
+}
+
+.op-question {
+    font-size: min(9vw, 7vh);
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+.op-hint {
+    font-size: min(4.5vw, 3.5vh);
+    color: rgba(255,255,255,0.9);
+    text-align: center;
+}
+
+/* The ten-frame is a wide rectangle; the default `.dice-container svg` rule
+   sizes svgs square, so override both axes. */
+.ten-frame {
+    width: min(80vw, 42vh) !important;
+    height: auto !important;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
+
+@media (orientation: landscape) {
+    .num-game-layout {
+        flex-direction: row !important;
+    }
+
+    .num-game-layout .dice-container {
+        flex: 2;
+    }
+
+    .op-question {
+        font-size: min(5vw, 9vh);
+    }
+
+    .op-hint {
+        font-size: min(2.5vw, 4vh);
+    }
+
+    .ten-frame {
+        width: min(45vw, 60vh) !important;
+    }
+}
+
+/* Subtraction: the minuend as emoji, the subtrahend greyed and struck out. */
+.sub-objects {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: min(2vw, 12px);
+    max-width: 92%;
+}
+
+.sub-object {
+    font-size: min(11vw, 11vh);
+    line-height: 1;
+    animation: object-pop 0.4s ease-out;
+}
+
+.sub-object.removed {
+    opacity: 0.35;
+    filter: grayscale(1);
+    text-decoration: line-through;
+    text-decoration-color: #f44336;
+    text-decoration-thickness: 4px;
+}
+
+@media (orientation: landscape) {
+    .sub-object {
+        font-size: min(6vw, 9vh);
+    }
+}
+
+/* Doubles/halves ask a full sentence rather than an equation, so it needs to
+   wrap instead of overflowing the prompt area. */
+.num-game-layout .op-question {
+    max-width: 92%;
+    line-height: 1.2;
+}
+
+/* Compare: two collections or numerals with a gap, answered with three
+   sign buttons instead of the default five-choice grid. */
+.compare-layout .dice-container {
+    flex-direction: column;
+    flex: 1;
+    gap: min(2vh, 12px);
+}
+
+.compare-layout .choices-container {
+    grid-template-columns: repeat(3, 1fr) !important;
+}
+
+.compare-choice-btn {
+    font-size: min(14vw, 12vh) !important;
+}
+
+.compare-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: min(5vw, 32px);
+    width: 100%;
+}
+
+.compare-side {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.compare-gap {
+    font-size: min(10vw, 9vh);
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.compare-number {
+    font-size: min(16vw, 14vh);
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.compare-objects {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: min(1.5vw, 8px);
+}
+
+.compare-object {
+    font-size: min(7vw, 7vh);
+    line-height: 1;
+}
+
+@media (orientation: landscape) {
+    .compare-layout {
+        flex-direction: row !important;
+    }
+
+    .compare-layout .dice-container {
+        flex: 2;
+    }
+
+    .compare-layout .choices-container {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: repeat(3, 1fr) !important;
+        align-content: center !important;
+    }
+
+    .compare-choice-btn {
+        font-size: min(6vw, 12vh) !important;
+    }
+
+    .compare-number {
+        font-size: min(9vw, 16vh);
+    }
+
+    .compare-object {
+        font-size: min(4vw, 7vh);
+    }
+}
+
+/* Missing number: a short run of a sequence with one term blanked. */
+.sequence-run {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: min(4vw, 24px);
+}
+
+.sequence-term {
+    font-size: min(11vw, 9vh);
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.sequence-term.blank {
+    color: #ffd54f;
+    border-bottom: 4px solid #ffd54f;
+    padding: 0 min(2vw, 12px);
+}
+
+/* Hard reaches 100, so three-digit choices must not overflow their button. */
+.num-game-layout .missing-number-choice-btn {
+    font-size: min(6.5vw, 6.5vh);
+}
+
+@media (orientation: landscape) {
+    .sequence-term {
+        font-size: min(6vw, 11vh);
+    }
+
+    .num-game-layout .missing-number-choice-btn {
+        font-size: min(4vw, 8vh);
+    }
+}
