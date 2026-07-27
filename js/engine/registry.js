@@ -19,6 +19,7 @@ import { NumberWordsGame } from '../games/number-words.js';
 import { WordProblemsGame } from '../games/word-problems.js';
 import { ShapesGame } from '../games/shapes.js';
 import { ParityGame } from '../games/parity.js';
+import { OrderingGame } from '../games/ordering.js';
 
 export const DOMAINS = [
   { key: 'nombres', labelKey: 'domainNombres', emoji: '🔢' },
@@ -50,6 +51,7 @@ export const GAMES = [
   WordProblemsGame,
   ShapesGame,
   ParityGame,
+  OrderingGame,
 ];
 
 // domains/games default to the real registry; a test can pass its own

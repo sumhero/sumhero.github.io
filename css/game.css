@@ -2301,3 +2301,71 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
         font-size: min(4vw, 9vh);
     }
 }
+
+/* Ranger dans l'ordre. The tiles replace the default five-column choice grid
+   with a centred flex row, so three tiles and five tiles both look deliberate
+   rather than left-aligned in a five-slot grid. Each tile keeps the base
+   `.choice-btn` class, so `.choice-btn.wrong` and `.choice-btn.correct` supply
+   the app's shared shake and pulse with nothing reimplemented. */
+.ordering-layout .dice-container {
+    flex-direction: column;
+    flex: 1;
+    gap: min(2vh, 12px);
+}
+
+.ordering-arrow {
+    font-size: min(20vw, 18vh);
+    line-height: 1;
+}
+
+.ordering-layout .choices-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: min(3vw, 16px);
+}
+
+.ordering-layout .ordering-tile {
+    position: relative;
+    flex: 1 1 0;
+    max-width: min(24vw, 20vh);
+    font-size: min(8vw, 7vh);
+}
+
+.ordering-layout .ordering-tile.picked {
+    background: #ffe082;
+    transform: scale(0.94);
+}
+
+.ordering-rank {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    font-size: min(3.5vw, 3vh);
+    font-weight: 700;
+    color: #2e5c8a;
+    line-height: 1;
+}
+
+@media (orientation: landscape) {
+    .ordering-layout {
+        flex-direction: row !important;
+    }
+
+    .ordering-layout .dice-container {
+        flex: 2;
+    }
+
+    .ordering-arrow {
+        font-size: min(10vw, 22vh);
+    }
+
+    .ordering-layout .choices-container {
+        align-items: center;
+    }
+
+    .ordering-layout .ordering-tile {
+        max-width: min(14vw, 26vh);
+        font-size: min(4vw, 9vh);
+    }
+}
