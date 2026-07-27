@@ -9,9 +9,9 @@ describe('registry', () => {
 
   it('registers every game', () => {
     expect(GAMES.map(g => g.id).sort()).toEqual([
-      'capitals', 'chess', 'complements', 'count_objects', 'countries',
-      'dice_addition', 'dice_recognition', 'double_crash', 'doubles',
-      'guess_time', 'memory', 'subtraction', 'uno',
+      'capitals', 'chess', 'compare', 'complements', 'count_objects',
+      'countries', 'dice_addition', 'dice_recognition', 'double_crash',
+      'doubles', 'guess_time', 'memory', 'subtraction', 'uno',
     ]);
   });
 
@@ -43,7 +43,7 @@ describe('registry', () => {
     expect(grouped.map(g => g.domain.key))
       .toEqual(['nombres', 'mesures', 'logique', 'monde']);
     expect(grouped[0].games.map(g => g.id))
-      .toEqual(['dice_addition', 'count_objects', 'dice_recognition', 'complements', 'subtraction', 'doubles']);
+      .toEqual(['dice_addition', 'count_objects', 'dice_recognition', 'complements', 'subtraction', 'doubles', 'compare']);
     expect(grouped[1].games.map(g => g.id)).toEqual(['guess_time']);
     expect(grouped[2].games.map(g => g.id))
       .toEqual(['uno', 'memory', 'chess', 'double_crash']);

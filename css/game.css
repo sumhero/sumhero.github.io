@@ -1859,3 +1859,87 @@ body.time-theme-night {
     max-width: 92%;
     line-height: 1.2;
 }
+
+/* Compare: two collections or numerals with a gap, answered with three
+   sign buttons instead of the default five-choice grid. */
+.compare-layout .dice-container {
+    flex-direction: column;
+    flex: 1;
+    gap: min(2vh, 12px);
+}
+
+.compare-layout .choices-container {
+    grid-template-columns: repeat(3, 1fr) !important;
+}
+
+.compare-choice-btn {
+    font-size: min(14vw, 12vh) !important;
+}
+
+.compare-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: min(5vw, 32px);
+    width: 100%;
+}
+
+.compare-side {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.compare-gap {
+    font-size: min(10vw, 9vh);
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.compare-number {
+    font-size: min(16vw, 14vh);
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.compare-objects {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: min(1.5vw, 8px);
+}
+
+.compare-object {
+    font-size: min(7vw, 7vh);
+    line-height: 1;
+}
+
+@media (orientation: landscape) {
+    .compare-layout {
+        flex-direction: row !important;
+    }
+
+    .compare-layout .dice-container {
+        flex: 2;
+    }
+
+    .compare-layout .choices-container {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: repeat(3, 1fr) !important;
+        align-content: center !important;
+    }
+
+    .compare-choice-btn {
+        font-size: min(6vw, 12vh) !important;
+    }
+
+    .compare-number {
+        font-size: min(9vw, 16vh);
+    }
+
+    .compare-object {
+        font-size: min(4vw, 7vh);
+    }
+}

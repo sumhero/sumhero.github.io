@@ -1,4 +1,4 @@
-const CACHE_VERSION = '2026072724';
+const CACHE_VERSION = '2026072725';
 const CACHE_NAME = `sumhero-v${CACHE_VERSION}`;
 
 const ASSETS = [
@@ -16,6 +16,7 @@ const ASSETS = [
   "/js/engine/speech.js",
   "/js/games/capitals.js",
   "/js/games/chess.js",
+  "/js/games/compare.js",
   "/js/games/complements.js",
   "/js/games/count-objects.js",
   "/js/games/countries.js",
