@@ -2220,3 +2220,84 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
         font-size: min(4vw, 8vh);
     }
 }
+
+/* Pair ou impair. Two choices, not five, so the grid is overridden — and the
+   labels are words rather than digits, so the square aspect-ratio the default
+   `.choice-btn` imposes is dropped. On easy the objects are laid out as
+   complete pairs with any odd one left visibly alone. */
+.parity-layout .dice-container {
+    flex-direction: column;
+    flex: 1;
+    gap: min(2vh, 12px);
+}
+
+.parity-layout .op-question {
+    font-size: min(26vw, 20vh);
+    line-height: 1;
+}
+
+.parity-pairs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: min(4vw, 24px);
+    max-width: 94%;
+}
+
+.parity-pair {
+    display: flex;
+    gap: min(0.6vw, 4px);
+    padding: min(1.2vw, 8px);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.18);
+}
+
+.parity-lonely {
+    background: rgba(255,255,255,0.4);
+    outline: 3px dashed rgba(255,255,255,0.85);
+    outline-offset: 2px;
+}
+
+.parity-object {
+    font-size: min(7vw, 6vh);
+    line-height: 1;
+}
+
+.parity-layout .choices-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+
+.parity-layout .parity-choice-btn {
+    aspect-ratio: auto;
+    font-size: min(8vw, 6vh);
+    padding: min(3vh, 20px) 8px;
+}
+
+@media (orientation: landscape) {
+    .parity-layout {
+        flex-direction: row !important;
+    }
+
+    .parity-layout .dice-container {
+        flex: 2;
+    }
+
+    .parity-layout .op-question {
+        font-size: min(14vw, 30vh);
+    }
+
+    .parity-object {
+        font-size: min(4vw, 8vh);
+    }
+
+    .parity-layout .choices-container {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: repeat(2, 1fr) !important;
+        align-content: center !important;
+    }
+
+    .parity-layout .parity-choice-btn {
+        font-size: min(4vw, 9vh);
+    }
+}
