@@ -51,4 +51,19 @@ describe('registry', () => {
   it('leaves geometrie empty until Tier 3 adds shapes', () => {
     expect(gamesByDomain().map(g => g.domain.key)).not.toContain('geometrie');
   });
+
+  it('gives every game at most one dispatch-selecting field, since the chooser checks them in a fixed order', () => {
+    // GameList.load() branches on legacy / setup === 'category' / rounds === 'ask' in that
+    // order. The order is only safe because no game today sets more than one of these — if
+    // a future game combined two, the chooser's fixed branch order would silently decide
+    // which one wins. This test exists to fail loudly at that point instead.
+    for (const game of GAMES) {
+      const dispatchFields = [
+        game.legacy === true,
+        game.setup === 'category',
+        game.rounds === 'ask',
+      ].filter(Boolean).length;
+      expect(dispatchFields).toBeLessThanOrEqual(1);
+    }
+  });
 });

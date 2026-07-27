@@ -2,8 +2,6 @@ import { App } from '../app.js';
 import { I18n } from '../i18n/i18n.js';
 import { LANGUAGES } from '../i18n/translations.js';
 import { OBJECT_CATEGORIES } from '../games/object-categories.js';
-import { CountObjectsGame } from '../games/count-objects.js';
-import { DiceAdditionGame } from '../games/dice-addition.js';
 import { GameEngine } from './game-engine.js';
 import { showScreen } from './screens.js';
 import { GAMES, gamesByDomain } from './registry.js';

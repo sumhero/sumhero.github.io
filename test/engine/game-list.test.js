@@ -81,4 +81,29 @@ describe('GameList.load', () => {
     expect(document.getElementById('screen-category').classList.contains('active')).toBe(true);
     expect(spy).not.toHaveBeenCalled();
   });
+
+  it('starts dice_addition through GameEngine with the picked count once a picker button is clicked', () => {
+    const spy = vi.spyOn(GameEngine, 'start').mockImplementation(() => {});
+    GameList.load();
+    document.querySelector('[data-id="dice_addition"]').click();
+    const buttons = document.querySelectorAll('#exercise-picker .picker-btn');
+    buttons[4].click(); // fifth button, labelled "5"
+
+    expect(spy).toHaveBeenCalledOnce();
+    expect(spy.mock.calls[0][0].id).toBe('dice_addition');
+    expect(spy.mock.calls[0][1].count).toBe(5);
+  });
+
+  it('starts count_objects through GameEngine with the picked category once a category button is clicked', () => {
+    const spy = vi.spyOn(GameEngine, 'start').mockImplementation(() => {});
+    GameList.load();
+    document.querySelector('[data-id="count_objects"]').click();
+    const button = document.querySelector('#category-picker .category-btn');
+    const category = button.dataset.category;
+    button.click();
+
+    expect(spy).toHaveBeenCalledOnce();
+    expect(spy.mock.calls[0][0].id).toBe('count_objects');
+    expect(spy.mock.calls[0][1].category).toBe(category);
+  });
 });
