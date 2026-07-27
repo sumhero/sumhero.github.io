@@ -1,4 +1,5 @@
 import { CoinRenderer } from '../render/coins.js';
+import { drawDistinct } from '../engine/unique.js';
 
 // Whole euros only — no cents. Decimal money is CE1 material.
 const DENOMINATIONS = [1, 2, 5, 10, 20];
@@ -20,16 +21,22 @@ export const MoneyGame = {
   layoutClass: 'money-game-layout',
   choiceClass: 'money-choice-btn',
 
+  // The identity of a money exercise depends on the mode. In count mode the
+  // question *is* the purse, so two purses that both total 12 with different
+  // coins are different exercises — keying on the total would collapse easy's
+  // 23 purses to about 9 reachable totals and make an achievable band
+  // impossible. In pay mode the question is the price; the distractor purses
+  // are redrawn every round and are not part of it. Hard has eighteen prices
+  // against twenty rounds, so it lives in drawDistinct's refill path.
   generate(difficulty, ctx) {
     const { rng, t, count } = ctx;
     const config = CONFIG[difficulty];
-    const exercises = [];
 
-    for (let i = 0; i < count; i++) {
-      exercises.push(config.pay ? buildPayment(rng, t) : buildCount(config, rng, t));
-    }
-
-    return exercises;
+    return drawDistinct(
+      count,
+      () => (config.pay ? buildPayment(rng, t) : buildCount(config, rng, t)),
+      exercise => (exercise.pay ? String(exercise.target) : exercise.coins.join('-'))
+    );
   },
 };
 

@@ -210,4 +210,45 @@ describe('MoneyGame', () => {
       }
     });
   });
+
+  it('never offers the same purse twice in a counting session', () => {
+    // easy and normal are count mode: the question is the purse, so two purses
+    // that both total 12 with different coins are different exercises. 23 and
+    // 74 distinct purses against 5 and 10 rounds — full distinctness held in
+    // 500 000 of 500 000 simulated sessions, so this is a hard assertion.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10]]) {
+      for (let session = 0; session < 20; session++) {
+        const keys = MoneyGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.coins.join('-'));
+
+        expect(new Set(keys).size, difficulty).toBe(rounds);
+      }
+    }
+  });
+
+  it('never asks for the same price twice in a row on hard', () => {
+    // buildPayment draws target from 3..20 — eighteen prices against twenty
+    // rounds, so uniqueness is impossible and back-to-back avoidance is the
+    // whole promise. Before this change 66.1% of hard sessions repeated a
+    // price back-to-back.
+    for (let session = 0; session < 20; session++) {
+      const targets = MoneyGame.generate('hard', ctx(20)).map(ex => ex.target);
+
+      for (let i = 1; i < targets.length; i++) {
+        expect(targets[i], 'round ' + i).not.toBe(targets[i - 1]);
+      }
+    }
+  });
+
+  it('spreads a hard session across most of the price range', () => {
+    // Independent literal: the space is eighteen prices (3..20) and the worst
+    // coverage seen in 500 000 simulated sessions was fourteen, so thirteen is
+    // a floor with headroom. Not "all twenty distinct" — that is arithmetically
+    // impossible and a test asserting it would be a lie.
+    for (let session = 0; session < 20; session++) {
+      const targets = MoneyGame.generate('hard', ctx(20)).map(ex => ex.target);
+
+      expect(new Set(targets).size).toBeGreaterThanOrEqual(13);
+    }
+  });
 });
