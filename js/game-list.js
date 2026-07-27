@@ -3,7 +3,7 @@ import { I18n } from './i18n/i18n.js';
 import { LANGUAGES } from './i18n/translations.js';
 import { OBJECT_CATEGORIES } from './games/object-categories.js';
 import { CountObjectsGame } from './games/count-objects.js';
-import { UnoGame } from './uno-game.js';
+import { UnoGame } from './games/uno.js';
 import { DiceRecognitionGame } from './games/dice-recognition.js';
 import { CountriesGame } from './countries-game.js';
 import { CapitalsGame } from './capitals-game.js';
@@ -113,7 +113,7 @@ export const GameList = {
                 if (this.selectedGame === 'count_objects') {
                     this.showCategoryPicker();
                 } else if (this.selectedGame === 'uno') {
-                    UnoGame.start(this.getDifficulty());
+                    GameEngine.start(UnoGame, { difficulty: this.getDifficulty() });
                 } else if (this.selectedGame === 'dice_recognition') {
                     GameEngine.start(DiceRecognitionGame, { difficulty: this.getDifficulty() });
                 } else if (this.selectedGame === 'countries') {
