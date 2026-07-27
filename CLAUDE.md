@@ -12,6 +12,9 @@ all auth, API, and result-storage code was intentionally removed (see
 `.claude/plans/structured-snacking-nygaard.md`), and later from ten
 copy-pasted games onto a shared `GameEngine` (see
 `.claude/superpowers/specs/2026-07-26-gameengine-and-cp-math-games-design.md`).
+That programme is now complete: all twelve new CP games shipped across four
+checkpoints, and `GameEngine` was never modified after checkpoint 1 — every
+game from checkpoint 2 onward fitted the seams it already had.
 
 ## Running locally
 
@@ -58,6 +61,9 @@ js/
                           and unit-cubes
     coins.js             CoinRenderer.render(denominations) — SVG euro coins
                           and notes (whole euros only: 1, 2, 5, 10, 20)
+    shapes.js            ShapeRenderer.render(shape, options) — SVG square,
+                          rectangle, triangle, circle and losange, with
+                          rotation and scale baked into the coordinates
   data/
     countries.js         Country/capital data for the geography games
     number-words.js      numberToWords(n, lang) — 1–100 spelled out in all
@@ -101,7 +107,28 @@ js/
   - `renderPrompt(el, exercise, submit)` — custom prompt rendering instead of
     `exercise.promptHtml` (used by `chess`).
   - `renderChoices(el, exercise, submit)` — custom choice rendering instead
-    of the default button grid (used by `chess`, `uno`).
+    of the default button grid (used by `chess`, `uno`, `ordering`).
+    - **`submit(value, btn)`'s second argument is optional, and that is what
+      makes multi-tap interactions possible.** `ordering` (tap 3–5 numbers in
+      sequence) accumulates taps in a closure and calls `submit(...)` exactly
+      once per attempt with the whole ordering and **no `btn`**. With no
+      button, `answer()` never enters `if (btn && btn.dataset.wrongChoice)`
+      and never executes `btn.dataset.wrongChoice = '1'`, so the per-button
+      wrong-answer latch — the thing that forced `memory` to go `legacy: true`,
+      because a latched tile could never be tapped correctly afterwards — is
+      never reached. Passing a button here would not hang `ordering` the way it
+      hung `memory` (a sequencing game decides for itself which taps it
+      accepts), but it would silently under-count: the game's own reset cannot
+      clear the engine's private `dataset.wrongChoice`, so every repeat wrong
+      tap of that tile after the first returns before `wrongAttempts++`. In exchange the
+      game owns what the engine skips when there is no button: the `.wrong`
+      and `.correct` classes, and clearing its own tap state so the child can
+      retry. The engine still counts the attempt and plays the sound.
+    - A game taking this route needs no `isCorrect` if it makes
+      `correctAnswer` a single comparable value — `ordering` joins the required
+      sequence with commas (`'2,5,9'`) and submits the tapped sequence the same
+      way, so the engine's default `value === exercise.correctAnswer` is
+      already an exact ordering comparison.
   - `isCorrect(value, exercise)` — custom correctness check instead of
     `value === exercise.correctAnswer` (used by `chess`).
   - `layoutClass` — a class `GameEngine.start` applies to `.game-body` for
@@ -165,7 +192,12 @@ js/
     single-choice) doesn't fit anyway.
   - If a future game doesn't fit the engine either, the documented fallback
     is the same: mark it `legacy: true` rather than distorting the shared
-    loop for one game.
+    loop for one game. Try the `renderChoices` route first, though:
+    `ordering` looked like the next `legacy` candidate — a sequencing
+    interaction where `memory`'s wrong-tap latch should have applied — and
+    turned out to fit unchanged, because a custom renderer that submits once
+    per attempt without a `btn` never reaches the latch at all. Only two
+    games remain legacy.
 - **i18n**: every user-facing string goes through `I18n.t('key')`
   (`js/i18n/i18n.js`); add the key to all five language blocks in
   `js/i18n/translations.js` (en is the fallback).

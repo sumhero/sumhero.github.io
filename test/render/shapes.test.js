@@ -79,9 +79,10 @@ function adjacentDots(p) {
 // Epsilon for side-length equality, in emitted pixels. The renderer rounds
 // every coordinate to 2 decimal places, which alone can spread an otherwise
 // equal side by up to ~0.01px (measured worst case across the whole
-// rotation/scale sweep: ~0.0093px on the rhombus). 0.05px is 5x that noise
-// floor, while a real distortion (e.g. a stray per-axis scale) moves a side
-// by whole pixels at these circumradii, so it stays easily separable.
+// rotation/scale sweep: ~0.0167px on the triangle — the rhombus's worst case
+// is smaller, ~0.0093px). 0.05px is ~3x that noise floor, while a real
+// distortion (e.g. a stray per-axis scale) moves a side by whole pixels at
+// these circumradii, so it stays easily separable.
 const SIDE_EPS = 0.05;
 
 // Epsilon for "adjacent edges are perpendicular", i.e. |dot product| ~= 0, in

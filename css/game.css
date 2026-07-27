@@ -2313,7 +2313,7 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
     gap: min(2vh, 12px);
 }
 
-.ordering-arrow {
+.ordering-layout .ordering-arrow {
     font-size: min(20vw, 18vh);
     line-height: 1;
 }
@@ -2337,7 +2337,7 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
     transform: scale(0.94);
 }
 
-.ordering-rank {
+.ordering-layout .ordering-rank {
     position: absolute;
     top: 4px;
     right: 6px;
@@ -2356,7 +2356,7 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
         flex: 2;
     }
 
-    .ordering-arrow {
+    .ordering-layout .ordering-arrow {
         font-size: min(10vw, 22vh);
     }
 
