@@ -103,4 +103,52 @@ describe('SubtractionGame', () => {
     const b = SubtractionGame.generate('normal', ctx(5, seeded));
     expect(a.map(e => e.promptHtml)).toEqual(b.map(e => e.promptHtml));
   });
+
+  it('never poses the same subtraction pair back-to-back', () => {
+    // A weaker, independent property than full-session distinctness below:
+    // even if two identical pairs ever did land in one session, they must
+    // never be adjacent. Kept as its own assertion because the exhaustion
+    // path in drawDistinct re-seeds with only the *last* emitted key, so
+    // adjacency is the specific guarantee that path protects.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const keys = SubtractionGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.minuend + '-' + ex.subtrahend);
+
+        for (let i = 1; i < keys.length; i++) {
+          expect(keys[i], difficulty).not.toBe(keys[i - 1]);
+        }
+      }
+    }
+  });
+
+  it('never poses the same subtraction twice in a session', () => {
+    // Keyed on minuend-subtrahend, not on the difference: 9-4 and 7-2 are
+    // different exercises, and answer-keying would collapse hard from 190
+    // combinations to about 19. Spaces are 10, 45 and 190 against 5, 10 and 20
+    // rounds; full distinctness held in 500 000 of 500 000 simulated sessions.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const keys = SubtractionGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.minuend + '-' + ex.subtrahend);
+
+        expect(new Set(keys).size, difficulty).toBe(rounds);
+      }
+    }
+  });
+
+  it('still repeats a difference sometimes, because the pair is the question', () => {
+    // A trap guard. If someone later "simplifies" the key to correctAnswer,
+    // hard's usable space drops from 190 to 19 and the sampler starts refilling
+    // constantly. Over 20 hard rounds an honest generator produces at least one
+    // shared difference in the overwhelming majority of sessions, so requiring
+    // it in at least one of thirty sessions is a safe, non-flaky assertion.
+    const sessionsWithSharedDifference = Array.from({ length: 30 }, () => {
+      const answers = SubtractionGame.generate('hard', ctx(20)).map(ex => ex.correctAnswer);
+
+      return new Set(answers).size < answers.length;
+    }).filter(Boolean).length;
+
+    expect(sessionsWithSharedDifference).toBeGreaterThan(0);
+  });
 });

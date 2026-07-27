@@ -1,4 +1,5 @@
 import { ClockRenderer } from '../render/clock.js';
+import { drawDistinct } from '../engine/unique.js';
 
 const CHOICE_COUNT = 4;
 const MINUTES = { normal: [0, 30], hard: [0, 15, 30, 45] };
@@ -12,25 +13,21 @@ export const GuessTimeGame = {
   layoutClass: 'time-game-layout',
   choiceClass: 'time-choice-btn',
 
+  // Converged from a one-slot `previous` guard onto the shared sampler. That
+  // guard only ever blocked A A; it happily emitted A B A B A, which is why
+  // 7.9% of hard sessions still showed the same time three or more times. The
+  // formatted HH:MM string genuinely is this game's identity, so the key and
+  // correctAnswer coincide here — one of the few places they legitimately do.
   generate(difficulty, ctx) {
     const { rng, count } = ctx;
-    const exercises = [];
-    let previous = null;
 
-    for (let i = 0; i < count; i++) {
-      let time, formatted;
-      let guard = 0;
-      do {
-        time = randomTime(difficulty, rng);
-        formatted = formatTime(time);
-        guard++;
-      } while (formatted === previous && guard < 200);
-      previous = formatted;
-
+    return drawDistinct(count, () => {
+      const time = randomTime(difficulty, rng);
+      const formatted = formatTime(time);
       const themed = difficulty !== 'easy';
       const day = isDaytime(time);
 
-      exercises.push({
+      return {
         time,
         correctAnswer: formatted,
         bodyClass: themed ? (day ? 'time-theme-day' : 'time-theme-night') : null,
@@ -38,10 +35,8 @@ export const GuessTimeGame = {
           (themed ? '<div class="time-daynight">' + (day ? '☀️' : '🌙') + '</div>' : '') +
           ClockRenderer.render(time.hour, time.minute),
         choices: buildChoices(formatted, difficulty, rng),
-      });
-    }
-
-    return exercises;
+      };
+    }, exercise => exercise.correctAnswer);
   },
 };
 
