@@ -2,7 +2,17 @@ import { OBJECT_CATEGORIES } from './object-categories.js';
 
 const CHOICE_CEILING = { easy: 10, normal: 20, hard: 20 };
 const MAX_TWO_STEP = 20;
+// Every addAdd total is at least this, so hard's two-step problems are
+// genuinely harder than normal's one-step-within-20 range rather than
+// occasionally trivial (e.g. 1+1+1).
+const MIN_TWO_STEP_TOTAL = 12;
 const CHOICE_COUNT = 5;
+// No quantity that is spoken aloud inside a sentence may be 1: every
+// template's verb agrees with a plural/invariant count ("il y en avait {a}",
+// "es waren {a} da", "було {a}") and breaks for a singular count in all five
+// languages (fr "est arrivé", de "war"/"kam", uk/ru gendered singular verbs).
+// Every generator below keeps its interpolated a/b/c at 2 or above instead.
+const MIN_SPOKEN_COUNT = 2;
 
 export const WordProblemsGame = {
   id: 'word_problems',
@@ -54,37 +64,49 @@ function buildStory(difficulty, rng) {
 }
 
 function addStory(max, rng) {
-  const a = 1 + Math.floor(rng() * (max - 1));
-  const b = 1 + Math.floor(rng() * (max - a));
+  // Both a and b are spoken, so both stay at 2 or above; a leaves room for
+  // b >= 2 to still fit under max.
+  const a = MIN_SPOKEN_COUNT + Math.floor(rng() * (max - 2 * MIN_SPOKEN_COUNT + 1));
+  const b = MIN_SPOKEN_COUNT + Math.floor(rng() * (max - a - MIN_SPOKEN_COUNT + 1));
 
   return { kind: 'add', key: 'wpAdd', a, b, c: null, answer: a + b, params: { a, b } };
 }
 
 function subStory(max, rng) {
-  const a = 2 + Math.floor(rng() * (max - 1));
-  // 1..a-1, so at least one is left and the answer is never zero.
-  const b = 1 + Math.floor(rng() * (a - 1));
+  // b is spoken and must be >= 2, and b <= a - 1 (so the answer is never
+  // zero), so a needs at least one more headroom slot than b's minimum,
+  // hence a's floor is MIN_SPOKEN_COUNT + 1.
+  const a = (MIN_SPOKEN_COUNT + 1) + Math.floor(rng() * (max - MIN_SPOKEN_COUNT));
+  // MIN_SPOKEN_COUNT..a-1, so at least one is left, the answer is never
+  // zero, and b is never the spoken singular.
+  const b = MIN_SPOKEN_COUNT + Math.floor(rng() * (a - MIN_SPOKEN_COUNT));
 
   return { kind: 'sub', key: 'wpSub', a, b, c: null, answer: a - b, params: { a, b } };
 }
 
 function addAddStory(rng) {
-  // Split a total into three parts of at least one each, so both steps are
-  // real and nothing goes negative.
-  const total = 3 + Math.floor(rng() * (MAX_TWO_STEP - 2));
-  const a = 1 + Math.floor(rng() * (total - 2));
-  const b = 1 + Math.floor(rng() * (total - a - 1));
-  const c = total - a - b;
+  // Split a total into three spoken parts of at least MIN_SPOKEN_COUNT each,
+  // so both steps are real, nothing goes negative, and no part is ever the
+  // spoken singular. The total itself starts at MIN_TWO_STEP_TOTAL so hard
+  // stays genuinely harder than normal's one-step-within-20 range.
+  const total = MIN_TWO_STEP_TOTAL + Math.floor(rng() * (MAX_TWO_STEP - MIN_TWO_STEP_TOTAL + 1));
+  // a leaves at least 2 * MIN_SPOKEN_COUNT behind so both b and c can still
+  // be >= MIN_SPOKEN_COUNT.
+  const a = MIN_SPOKEN_COUNT + Math.floor(rng() * (total - 3 * MIN_SPOKEN_COUNT + 1));
+  const remaining = total - a;
+  const b = MIN_SPOKEN_COUNT + Math.floor(rng() * (remaining - 2 * MIN_SPOKEN_COUNT + 1));
+  const c = remaining - b;
 
   return { kind: 'addAdd', key: 'wpAddAdd', a, b, c, answer: total, params: { a, b, c } };
 }
 
 function addSubStory(rng) {
-  // a + b <= 19 keeps the intermediate total inside 20; c <= a + b - 1 keeps
-  // the final answer at one or more.
-  const a = 1 + Math.floor(rng() * (MAX_TWO_STEP - 2));
-  const b = 1 + Math.floor(rng() * (MAX_TWO_STEP - 1 - a));
-  const c = 1 + Math.floor(rng() * (a + b - 1));
+  // a + b <= MAX_TWO_STEP keeps the intermediate total inside 20; c is
+  // spoken and stays at 2 or above, capped so the final answer is at least
+  // one (c <= a + b - 1).
+  const a = MIN_SPOKEN_COUNT + Math.floor(rng() * (MAX_TWO_STEP - 2 * MIN_SPOKEN_COUNT + 1));
+  const b = MIN_SPOKEN_COUNT + Math.floor(rng() * (MAX_TWO_STEP - a - MIN_SPOKEN_COUNT + 1));
+  const c = MIN_SPOKEN_COUNT + Math.floor(rng() * (a + b - MIN_SPOKEN_COUNT));
 
   return { kind: 'addSub', key: 'wpAddSub', a, b, c, answer: a + b - c, params: { a, b, c } };
 }

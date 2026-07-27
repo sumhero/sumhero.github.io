@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { WordProblemsGame } from '../../js/games/word-problems.js';
 import { OBJECT_CATEGORIES } from '../../js/games/object-categories.js';
+import { TRANSLATIONS } from '../../js/i18n/translations.js';
 
 // The t stub echoes the key and every interpolated parameter, so a sentence
 // built by string concatenation instead of ctx.t interpolation fails here.
@@ -87,12 +88,45 @@ describe('WordProblemsGame', () => {
         if (ex.kind === 'sub') expect(ex.a - ex.b).toBeGreaterThanOrEqual(1);
         if (ex.kind === 'addAdd' || ex.kind === 'addSub') {
           expect(ex.c).toBeGreaterThanOrEqual(1);
-          // The quantity after step one, before step two.
-          expect(ex.a + ex.b).toBeGreaterThanOrEqual(1);
+          // The quantity after step one, before step two, must still fit
+          // inside the two-step ceiling.
           expect(ex.a + ex.b).toBeLessThanOrEqual(20);
         }
       }
     }
+  });
+
+  it('never speaks a singular count: no interpolated a, b, or c is ever 1', () => {
+    // Spoken sentences agree their verb with a plural/invariant count in
+    // every language ("il y en avait {a}", "es waren {a} da", "було {a}"),
+    // which breaks for a count of exactly one in all five languages. a and b
+    // are reachable at every difficulty; c only on hard.
+    for (const difficulty of ['easy', 'normal', 'hard']) {
+      for (let i = 0; i < 20; i++) {
+        for (const ex of WordProblemsGame.generate(difficulty, ctx(30))) {
+          expect(ex.a).not.toBe(1);
+          expect(ex.b).not.toBe(1);
+          if (ex.c !== null) expect(ex.c).not.toBe(1);
+        }
+      }
+    }
+  });
+
+  it('keeps hard\'s two-step addition genuinely harder than normal\'s one-step range', () => {
+    // addAdd's total used to be drawn from 3-20, so hard could serve
+    // 1+1+1 - arithmetically easier than a normal one-step problem summing
+    // to, say, 18. The floor keeps every addAdd total above what a one-step
+    // problem could trivially match.
+    let sawAddAdd = false;
+    for (let i = 0; i < 20; i++) {
+      for (const ex of WordProblemsGame.generate('hard', ctx(20))) {
+        if (ex.kind === 'addAdd') {
+          sawAddAdd = true;
+          expect(ex.a + ex.b + ex.c).toBeGreaterThanOrEqual(12);
+        }
+      }
+    }
+    expect(sawAddAdd).toBe(true);
   });
 
   it('asks one-step addition only on easy', () => {
@@ -173,5 +207,31 @@ describe('WordProblemsGame', () => {
     expect(a.map(e => e.speak)).toEqual(b.map(e => e.speak));
     expect(a.map(e => e.correctAnswer)).toEqual(b.map(e => e.correctAnswer));
     expect(a.map(e => e.promptHtml)).toEqual(b.map(e => e.promptHtml));
+  });
+});
+
+describe('word problem templates (shipped translations)', () => {
+  // The generator tests above stub ctx.t to echo its params, so they can
+  // never see the real strings in translations.js. A future edit that drops
+  // {c} from one language's wpAddAdd, or otherwise loses a placeholder the
+  // key requires, would ship a story that contradicts the grading in that
+  // one language only - silently, since nothing else reads these templates.
+  const REQUIRED_PLACEHOLDERS = {
+    wpAdd: ['a', 'b'],
+    wpSub: ['a', 'b'],
+    wpAddAdd: ['a', 'b', 'c'],
+    wpAddSub: ['a', 'b', 'c'],
+  };
+
+  it('contains exactly the placeholder set its key requires, in every language', () => {
+    for (const lang of Object.keys(TRANSLATIONS)) {
+      for (const [key, required] of Object.entries(REQUIRED_PLACEHOLDERS)) {
+        const template = TRANSLATIONS[lang][key];
+        expect(template, lang + '.' + key).toBeTruthy();
+
+        const found = [...template.matchAll(/\{(\w+)\}/g)].map(m => m[1]);
+        expect(new Set(found), lang + '.' + key).toEqual(new Set(required));
+      }
+    }
   });
 });
