@@ -15,6 +15,7 @@
 - **All five languages** stay in sync: `en`, `fr`, `de`, `uk`, `ru`. A new key means five entries.
 - **Diacritics are mandatory** in `fr` and `de` strings. Never write `Parametres` for `Paramètres` or `zahlen` for `zählen`.
 - **`generate()` is pure**: no DOM, no `Date`, no `Math.random`, no module-scope reads. Everything arrives via `ctx`.
+- **One approved carve-out from behaviour parity: the answer-choice shuffle.** Every game replaces the legacy `choices.sort(() => Math.random() - 0.5)` with an unbiased Fisher-Yates shuffle driven by `ctx.rng`. The legacy comparator shuffle is non-uniform, which biases the screen position the correct answer lands in — in a drilling app that lets a child learn positions instead of arithmetic. Apply Fisher-Yates consistently in all nine migrations; do not port the old comparator. Ruled by the user on 2026-07-27.
 - **Behaviour must not change in this checkpoint.** All ten games play identically when it lands. New games come in checkpoints 2–4.
 - **`double_crash` internals are off limits.** Only its imports and registry fields change. Do not refactor 1046 lines of betting logic while extracting an engine.
 - **The upstream baseline is `origin/main`, not a local checkout.** This plan was rewritten after discovering four games (`guess_time`, `memory`, `chess`, `double_crash`) that a stale working copy did not contain.
