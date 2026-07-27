@@ -1606,7 +1606,14 @@ body.time-theme-night {
         max-width: 100%;
         padding: calc(8px + env(safe-area-inset-top)) calc(24px + env(safe-area-inset-right))
                  calc(8px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-left));
+        /* svh, with vh kept first as the fallback for browsers without it:
+           landscape only ever happens in a browser tab (manifest.json pins the
+           installed app to portrait), and on iOS Safari `100vh` is the
+           toolbar-*retracted* height, so it overshoots the visible viewport by
+           a toolbar while the toolbar is showing. svh is the toolbar-showing
+           height, i.e. the one that is always visible. */
         min-height: 100vh;
+        min-height: 100svh;
     }
 
     /* Height is the scarce axis here: four group headings plus four card rows
@@ -1638,10 +1645,16 @@ body.time-theme-night {
        `.game-body { overflow: hidden }`. Neither `min-height: 0` on the screen
        nor on the body prevents this — max-content contributions ignore
        min-height — so a max-height is the only thing that does. The subtraction
-       mirrors `#app`'s landscape padding above. */
+       mirrors `#app`'s landscape padding above, and `min-height: 0` is spelled
+       out because a *used* min-height beats max-height: the cap would otherwise
+       hold only for as long as `.game-body { overflow: hidden }` keeps zeroing
+       this screen's automatic minimum size, which is a dependency on a rule
+       elsewhere in the file. `svh` for the same reason as `#app` above. */
     #screen-game {
         flex-direction: column;
+        min-height: 0;
         max-height: calc(100vh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        max-height: calc(100svh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     }
 
     .game-header {
@@ -1694,9 +1707,15 @@ body.time-theme-night {
         font-size: min(5vw, 10vh);
     }
 
+    /* 64vh, not 70vh: `.count-object` is centred on its coordinate
+       (`translate(-50%, -50%)`) and count-objects.js places objects from 10% to
+       90%, so an object near the edge hangs half a glyph outside the field. The
+       field has to leave room for that overhang inside the prompt column, or
+       the topmost object is clipped — measured at 844x320 hard, and only on the
+       rounds where the rng happens to put an object near the top edge. */
     .objects-field {
-        max-width: min(50vw, 70vh);
-        max-height: min(50vw, 70vh);
+        max-width: min(50vw, 64vh);
+        max-height: min(50vw, 64vh);
     }
 
     .count-object {
@@ -1710,14 +1729,39 @@ body.time-theme-night {
        `width` via `aspect-ratio`, and the choice buttons' height came from the
        grid column width, so a wide-and-short viewport made them taller, not
        shorter. Driving both from vh is what keeps them inside the body. */
+    /* 26vh, not less: this is the prompt card in a matching game, so it has to
+       read as bigger than the five choice cards below it (at 844x390 that is
+       101x142 against 72x101). 28vh was measured to overflow the body by 8px at
+       844x320, so 26vh is the largest value that still fits the shortest
+       landscape viewport. */
     .uno-card-main {
-        width: min(14vw, 22vh);
+        width: min(14vw, 26vh);
     }
 
     .uno-game-body .uno-choice-btn {
         height: min(20vw, 26vh);
         width: auto;
         justify-self: center;
+    }
+
+    /* Memory landscape. `min(92vw, 62vh)` is a width bound, but the grid's
+       *height* is what has to fit: js/games/memory.js sets the column count
+       inline (3x2 easy, 3x3 normal, 4x3 hard), so a square 3x3 board is as tall
+       as it is wide. Measured at 844x320 before this: a 198px board in a 137px
+       column, clipping 6 of the 9 tiles — the tiles are the thing the child
+       taps, so that is the worst kind of clip. The calc() is the height
+       actually available to the board: the viewport less #app's padding, the
+       game header, this game's control row and the gaps around it. Trimming
+       that control row's bottom padding (it is the last thing on screen, so the
+       24px it inherits buys nothing) hands 16px back to the board. */
+    .memory-game-layout .memory-grid {
+        max-width: min(92vw, 62vh, calc(100vh - 184px));
+        max-width: min(92vw, 62vh, calc(100svh - 184px));
+    }
+
+    .memory-game-layout .choices-container {
+        min-height: 56px;
+        padding-bottom: 8px;
     }
 
     /* Dice recognition landscape — same column-layout problem as Uno above:
@@ -1741,8 +1785,14 @@ body.time-theme-night {
         flex-direction: row !important;
     }
 
+    /* gap: 0 — the 32px `.dice-container` gap was written for the *row* of dice
+       it started life on. In the geo column it lands between the flag and its
+       caption, which already carries its own `margin-top: 8px`, and it pushed
+       the pair to 245px inside a 233px column at 844x320: 6px clipped off each
+       end once the screen is capped. */
     .geo-game-layout .dice-container {
         flex: 2;
+        gap: 0;
     }
 
     .geo-game-layout .choices-container {
@@ -1799,22 +1849,61 @@ body.time-theme-night {
         font-size: 2.5rem;
     }
 
-    /* Celebration landscape */
+    /* Celebration landscape.
+
+       Same bug as `#screen-game` above, on the one screen no verification pass
+       had ever looked at: the content is taller than a short landscape
+       viewport, nothing capped it, so `#app` grew and the Play Again button
+       ended up below the fold (measured at 844x320: 49px of page overflow, the
+       button cut off by 41px — the child cannot start the next round).
+
+       The animation region is the other half of it. `.lottie-canvas` is a fixed
+       40vh square that reserves its height whether or not the CDN animation
+       ever paints, and `Animation.showCelebration` only falls back to the emoji
+       trio on `loadError` — a fetch that silently never resolves leaves a blank
+       canvas holding 40vh of empty space above the cut-off button. Measured
+       blank at 844x320.
+
+       So: cap the screen, then make the animation the one thing that gives way.
+       The title, the stats and above all the button never shrink. */
+    #screen-celebration {
+        min-height: 0;
+        max-height: calc(100vh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        max-height: calc(100svh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    }
+
     .celebration-content {
         flex-direction: column;
         gap: 8px;
+        min-height: 0;
     }
 
     .dancing-animals {
-        font-size: min(20vw, 25vh);
+        font-size: min(12vw, 18vh);
+        flex: 0 1 auto;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .celebration-content .lottie-canvas {
+        width: min(40vh, 26vw);
+        height: min(40vh, 26vw);
+        max-width: 100%;
+        max-height: 100%;
     }
 
     .celebration-title {
         font-size: min(8vw, 12vh);
+        flex: none;
     }
 
     .celebration-stats {
         font-size: min(3vw, 5vh);
+        flex: none;
+    }
+
+    .celebration-content .btn-large {
+        flex: none;
     }
 }
 
@@ -2114,6 +2203,20 @@ body.time-theme-night {
 
     .money-choice-btn {
         font-size: min(4vw, 8vh);
+    }
+
+    /* On hard the purse moves into the choice buttons, and with the rows now
+       able to shrink a button can be 35px tall at 844x320. `max-height: 88%`
+       is a percentage of the button's *border* box while `padding: 6px` eats
+       the content box, so the purse ended up 8px taller than the button it sits
+       in and spilled over the edge. Trim the padding and let the purse fill
+       what is left. */
+    .money-choice-btn {
+        padding: 2px;
+    }
+
+    .money-choice-btn .coin-purse {
+        max-height: 100%;
     }
 }
 
