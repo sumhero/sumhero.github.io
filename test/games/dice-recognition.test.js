@@ -64,4 +64,41 @@ describe('DiceRecognitionGame', () => {
       expect(ex.choices).toEqual([1, 2, 3, 4, 5, 6]);
     }
   });
+
+  it('never shows the same die face twice in a row, at any difficulty', () => {
+    // Five faces over twenty rounds: uniqueness is impossible, so the only
+    // promise that can be kept is "never twice in a row", and it must survive
+    // the used-set being refilled three times inside one session.
+    for (const difficulty of ['easy', 'normal', 'hard']) {
+      const rounds = { easy: 5, normal: 10, hard: 20 }[difficulty];
+
+      for (let session = 0; session < 30; session++) {
+        const values = DiceRecognitionGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.correctAnswer);
+
+        for (let i = 1; i < values.length; i++) {
+          expect(values[i], difficulty + ' round ' + i).not.toBe(values[i - 1]);
+        }
+      }
+    }
+  });
+
+  it('spreads the session across every available face', () => {
+    // Independent literals, deliberately duplicated rather than derived from
+    // RANGES: easy offers faces 1-4, normal 1-5, hard 2-6. Zero sessions in
+    // 500 000 failed to cover the whole band, so these are hard floors, not
+    // "usually" assertions.
+    const floors = { easy: 4, normal: 5, hard: 5 };
+
+    for (const difficulty of ['easy', 'normal', 'hard']) {
+      const rounds = { easy: 5, normal: 10, hard: 20 }[difficulty];
+
+      for (let session = 0; session < 30; session++) {
+        const values = DiceRecognitionGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.correctAnswer);
+
+        expect(new Set(values).size, difficulty).toBeGreaterThanOrEqual(floors[difficulty]);
+      }
+    }
+  });
 });

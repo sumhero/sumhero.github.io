@@ -85,4 +85,36 @@ describe('ComplementsGame', () => {
       expect(starts[i]).not.toBe(starts[i - 1]);
     }
   });
+
+  it('never asks the same complement twice in a row, at any difficulty', () => {
+    for (const difficulty of ['easy', 'normal', 'hard']) {
+      const rounds = { easy: 5, normal: 10, hard: 20 }[difficulty];
+
+      for (let session = 0; session < 30; session++) {
+        const starts = ComplementsGame.generate(difficulty, ctx(rounds)).map(ex => ex.start);
+
+        for (let i = 1; i < starts.length; i++) {
+          expect(starts[i], difficulty + ' round ' + i).not.toBe(starts[i - 1]);
+        }
+      }
+    }
+  });
+
+  it('spreads the session across the available starts', () => {
+    // start runs 1..target-1, so the spaces are 4, 9 and 19 against 5, 10 and
+    // 20 rounds — uniqueness is impossible at every difficulty. These floors
+    // are independent literals set below the worst case seen in 500 000
+    // simulated sessions (4, 7 and 15 respectively).
+    const floors = { easy: 4, normal: 7, hard: 14 };
+
+    for (const difficulty of ['easy', 'normal', 'hard']) {
+      const rounds = { easy: 5, normal: 10, hard: 20 }[difficulty];
+
+      for (let session = 0; session < 30; session++) {
+        const starts = ComplementsGame.generate(difficulty, ctx(rounds)).map(ex => ex.start);
+
+        expect(new Set(starts).size, difficulty).toBeGreaterThanOrEqual(floors[difficulty]);
+      }
+    }
+  });
 });

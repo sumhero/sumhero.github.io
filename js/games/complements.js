@@ -1,4 +1,5 @@
 import { TenFrameRenderer } from '../render/ten-frame.js';
+import { drawDistinct } from '../engine/unique.js';
 
 const TARGET = { easy: 5, normal: 10, hard: 20 };
 const CHOICE_COUNT = 5;
@@ -11,24 +12,19 @@ export const ComplementsGame = {
   rounds: { easy: 5, normal: 10, hard: 20 },
   layoutClass: 'num-game-layout',
 
+  // start runs 1..target-1, so the space is 4, 9 or 19 against 5, 10 or 20
+  // rounds. Uniqueness is impossible at every difficulty; drawDistinct cycles
+  // the whole band and guarantees only that no start is ever repeated
+  // back-to-back.
   generate(difficulty, ctx) {
     const { rng, t, count } = ctx;
     const target = TARGET[difficulty];
-    const exercises = [];
-    let previous = -1;
 
-    for (let i = 0; i < count; i++) {
-      let start;
-      let guard = 0;
-      do {
-        start = Math.floor(rng() * (target - 1)) + 1;
-        guard++;
-      } while (start === previous && guard < 200);
-      previous = start;
-
+    return drawDistinct(count, () => {
+      const start = Math.floor(rng() * (target - 1)) + 1;
       const correctAnswer = target - start;
 
-      exercises.push({
+      return {
         start,
         target,
         correctAnswer,
@@ -37,10 +33,8 @@ export const ComplementsGame = {
           '<div class="op-question">' + start + ' + ? = ' + target + '</div>' +
           '<div class="op-hint">' + t('complementsPrompt') + '</div>',
         choices: buildChoices(correctAnswer, target, rng),
-      });
-    }
-
-    return exercises;
+      };
+    }, exercise => String(exercise.start));
   },
 };
 
