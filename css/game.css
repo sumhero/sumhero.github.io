@@ -2531,18 +2531,35 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
        `align-items: center` do the centring instead. */
     margin-top: 0;
     padding-bottom: 0;
+    /* The gap is a variable because `.ordering-tile`'s max-width has to
+       subtract exactly this value. Landscape overrides it below; if the two
+       ever drift apart the fit calculation silently stops being a fit. */
+    --ordering-gap: min(3vw, 16px);
+    gap: var(--ordering-gap);
 }
 
 /* A fixed size, not `flex: 1 1 0` with a max-width: a flex basis of 0 floors at
    the tile's own min-content width, which differs between "5" and "94", so the
-   row came out visibly uneven (12.8px next to 25.3px, measured). Sizing off the
-   viewport instead makes all five identical, and 5 x 16vw + 4 gaps always fits
-   the width by construction — no shrink step to distribute unevenly. The 26vh
-   arm caps height in landscape, where vw is the generous axis. */
+   row came out visibly uneven (12.8px next to 25.3px, measured). A viewport
+   size instead makes all five identical. The 26vh arm caps height in landscape,
+   where vw is the generous axis.
+
+   The max-width is what guarantees the row fits, and it is a percentage — of
+   the choices container, not the viewport — on purpose. `#app`'s side padding
+   is `16px + env(safe-area-inset-*)`, so the usable width is not a fixed
+   inset off the viewport: it is 32px narrower on a plain screen and can be
+   ~120px narrower in landscape on a notched phone. A vw-only sum cannot see
+   that, and the first version of this rule did not: five 16vw tiles plus gaps
+   came to 294.4px against the 288px actually available at 320x568, and
+   `.game-body { overflow: hidden }` clipped ~3.2px off each outer tile.
+   A percentage resolves against the real content box, so the fit holds
+   whatever the insets turn out to be. The extra 2px absorbs sub-pixel
+   rounding, since the five tiles and four gaps otherwise total exactly 100%. */
 .ordering-layout .ordering-tile {
     position: relative;
     flex: 0 0 auto;
-    width: min(16vw, 26vh);
+    width: min(15vw, 26vh);
+    max-width: calc((100% - 4 * var(--ordering-gap) - 2px) / 5);
     aspect-ratio: 1;
     font-size: min(9vw, 14vh);
 }
@@ -2573,8 +2590,10 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
         flex-direction: column !important;
     }
 
+    /* Redefines the variable, not `gap` — the base rule's `gap` reads from it
+       and so does the tile's max-width, so both track this one value. */
     .ordering-layout .choices-container {
-        gap: min(2vw, 12px);
+        --ordering-gap: min(2vw, 12px);
     }
 
     /* `.choice-btn`'s `aspect-ratio: 1` is reset to `auto` for every button in
