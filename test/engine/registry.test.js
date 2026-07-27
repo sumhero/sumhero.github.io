@@ -11,8 +11,8 @@ describe('registry', () => {
     expect(GAMES.map(g => g.id).sort()).toEqual([
       'capitals', 'chess', 'compare', 'complements', 'count_objects',
       'countries', 'dice_addition', 'dice_recognition', 'double_crash',
-      'doubles', 'guess_time', 'memory', 'missing_number', 'subtraction',
-      'tens_units', 'uno',
+      'doubles', 'guess_time', 'memory', 'missing_number', 'money',
+      'subtraction', 'tens_units', 'uno',
     ]);
   });
 
@@ -48,7 +48,7 @@ describe('registry', () => {
         'dice_addition', 'count_objects', 'dice_recognition', 'complements',
         'subtraction', 'doubles', 'compare', 'missing_number', 'tens_units',
       ]);
-    expect(grouped[1].games.map(g => g.id)).toEqual(['guess_time']);
+    expect(grouped[1].games.map(g => g.id)).toEqual(['guess_time', 'money']);
     expect(grouped[2].games.map(g => g.id))
       .toEqual(['uno', 'memory', 'chess', 'double_crash']);
     expect(grouped[3].games.map(g => g.id))
