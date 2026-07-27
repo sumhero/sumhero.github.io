@@ -1,4 +1,9 @@
-const MEMORY_COLORS = [
+import { showScreen } from '../engine/screens.js';
+import { I18n } from '../i18n/i18n.js';
+import { Sound } from '../sound.js';
+import { Animation } from '../animation.js';
+
+export const MEMORY_COLORS = [
     { key: 'green', hex: '#4CAF50' },
     { key: 'red', hex: '#f44336' },
     { key: 'blue', hex: '#4a90d9' },
@@ -7,13 +12,19 @@ const MEMORY_COLORS = [
     { key: 'violet', hex: '#9b59b6' },
 ];
 
-const MEMORY_CONFIG = {
+export const MEMORY_CONFIG = {
     easy: { cols: 3, rows: 2, boards: 3, memMs: 5000 },
     normal: { cols: 3, rows: 3, boards: 4, memMs: 6000 },
     hard: { cols: 4, rows: 3, boards: 5, memMs: 7000 },
 };
 
-const MemoryGame = {
+export const MemoryGame = {
+    id: 'memory',
+    nameKey: 'memory',
+    emoji: '🧠',
+    domain: 'logique',
+    legacy: true,
+
     session: null,
     currentExercise: 0,
     wrongAttempts: 0,
@@ -40,7 +51,7 @@ const MemoryGame = {
         this.peeksUsed = 0;
         this.startTime = Date.now();
         this.showExercise();
-        App.showScreen('game');
+        showScreen('game');
     },
 
     // Three random colors, rerolled fresh for each board.
@@ -275,6 +286,6 @@ const MemoryGame = {
         Animation.showCelebration(document.getElementById('dancing-animals'));
         Animation.showConfetti(document.getElementById('confetti-container'));
         Sound.play('victory');
-        App.showScreen('celebration');
+        showScreen('celebration');
     },
 };

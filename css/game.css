@@ -64,8 +64,8 @@ input, textarea {
     100% { opacity: 0; transform: translateY(-16px); }
 }
 
-/* Auth Screen */
-.auth-container {
+/* Loading Screen */
+.loading-container {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -92,33 +92,6 @@ input, textarea {
     text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
     margin-bottom: 40px;
     text-align: center;
-}
-
-.auth-form {
-    width: 100%;
-    max-width: 320px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.auth-form input {
-    padding: 16px 20px;
-    border: none;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    background: rgba(255,255,255,0.95);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    outline: none;
-}
-
-.auth-form input:focus {
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-}
-
-.auth-buttons {
-    display: flex;
-    gap: 12px;
 }
 
 .error-message {
@@ -265,6 +238,23 @@ input, textarea {
     color: #4a90d9;
     text-align: center;
     line-height: 1.2;
+}
+
+.game-group {
+    margin-bottom: 1.5rem;
+}
+
+.game-group-title {
+    font-size: 1rem;
+    font-weight: 600;
+    opacity: 0.7;
+    margin: 0 0 0.5rem 0.25rem;
+}
+
+.game-group-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
 }
 
 /* Exercise Picker */
@@ -1703,8 +1693,8 @@ body.time-theme-night {
         font-size: min(3.5vw, 6vh) !important;
     }
 
-    /* Auth landscape */
-    .auth-container {
+    /* Loading landscape */
+    .loading-container {
         flex-direction: row;
         gap: 48px;
     }

@@ -1,4 +1,4 @@
-const COUNTRIES_EUROPE = [
+export const COUNTRIES_EUROPE = [
     {name: 'Albania', flag: 'al', capital: 'Tirana', t: {fr: {name: 'Albanie', capital: 'Tirana'}, de: {name: 'Albanien', capital: 'Tirana'}, uk: {name: 'Албанія', capital: 'Тирана'}, ru: {name: 'Албания', capital: 'Тирана'}}},
     {name: 'Andorra', flag: 'ad', capital: 'Andorra la Vella', t: {fr: {name: 'Andorre', capital: 'Andorre-la-Vieille'}, de: {name: 'Andorra', capital: 'Andorra la Vella'}, uk: {name: 'Андорра', capital: 'Андорра-ла-Велья'}, ru: {name: 'Андорра', capital: 'Андорра-ла-Велья'}}},
     {name: 'Austria', flag: 'at', capital: 'Vienna', t: {fr: {name: 'Autriche', capital: 'Vienne'}, de: {name: 'Österreich', capital: 'Wien'}, uk: {name: 'Австрія', capital: 'Відень'}, ru: {name: 'Австрия', capital: 'Вена'}}},
@@ -46,7 +46,7 @@ const COUNTRIES_EUROPE = [
     {name: 'Vatican City', flag: 'va', capital: 'Vatican City', t: {fr: {name: 'Vatican', capital: 'Cité du Vatican'}, de: {name: 'Vatikanstadt', capital: 'Vatikanstadt'}, uk: {name: 'Ватикан', capital: 'Ватикан'}, ru: {name: 'Ватикан', capital: 'Ватикан'}}},
 ];
 
-const COUNTRIES_TOP50 = [
+export const COUNTRIES_TOP50 = [
     {name: 'Afghanistan', flag: 'af', capital: 'Kabul', t: {fr: {name: 'Afghanistan', capital: 'Kaboul'}, de: {name: 'Afghanistan', capital: 'Kabul'}, uk: {name: 'Афганістан', capital: 'Кабул'}, ru: {name: 'Афганистан', capital: 'Кабул'}}},
     {name: 'Algeria', flag: 'dz', capital: 'Algiers', t: {fr: {name: 'Algérie', capital: 'Alger'}, de: {name: 'Algerien', capital: 'Algier'}, uk: {name: 'Алжир', capital: 'Алжир'}, ru: {name: 'Алжир', capital: 'Алжир'}}},
     {name: 'Argentina', flag: 'ar', capital: 'Buenos Aires', t: {fr: {name: 'Argentine', capital: 'Buenos Aires'}, de: {name: 'Argentinien', capital: 'Buenos Aires'}, uk: {name: 'Аргентина', capital: 'Буенос-Айрес'}, ru: {name: 'Аргентина', capital: 'Буэнос-Айрес'}}},
@@ -94,7 +94,7 @@ const COUNTRIES_TOP50 = [
     {name: 'Vietnam', flag: 'vn', capital: 'Hanoi', t: {fr: {name: 'Viêt Nam', capital: 'Hanoï'}, de: {name: 'Vietnam', capital: 'Hanoi'}, uk: {name: 'В\'єтнам', capital: 'Ханой'}, ru: {name: 'Вьетнам', capital: 'Ханой'}}},
 ];
 
-const COUNTRIES_REST = [
+export const COUNTRIES_REST = [
     {name: 'Angola', flag: 'ao', capital: 'Luanda', t: {fr: {name: 'Angola', capital: 'Luanda'}, de: {name: 'Angola', capital: 'Luanda'}, uk: {name: 'Ангола', capital: 'Луанда'}, ru: {name: 'Ангола', capital: 'Луанда'}}},
     {name: 'Antigua and Barbuda', flag: 'ag', capital: "St. John's", t: {fr: {name: 'Antigua-et-Barbuda', capital: "St. John's"}, de: {name: 'Antigua und Barbuda', capital: "St. John's"}, uk: {name: 'Антигуа і Барбуда', capital: 'Сент-Джонс'}, ru: {name: 'Антигуа и Барбуда', capital: 'Сент-Джонс'}}},
     {name: 'Armenia', flag: 'am', capital: 'Yerevan', t: {fr: {name: 'Arménie', capital: 'Erevan'}, de: {name: 'Armenien', capital: 'Jerewan'}, uk: {name: 'Вірменія', capital: 'Єреван'}, ru: {name: 'Армения', capital: 'Ереван'}}},
@@ -203,19 +203,15 @@ const COUNTRIES_REST = [
     {name: 'Zimbabwe', flag: 'zw', capital: 'Harare', t: {fr: {name: 'Zimbabwe', capital: 'Harare'}, de: {name: 'Simbabwe', capital: 'Harare'}, uk: {name: 'Зімбабве', capital: 'Хараре'}, ru: {name: 'Зимбабве', capital: 'Хараре'}}},
 ];
 
-function getCountryName(country) {
-    const lang = I18n.getLanguage();
-
+export function getCountryName(country, lang) {
     return (lang !== 'en' && country.t && country.t[lang] && country.t[lang].name) || country.name;
 }
 
-function getCapitalName(country) {
-    const lang = I18n.getLanguage();
-
+export function getCapitalName(country, lang) {
     return (lang !== 'en' && country.t && country.t[lang] && country.t[lang].capital) || country.capital;
 }
 
-function getCountryPool(difficulty) {
+export function getCountryPool(difficulty) {
     if (difficulty === 'easy') {
         return COUNTRIES_EUROPE;
     }

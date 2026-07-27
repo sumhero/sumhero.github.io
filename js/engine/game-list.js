@@ -1,63 +1,18 @@
-const GAMES = [
-    {
-        type: 'dice_addition',
-        nameKey: 'diceAddition',
-        emoji: '🎲',
-    },
-    {
-        type: 'count_objects',
-        nameKey: 'countObjects',
-        emoji: '🔢',
-    },
-    {
-        type: 'uno',
-        nameKey: 'uno',
-        emoji: '🃏',
-    },
-    {
-        type: 'dice_recognition',
-        nameKey: 'diceRecognition',
-        emoji: '\uD83C\uDFAF',
-    },
-    {
-        type: 'countries',
-        nameKey: 'countries',
-        emoji: '\uD83C\uDF0D',
-    },
-    {
-        type: 'capitals',
-        nameKey: 'capitals',
-        emoji: '\uD83C\uDFDB\uFE0F',
-    },
-    {
-        type: 'guess_time',
-        nameKey: 'guessTime',
-        emoji: '\uD83D\uDD50',
-    },
-    {
-        type: 'double_crash',
-        nameKey: 'doubleCrash',
-        emoji: '\uD83C\uDFA1',
-    },
-    {
-        type: 'memory',
-        nameKey: 'memory',
-        emoji: '\uD83E\uDDE0',
-    },
-    {
-        type: 'chess',
-        nameKey: 'chess',
-        emoji: '\u265F\uFE0F',
-    },
-];
+import { App } from '../app.js';
+import { I18n } from '../i18n/i18n.js';
+import { LANGUAGES } from '../i18n/translations.js';
+import { OBJECT_CATEGORIES } from '../games/object-categories.js';
+import { GameEngine } from './game-engine.js';
+import { showScreen } from './screens.js';
+import { GAMES, gamesByDomain } from './registry.js';
 
-const DIFFICULTY_LEVELS = [
+export const DIFFICULTY_LEVELS = [
     { key: 'easy', labelKey: 'easy' },
     { key: 'normal', labelKey: 'normal' },
     { key: 'hard', labelKey: 'hard' },
 ];
 
-const GameList = {
+export const GameList = {
     selectedGame: null,
     selectedCategory: null,
 
@@ -70,10 +25,10 @@ const GameList = {
     },
 
     init() {
-        document.getElementById('btn-back-games').addEventListener('click', () => App.showScreen('games'));
-        document.getElementById('btn-back-category').addEventListener('click', () => App.showScreen('games'));
+        document.getElementById('btn-back-games').addEventListener('click', () => showScreen('games'));
+        document.getElementById('btn-back-category').addEventListener('click', () => showScreen('games'));
         document.getElementById('btn-settings').addEventListener('click', () => this.showSettings());
-        document.getElementById('btn-back-settings').addEventListener('click', () => App.showScreen('games'));
+        document.getElementById('btn-back-settings').addEventListener('click', () => showScreen('games'));
         document.getElementById('btn-reload-app').addEventListener('click', () => {
             if ('caches' in window) {
                 caches.keys().then(names => names.forEach(name => caches.delete(name)));
@@ -84,36 +39,33 @@ const GameList = {
 
     load() {
         const container = document.getElementById('game-list');
-        container.innerHTML = GAMES.map(game =>
-            '<div class="game-card" data-type="' + game.type + '">' +
-                '<span class="game-card-emoji">' + game.emoji + '</span>' +
-                '<span class="game-card-name">' + I18n.t(game.nameKey) + '</span>' +
-            '</div>'
+        container.innerHTML = gamesByDomain().map(({ domain, games }) =>
+            '<section class="game-group">' +
+                '<h3 class="game-group-title">' + domain.emoji + ' ' + I18n.t(domain.labelKey) + '</h3>' +
+                '<div class="game-group-cards">' +
+                    games.map(game =>
+                        '<div class="game-card" data-id="' + game.id + '">' +
+                            '<span class="game-card-emoji">' + game.emoji + '</span>' +
+                            '<span class="game-card-name">' + I18n.t(game.nameKey) + '</span>' +
+                        '</div>'
+                    ).join('') +
+                '</div>' +
+            '</section>'
         ).join('');
 
         container.querySelectorAll('.game-card').forEach(card => {
             card.addEventListener('click', () => {
-                this.selectedGame = card.dataset.type;
-                if (this.selectedGame === 'count_objects') {
+                const game = GAMES.find(g => g.id === card.dataset.id);
+                this.selectedGame = game;
+
+                if (game.legacy) {
+                    game.start(this.getDifficulty());
+                } else if (game.setup === 'category') {
                     this.showCategoryPicker();
-                } else if (this.selectedGame === 'uno') {
-                    UnoGame.start(this.getDifficulty());
-                } else if (this.selectedGame === 'dice_recognition') {
-                    DiceRecognitionGame.start(this.getDifficulty());
-                } else if (this.selectedGame === 'countries') {
-                    CountriesGame.start(this.getDifficulty());
-                } else if (this.selectedGame === 'capitals') {
-                    CapitalsGame.start(this.getDifficulty());
-                } else if (this.selectedGame === 'guess_time') {
-                    GuessTimeGame.start(this.getDifficulty());
-                } else if (this.selectedGame === 'double_crash') {
-                    DoubleCrashGame.start(this.getDifficulty());
-                } else if (this.selectedGame === 'memory') {
-                    MemoryGame.start(this.getDifficulty());
-                } else if (this.selectedGame === 'chess') {
-                    ChessGame.start(this.getDifficulty());
-                } else {
+                } else if (game.rounds === 'ask') {
                     this.showPicker();
+                } else {
+                    GameEngine.start(game, { difficulty: this.getDifficulty() });
                 }
             });
         });
@@ -131,11 +83,11 @@ const GameList = {
         container.querySelectorAll('.category-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 this.selectedCategory = btn.dataset.category;
-                CountObjectsGame.start(this.getDifficulty(), this.selectedCategory);
+                GameEngine.start(this.selectedGame, { difficulty: this.getDifficulty(), category: this.selectedCategory });
             });
         });
 
-        App.showScreen('category');
+        showScreen('category');
     },
 
     showPicker() {
@@ -145,10 +97,10 @@ const GameList = {
             const btn = document.createElement('button');
             btn.className = 'picker-btn';
             btn.textContent = i;
-            btn.addEventListener('click', () => DiceGame.start(this.selectedGame, i, this.getDifficulty()));
+            btn.addEventListener('click', () => GameEngine.start(this.selectedGame, { difficulty: this.getDifficulty(), count: i }));
             container.appendChild(btn);
         }
-        App.showScreen('picker');
+        showScreen('picker');
     },
 
     showSettings() {
@@ -185,6 +137,6 @@ const GameList = {
             });
         });
 
-        App.showScreen('settings');
+        showScreen('settings');
     },
 };

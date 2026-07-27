@@ -1,4 +1,4 @@
-const Animation = {
+export const Animation = {
     DotLottie: null,
     lottieInstance: null,
 

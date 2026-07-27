@@ -1,4 +1,4 @@
-const Sound = {
+export const Sound = {
     ctx: null,
 
     getContext() {

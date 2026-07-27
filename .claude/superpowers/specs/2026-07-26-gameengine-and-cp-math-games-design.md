@@ -1,15 +1,16 @@
-# GameEngine extraction + 13 CP math games
+# GameEngine extraction + 12 CP math games
 
 **Date:** 2026-07-26
 **Status:** Approved design, ready for planning
 
 ## Problem
 
-SumHero has six games. Four are math (`dice_addition`, `count_objects`,
-`dice_recognition`, `uno`), two are geography. Each game file re-implements the
-same session loop — `answer()`, `updateProgress()`, `completeGame()` — costing
-roughly 90 duplicated lines per game. Adding games multiplies that duplication,
-and any scoring bug must be fixed once per game.
+SumHero has ten games: `dice_addition`, `count_objects`, `dice_recognition`,
+`uno`, `countries`, `capitals`, `guess_time`, `memory`, `chess`, and
+`double_crash`. Nine of them re-implement the same session loop — `answer()`,
+`updateProgress()`, `completeGame()` — costing roughly 90 duplicated lines per
+game. Adding games multiplies that duplication, and any scoring bug must be
+fixed once per game.
 
 Separately, the app's math coverage stops well short of the French CP
 programme. Missing: subtraction, compléments à 10, doubles et moitiés,
@@ -18,9 +19,22 @@ formes géométriques, and word problems.
 
 ## Goal
 
-Extract a shared `GameEngine`, migrate the six existing games onto it, then add
-13 new games covering the CP programme. Target user: one six-year-old in CP,
-playing on a phone or tablet, offline-capable.
+Extract a shared `GameEngine`, migrate nine of the ten existing games onto it,
+then add 12 new games covering the CP programme. Target user: one six-year-old
+in CP, playing on a phone or tablet, offline-capable.
+
+### `double_crash` is exempt
+
+`double_crash` (Crash Roulette, 1046 lines) has no exercises, no difficulty, no
+wrong-attempt count, and no completion or celebration. It is a continuous
+betting session that borrows `screen-game` and renders into `#dice-container`.
+The engine's contract — generate exercises, answer, advance, celebrate — does
+not apply to it.
+
+It stays on its own loop, registered as `{ id: 'double_crash', legacy: true }`.
+The game list renders its card like any other; the click handler calls
+`DoubleCrashGame.start()` instead of `GameEngine.start()`. This is the single
+permitted exception, and `registry.js` documents it as such.
 
 ## Decisions
 
@@ -55,12 +69,12 @@ js/
   engine/registry.js        GAMES array
   engine/game-list.js       chooser UI, grouped by domain
   render/dice.js            existing DiceRenderer, moved
+  render/clock.js           existing ClockRenderer, extracted from guess_time
   render/ten-frame.js       new
   render/base-ten.js        new
   render/coins.js           new
-  render/clock.js           new
   render/shapes.js          new
-  games/<id>.js             one per game, 19 total
+  games/<id>.js             one per game, 22 total (21 on the engine + double_crash)
   i18n/translations.js      existing, accents fixed
 test/
   engine/game-engine.test.js
@@ -112,7 +126,7 @@ stub `t` so generator assertions never depend on translation content.
 
 ### Engine responsibilities
 
-Everything currently copy-pasted across the six game files:
+Everything currently copy-pasted across the nine engine-driven game files:
 
 - Session state and exercise advancement
 - Progress bar and score display
@@ -125,14 +139,24 @@ Everything currently copy-pasted across the six game files:
 
 ### Escape hatches
 
-Four games need custom interaction and will override `renderChoices`:
+These games need custom interaction and will override `renderChoices`:
 
 - **Plus grand, plus petit** — three buttons (`<`, `=`, `>`) instead of five
 - **Ranger dans l'ordre** — tap numbers in sequence, submit on completion
 - **Uno** — renders cards, not numerals
-- **Countries / Capitals** — renders flag images
+- **Chess** — renders a 3×3 board; a cell tap is the answer
+- **Memory** — owns a tile board plus a timed memorise phase; a wrong tile tap
+  calls `submit(wrongValue, btn)` so the engine still counts it
 
-All others use the engine's default multiple-choice rendering.
+Countries and Capitals need only the lighter `choiceClass` field to keep their
+`geo-choice-btn` styling — plain string choices work with the engine default.
+All remaining games use the default multiple-choice rendering.
+
+**Memory is the one stateful case.** Its memorise timers and `peek` feature live
+entirely inside its `renderChoices`; the engine sees one exercise per board and
+advances when the board is solved. If this proves awkward in practice, the
+fallback is to give it `legacy: true` like `double_crash` rather than to
+contort the engine.
 
 ### Dead code removed
 
@@ -168,8 +192,19 @@ All others use the engine's default multiple-choice rendering.
 
 | Game | id | Easy | Normal | Hard |
 |---|---|---|---|---|
+| Guess Time *(existing)* | `guess_time` | whole hours | half hours | quarter hours |
 | La monnaie | `money` | count ≤ 10 € | mixed coins and notes ≤ 20 € | pay an exact amount |
-| La pendule | `clock` | whole hours | half hours | quarter hours |
+
+**No new clock game.** `guess_time` already ships a complete `ClockRenderer`
+(SVG face, ticks, numerals, correctly-angled hands) and a full session loop.
+Building a second "La pendule" would duplicate it and put two clock cards in
+front of a six-year-old. Instead, `guess_time` is migrated onto the engine and
+its difficulty ladder checked against the CP progression above — whole hours,
+then half hours, then quarter hours. If it already scales that way, migration is
+the only change.
+
+The extracted `ClockRenderer` moves to `js/render/clock.js` so later games can
+reuse it.
 
 ### 🔷 Espace et géométrie
 
@@ -179,7 +214,8 @@ All others use the engine's default multiple-choice rendering.
 
 ### 🃏 Logique
 
-Uno *(existing)*.
+Uno, Memory, Chess, Crash Roulette *(all existing)*. Crash Roulette is the
+`legacy: true` entry described above.
 
 ### 🌍 Découverte du monde
 
@@ -253,12 +289,17 @@ files with no build step.
 
 Four checkpoints, each independently playable:
 
-1. **Engine + migrate all six existing games.** No new features. Success
-   criterion: the existing games behave identically on a smaller codebase.
+1. **Engine + migrate nine of the ten existing games.** No new features.
+   `double_crash` stays legacy. Success criterion: every game behaves
+   identically on a smaller codebase, and `CLAUDE.md` describes the new
+   architecture rather than the old one.
 2. **Tier 1** — `complements`, `subtraction`, `doubles`, `compare`,
    `missing_number`.
-3. **Tier 2** — `tens_units`, `money`, `number_words`, `word_problems`, `clock`.
+3. **Tier 2** — `tens_units`, `money`, `number_words`, `word_problems`.
 4. **Tier 3** — `shapes`, `parity`, `ordering`.
+
+Twelve new games, not thirteen: `clock` is dropped because `guess_time` already
+covers it.
 
 Execution uses a git worktree with a fresh subagent per task and review between
 tasks. Each checkpoint gets its own implementation plan rather than one plan
@@ -271,3 +312,14 @@ engine that should inform how the later game plans are written.
   `localStorage`, so this later becomes a UI-only change.
 - Any backend or account system. The removed auth remnants are not replaced.
 - Multiplication and division — CE1 material, not CP.
+
+## Deviations from this design as built
+
+- `memory` also stayed `legacy: true`, alongside `double_crash` — this design's
+  "`double_crash` is exempt" section (and the build-order note above) only
+  named `double_crash` as the sole exception, which is no longer accurate.
+  `memory` fits the exercise/scoring shape but needs a fourth "peeks used"
+  stats line and a stricter perfect-score rule
+  (`wrongAttempts === 0 && peeksUsed === 0`) that `GameEngine.completeGame()`
+  can't express yet. See `CLAUDE.md`'s "legacy escape hatch" section for the
+  unblocking route.

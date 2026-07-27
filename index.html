@@ -15,7 +15,7 @@
 <body>
     <div id="app">
         <div id="screen-loading" class="screen active">
-            <div class="auth-container">
+            <div class="loading-container">
                 <h1 class="game-title">SumHero</h1>
                 <div class="loader-spinner"></div>
             </div>
@@ -90,23 +90,7 @@
         </div>
     </div>
 
-    <script src="/js/translations.js"></script>
-    <script src="/js/sound.js"></script>
-    <script src="/js/dice-renderer.js"></script>
-    <script src="/js/animation.js"></script>
-    <script src="/js/game-list.js"></script>
-    <script src="/js/count-objects-game.js"></script>
-    <script src="/js/uno-game.js"></script>
-    <script src="/js/dice-recognition-game.js"></script>
-    <script src="/js/countries-data.js"></script>
-    <script src="/js/countries-game.js"></script>
-    <script src="/js/capitals-game.js"></script>
-    <script src="/js/guess-time-game.js"></script>
-    <script src="/js/double-crash-game.js"></script>
-    <script src="/js/memory-game.js"></script>
-    <script src="/js/chess-game.js"></script>
-    <script src="/js/dice-game.js"></script>
-    <script src="/js/app.js"></script>
+    <script type="module" src="/js/app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js').then((reg) => {
