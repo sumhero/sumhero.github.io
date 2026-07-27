@@ -191,4 +191,48 @@ describe('ParityGame', () => {
       expect(a.map(e => JSON.stringify(e.choices))).toEqual(b.map(e => JSON.stringify(e.choices)));
     }
   });
+
+  it('never asks about the same number twice in a session', () => {
+    // Keyed on the NUMBER, never on correctAnswer. The answer space here is
+    // exactly two ('even' and 'odd'); an answer-keyed sampler would exhaust
+    // after two rounds and emit a strict even/odd/even/odd alternation for the
+    // rest of the session, which a six-year-old would crack in four rounds
+    // without ever reading the number. Spaces are 10, 20 and 100 against 5, 10
+    // and 20 rounds; full distinctness held in 500 000 of 500 000 sessions.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const numbers = ParityGame.generate(difficulty, ctx(rounds)).map(ex => ex.number);
+
+        expect(new Set(numbers).size, difficulty).toBe(rounds);
+      }
+    }
+  });
+
+  it('never puts the same number in two consecutive rounds', () => {
+    // Direct check of the no-adjacent-repeats guarantee, keyed on the number
+    // (never the answer) for the same reason as the full-distinctness test
+    // above: the floor applies to numbers drawn, not to the two-valued answer.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const numbers = ParityGame.generate(difficulty, ctx(rounds)).map(ex => ex.number);
+
+        for (let i = 1; i < numbers.length; i++) {
+          expect(numbers[i], difficulty + ' round ' + i).not.toBe(numbers[i - 1]);
+        }
+      }
+    }
+  });
+
+  it('still mixes even and odd answers rather than alternating them', () => {
+    // The regression an answer-keyed sampler would introduce, asserted
+    // directly: over 20 hard rounds the answer sequence must NOT be a perfect
+    // alternation. With numbers drawn from 1..100 the chance of a genuine
+    // 20-long alternation is about 2 in a million, so thirty sessions is safe.
+    for (let session = 0; session < 30; session++) {
+      const answers = ParityGame.generate('hard', ctx(20)).map(ex => ex.correctAnswer);
+      const alternating = answers.every((value, i) => i === 0 || value !== answers[i - 1]);
+
+      expect(alternating).toBe(false);
+    }
+  });
 });

@@ -1,4 +1,5 @@
 import { BaseTenRenderer } from '../render/base-ten.js';
+import { drawDistinct } from '../engine/unique.js';
 
 const CONFIG = {
   easy: { min: 10, max: 39, reverse: false },
@@ -19,9 +20,8 @@ export const TensUnitsGame = {
   generate(difficulty, ctx) {
     const { rng, t, count } = ctx;
     const config = CONFIG[difficulty];
-    const exercises = [];
 
-    for (let i = 0; i < count; i++) {
+    return drawDistinct(count, () => {
       const number = config.min + Math.floor(rng() * (config.max - config.min + 1));
       const tens = Math.floor(number / 10);
       const units = number % 10;
@@ -31,7 +31,7 @@ export const TensUnitsGame = {
       // ungrouped indexOf assertion meaningful.
       const values = shuffle([number, ...pickDistractors(number, config, rng)], rng);
 
-      exercises.push({
+      return {
         number,
         tens,
         units,
@@ -48,10 +48,8 @@ export const TensUnitsGame = {
               html: BaseTenRenderer.render(Math.floor(value / 10), value % 10),
             }))
           : values,
-      });
-    }
-
-    return exercises;
+      };
+    }, exercise => String(exercise.number));
   },
 };
 

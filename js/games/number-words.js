@@ -1,4 +1,5 @@
 import { numberToWords } from '../data/number-words.js';
+import { drawDistinct } from '../engine/unique.js';
 
 const RANGE = {
   easy: { min: 1, max: 10 },
@@ -22,12 +23,16 @@ export const NumberWordsGame = {
   // Word to numeral, never the other way round: the prompt is the spelling and
   // the choices are digits. No `speak` here — reading the word aloud would
   // hand the child the answer.
+  //
+  // The draw takes the round index, so hard keeps alternating its irregular
+  // French band on even rounds. One shared used-set covers both bands: they
+  // overlap only on 70-99, and ten even-index draws from a thirty-value band
+  // is comfortably inside the try budget.
   generate(difficulty, ctx) {
     const { rng, t, lang, count } = ctx;
     const range = RANGE[difficulty];
-    const exercises = [];
 
-    for (let i = 0; i < count; i++) {
+    return drawDistinct(count, i => {
       // Alternate rather than roll: an index-based guarantee is testable
       // without a flaky "often enough" assertion.
       const irregular = difficulty === 'hard' && i % 2 === 0;
@@ -35,7 +40,7 @@ export const NumberWordsGame = {
       const number = from.min + Math.floor(rng() * (from.max - from.min + 1));
       const word = numberToWords(number, lang);
 
-      exercises.push({
+      return {
         number,
         irregular,
         word,
@@ -44,10 +49,8 @@ export const NumberWordsGame = {
           '<div class="number-word">' + word + '</div>' +
           '<div class="op-hint">' + t('numberWordsPrompt') + '</div>',
         choices: buildChoices(number, range, rng),
-      });
-    }
-
-    return exercises;
+      };
+    }, exercise => String(exercise.number));
   },
 };
 
