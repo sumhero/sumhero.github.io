@@ -1,3 +1,5 @@
+import { drawDistinct } from '../engine/unique.js';
+
 const MAX_N = { easy: 5, normal: 10, hard: 10 };
 const MAX_HALF_ANSWER = 10;
 const HALF_CHOICE_CEILING = 12;
@@ -11,16 +13,21 @@ export const DoublesGame = {
   rounds: { easy: 5, normal: 10, hard: 20 },
   layoutClass: 'num-game-layout',
 
+  // The space equals the round count on every band, and on hard the asHalf
+  // coin flip is independent per round, so the ten doubles and ten halves are
+  // never drawn in balance. drawDistinct gets a session as close to a
+  // permutation as forty tries allow and guarantees no back-to-back repeat
+  // when it has to refill. The key is kind:operand — "double of 4" and
+  // "half of 8" are different questions, and keying on the answer would halve
+  // an already zero-slack space.
   generate(difficulty, ctx) {
     const { rng, t, count } = ctx;
-    const exercises = [];
 
-    for (let i = 0; i < count; i++) {
+    return drawDistinct(count, () => {
       const asHalf = difficulty === 'hard' && rng() < 0.5;
-      exercises.push(asHalf ? buildHalf(rng, t) : buildDouble(MAX_N[difficulty], rng, t));
-    }
 
-    return exercises;
+      return asHalf ? buildHalf(rng, t) : buildDouble(MAX_N[difficulty], rng, t);
+    }, exercise => exercise.kind + ':' + exercise.operand);
   },
 };
 

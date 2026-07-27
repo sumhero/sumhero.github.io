@@ -240,4 +240,47 @@ describe('ShapesGame', () => {
       expect(a.map(e => JSON.stringify(e.choices))).toEqual(b.map(e => JSON.stringify(e.choices)));
     }
   });
+
+  it('never repeats a figure back-to-back, at any difficulty', () => {
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const keys = ShapesGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.shape + ':' + ex.mode + ':' + ex.rotate + ':' + ex.scale);
+
+        for (let i = 1; i < keys.length; i++) {
+          expect(keys[i], difficulty + ' round ' + i).not.toBe(keys[i - 1]);
+        }
+      }
+    }
+  });
+
+  it('spreads a session across the shape and mode space', () => {
+    // easy is 5 shapes over 5 rounds and normal is 5 shapes x {sides, corners}
+    // = 10 over 10 rounds, so both are zero-slack and refill occasionally.
+    // Independent literals, set below the worst coverage seen in 500 000
+    // simulated sessions (4 and 7). Hard is roughly 340 combinations over 20
+    // rounds and is asserted fully distinct in the next test.
+    const floors = { easy: 4, normal: 7 };
+
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10]]) {
+      for (let session = 0; session < 30; session++) {
+        const keys = ShapesGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.shape + ':' + ex.mode + ':' + ex.rotate + ':' + ex.scale);
+
+        expect(new Set(keys).size, difficulty).toBeGreaterThanOrEqual(floors[difficulty]);
+      }
+    }
+  });
+
+  it('never shows the same rotated figure twice in a hard session', () => {
+    // 4 shapes (the circle is excluded from hard) x 19-23 rotations x 4 scales
+    // is roughly 340 combinations against 20 rounds: full distinctness held in
+    // 500 000 of 500 000 simulated sessions.
+    for (let session = 0; session < 30; session++) {
+      const keys = ShapesGame.generate('hard', ctx(20))
+        .map(ex => ex.shape + ':' + ex.mode + ':' + ex.rotate + ':' + ex.scale);
+
+      expect(new Set(keys).size).toBe(20);
+    }
+  });
 });
