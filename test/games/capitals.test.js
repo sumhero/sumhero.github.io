@@ -57,6 +57,24 @@ describe('CapitalsGame', () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
+  it('does not always place the correct answer at the same position', () => {
+    // buildChoices (shared with CountriesGame) seeds the choices array with
+    // the correct name at index 0 and relies solely on the Fisher-Yates loop
+    // to move it. If that loop were ever removed, the correct capital would
+    // sit at index 0 for every exercise, and a child could win by always
+    // tapping the leftmost button without learning any geography. A seeded,
+    // cycling rng keeps this deterministic while still driving the shuffle
+    // differently across exercises — we assert the property (the position
+    // varies), not one specific permutation or a specific index per exercise.
+    const values = [0.11, 0.83, 0.42, 0.07, 0.95, 0.28, 0.64, 0.5, 0.19, 0.76];
+    const exercises = CapitalsGame.generate('hard', ctx(20, cyclingRngFactory(values)));
+
+    const positions = exercises.map(ex => ex.choices.indexOf(ex.correctAnswer));
+    const distinctPositions = new Set(positions);
+
+    expect(distinctPositions.size).toBeGreaterThan(1);
+  });
+
   it('resolves the correct answer from ctx.lang, not from storage', () => {
     // Cyrillic never coincides with Latin, so comparing 'fr' vs 'ru' output
     // for the identical seed deterministically proves the language comes
