@@ -1852,3 +1852,10 @@ body.time-theme-night {
         font-size: min(6vw, 9vh);
     }
 }
+
+/* Doubles/halves ask a full sentence rather than an equation, so it needs to
+   wrap instead of overflowing the prompt area. */
+.num-game-layout .op-question {
+    max-width: 92%;
+    line-height: 1.2;
+}
