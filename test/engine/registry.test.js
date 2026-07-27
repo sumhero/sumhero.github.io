@@ -29,10 +29,12 @@ describe('registry', () => {
     }
   });
 
-  it('marks exactly one game legacy, and it supplies its own start()', () => {
+  it('marks the legacy games, and each supplies its own start()', () => {
     const legacy = GAMES.filter(g => g.legacy);
-    expect(legacy.map(g => g.id)).toEqual(['double_crash']);
-    expect(typeof legacy[0].start).toBe('function');
+    expect(legacy.map(g => g.id)).toEqual(['memory', 'double_crash']);
+    for (const game of legacy) {
+      expect(typeof game.start).toBe('function');
+    }
   });
 
   it('groups games under their domain, skipping empty domains', () => {
