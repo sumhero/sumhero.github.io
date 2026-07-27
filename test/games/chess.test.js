@@ -95,19 +95,30 @@ describe('ChessGame', () => {
     //    from queen(1,1)), which the loop must accept as exercise 1.
     //  - draws 9-11 are unused padding by correct code (which already
     //    resolved exercise 1 at draws 6-8) but matter for the mutant below.
-    // A mutant whose keyOf returns a constant can never satisfy the
-    // used-set check, so exercise 1 burns drawDistinct's full budget of
-    // DRAW_TRIES (40) tries. 40 tries * 3 draws/try = 120 draws, starting
-    // right after exercise 0's 3 draws — draw index 120 + 3 lands back on
-    // cycle position 3, and the 40th try reads cycle positions 0-2, which
-    // reproduce exercise 0's own queen(1,1) as exercise 1. That makes the
-    // mutant's exercise 1 equal to exercise 0 — caught by both the explicit
-    // piece/row/col assertions below and the loop's key check.
+    // A mutant whose keyOf returns a constant can never satisfy the used-set
+    // check, so drawDistinct's used-set is never actually populated with a
+    // real key, and exercise 1's draw runs to completion of BOTH of
+    // drawDistinct's internal phases (the first DRAW_TRIES-try loop, then
+    // the reseed-and-retry DRAW_TRIES-try loop) before falling through with
+    // whatever candidate it last drew. Each phase draws exactly DRAW_TRIES
+    // candidates (3 rng() calls each, since every candidate here has legal
+    // moves on the first roll), so the final candidate lands at rng-cycle
+    // position (2 * DRAW_TRIES * 3) mod 12, measured from right after
+    // exercise 0's own 3 draws.
     //
-    // THIS ARGUMENT DEPENDS ON 40 * 3 BEING A MULTIPLE OF 12. A budget of 30
-    // or 50 makes the mutant land elsewhere and produce the *correct* output,
-    // leaving this test green on broken code. If DRAW_TRIES ever changes,
-    // re-run the mutation in this file's plan step before trusting this test.
+    // MEASURED DIRECTLY (not assumed): with this 12-value cycle, that final
+    // candidate is queen(1,1) — the same as exercise 0, so the mutant is
+    // caught — whenever DRAW_TRIES is EVEN (checked 20, 30, 40, 50), and is
+    // rook(0,0) — coincidentally matching this test's own expected values
+    // for a *correct* exercise 1, so the mutant escapes and the test passes
+    // on broken code — whenever DRAW_TRIES is ODD (checked 39, 41, 45). The
+    // condition is DRAW_TRIES's parity, not any "multiple of 12" property:
+    // 30 and 50 are not multiples of 12 and are still caught; 39 and 41 are
+    // adjacent to 40 and both escape. If DRAW_TRIES ever changes, re-run
+    // this mutation (keyOf -> () => 'CONST') before trusting this test —
+    // don't assume from the arithmetic above, measure it, the way this
+    // comment's numbers were measured rather than derived from the old
+    // (also wrong) "500 tries is a multiple of 12" story this replaced.
     const rng = cyclingRngFactory([
       0.65, 0.5, 0.5,
       0.65, 0.5, 0.5,
