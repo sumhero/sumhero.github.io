@@ -1,4 +1,4 @@
-const CACHE_VERSION = '2026072732';
+const CACHE_VERSION = '2026072733';
 const CACHE_NAME = `sumhero-v${CACHE_VERSION}`;
 
 const ASSETS = [
