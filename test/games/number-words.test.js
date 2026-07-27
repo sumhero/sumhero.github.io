@@ -150,4 +150,53 @@ describe('NumberWordsGame', () => {
     expect(a.map(e => e.promptHtml)).toEqual(b.map(e => e.promptHtml));
     expect(a.map(e => e.choices.join(','))).toEqual(b.map(e => e.choices.join(',')));
   });
+
+  it('never spells the same number twice in a session', () => {
+    // easy 1-10 over 5 rounds, normal 1-20 over 10, hard alternates the
+    // irregular 70-99 band on even rounds with 1-100 on odd ones over 20.
+    // Full distinctness held in 500 000 of 500 000 simulated sessions.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const numbers = NumberWordsGame.generate(difficulty, ctx(rounds)).map(ex => ex.number);
+
+        expect(new Set(numbers).size, difficulty).toBe(rounds);
+      }
+    }
+  });
+
+  it('never spells the same number in two consecutive rounds', () => {
+    // Direct check of the no-adjacent-repeats guarantee drawDistinct provides,
+    // independent of the full-distinctness test above.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const numbers = NumberWordsGame.generate(difficulty, ctx(rounds)).map(ex => ex.number);
+
+        for (let i = 1; i < numbers.length; i++) {
+          expect(numbers[i], difficulty + ' round ' + i).not.toBe(numbers[i - 1]);
+        }
+      }
+    }
+  });
+
+  it('keeps the irregular band on even rounds after deduplication', () => {
+    // The guarantee the sampler had to be built around: hard draws the
+    // irregular French 70-99 band on even indices and the full 1-100 range on
+    // odd ones. drawDistinct passes the round index into the draw, so the
+    // alternation is index-driven and survives rejection. The rejected
+    // engine-side "over-generate and filter" design would have destroyed this.
+    for (let session = 0; session < 30; session++) {
+      const exercises = NumberWordsGame.generate('hard', ctx(20));
+
+      exercises.forEach((ex, i) => {
+        if (i % 2 === 0) {
+          expect(ex.irregular, 'round ' + i).toBe(true);
+          // 70..99 stated as independent literals, not read from IRREGULAR.
+          expect(ex.number).toBeGreaterThanOrEqual(70);
+          expect(ex.number).toBeLessThanOrEqual(99);
+        } else {
+          expect(ex.irregular, 'round ' + i).toBe(false);
+        }
+      });
+    }
+  });
 });

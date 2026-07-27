@@ -1,4 +1,5 @@
 import { OBJECT_CATEGORIES } from './object-categories.js';
+import { drawDistinct } from '../engine/unique.js';
 
 const MAX = { easy: 10, normal: 20, hard: 100 };
 const EQUAL_CHANCE = 0.2;
@@ -20,12 +21,20 @@ export const CompareGame = {
   layoutClass: 'compare-layout',
   choiceClass: 'compare-choice-btn',
 
+  // Keyed on the ordered pair, never on correctAnswer: there are only three
+  // possible answers, so answer-keying would exhaust after three rounds and
+  // then cycle lt/eq/gt, which a child would crack immediately.
+  //
+  // Accepted side effect, deliberately recorded so it is not "fixed" back:
+  // EQUAL_CHANCE gives equal pairs 20% of the draw, but there are only `max`
+  // equal pairs against `max²` pairs overall, so deduplicating on the pair
+  // slightly lowers the observed '=' rate. On easy that is 10 equal pairs
+  // against 5 rounds — harmless, and a test asserts '=' still appears.
   generate(difficulty, ctx) {
     const { rng, t, count } = ctx;
     const max = MAX[difficulty];
-    const exercises = [];
 
-    for (let i = 0; i < count; i++) {
+    return drawDistinct(count, () => {
       const left = Math.floor(rng() * max) + 1;
       let right;
 
@@ -42,7 +51,7 @@ export const CompareGame = {
       const category = OBJECT_CATEGORIES[Math.floor(rng() * OBJECT_CATEGORIES.length)];
       const emoji = category.emojis[Math.floor(rng() * category.emojis.length)];
 
-      exercises.push({
+      return {
         left,
         right,
         emoji,
@@ -55,10 +64,8 @@ export const CompareGame = {
           '</div>' +
           '<div class="op-hint">' + t('comparePrompt') + '</div>',
         choices: shuffle(SIGNS.map(sign => ({ ...sign })), rng),
-      });
-    }
-
-    return exercises;
+      };
+    }, exercise => exercise.left + ':' + exercise.right);
   },
 };
 

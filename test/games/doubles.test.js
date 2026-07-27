@@ -113,4 +113,41 @@ describe('DoublesGame', () => {
     expect(a.map(e => e.promptHtml)).toEqual(b.map(e => e.promptHtml));
     expect(a.map(e => e.correctAnswer)).toEqual(b.map(e => e.correctAnswer));
   });
+
+  it('never repeats a question back-to-back, at any difficulty', () => {
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const keys = DoublesGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.kind + ':' + ex.operand);
+
+        for (let i = 1; i < keys.length; i++) {
+          expect(keys[i], difficulty + ' round ' + i).not.toBe(keys[i - 1]);
+        }
+      }
+    }
+  });
+
+  it('spreads a session across the whole operand range', () => {
+    // The space equals the round count on every band (5/5, 10/10, 20/20), so a
+    // perfect permutation is reachable but not guaranteed: 14.4% of hard
+    // sessions legitimately refill once, because asHalf is an independent
+    // per-round coin flip and the two ten-value bands are never balanced.
+    // These floors are independent literals. Easy and normal (4, 7) are set AT
+    // the worst coverage seen in 500 000 simulated sessions, not below it —
+    // there is no headroom to spare at those sizes, and mutation testing
+    // (a neutered sampler) still goes red 10/10 against them. Hard (15) does
+    // have one round of headroom below its observed worst of 16. Do NOT
+    // tighten any of them to "all distinct" — that would be a flaky test
+    // asserting something the generator does not promise.
+    const floors = { easy: 4, normal: 7, hard: 15 };
+
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const keys = DoublesGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.kind + ':' + ex.operand);
+
+        expect(new Set(keys).size, difficulty).toBeGreaterThanOrEqual(floors[difficulty]);
+      }
+    }
+  });
 });

@@ -1,3 +1,5 @@
+import { drawDistinct, DRAW_TRIES } from '../engine/unique.js';
+
 export const CHESS_SIZE = 3;
 
 export const CHESS_PIECES = {
@@ -63,13 +65,24 @@ export const ChessGame = {
     return exercise.targets.includes(value);
   },
 
+  // Two different rejections, kept apart on purpose. A knight on the centre
+  // square of a 3x3 board has zero legal targets — an unanswerable board, so
+  // that rejection is a *validity* rule and stays inside the draw, bounded by
+  // its own guard — which happens to borrow DRAW_TRIES's value below rather
+  // than defining a separate one; the two budgets are semantically unrelated
+  // (this loop retries a piece placement, not a session-level identity check)
+  // and are only numerically coupled. Harmless: only 1 of the 45
+  // piece+square combinations is invalid (a knight on the centre square), so
+  // the chance of this loop burning all DRAW_TRIES attempts without finding a
+  // legal placement is (1/45)^40, not a figure anyone is tuning. Whether a
+  // board has been seen before is a separate *identity* question and belongs
+  // to drawDistinct. Folding validity into keyOf would make an unanswerable
+  // board reachable.
   generate(difficulty, ctx) {
     const { rng, count } = ctx;
-    const exercises = [];
-    let previousKey = null;
 
-    for (let i = 0; i < count; i++) {
-      let piece, row, col, targets, key;
+    return drawDistinct(count, () => {
+      let piece, row, col, targets;
       let guard = 0;
       do {
         guard++;
@@ -77,20 +90,16 @@ export const ChessGame = {
         row = Math.floor(rng() * CHESS_SIZE);
         col = Math.floor(rng() * CHESS_SIZE);
         targets = ChessMoves.targets(piece, row, col);
-        key = piece + row + col;
-      } while ((targets.length === 0 || key === previousKey) && guard < 500);
-      previousKey = key;
+      } while (targets.length === 0 && guard < DRAW_TRIES);
 
-      exercises.push({
+      return {
         piece,
         row,
         col,
         targets: targets.map(t => t.r + ',' + t.c),
         caption: ctx.t('chessPrompt'),
-      });
-    }
-
-    return exercises;
+      };
+    }, exercise => exercise.piece + exercise.row + exercise.col);
   },
 
   renderPrompt(el, exercise, submit) {

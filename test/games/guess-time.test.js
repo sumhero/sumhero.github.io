@@ -158,6 +158,22 @@ describe('GuessTimeGame', () => {
 
     expect(distinctPositions.size).toBeGreaterThan(1);
   });
+
+  it('never shows the same clock time twice in a session', () => {
+    // easy is 12 whole hours over 5 rounds; normal is 24 hours x {00, 30} = 48
+    // over 10; hard is 24 x {00, 15, 30, 45} = 96 over 20. Full distinctness
+    // held in 500 000 of 500 000 simulated sessions. The one-slot `previous`
+    // guard this replaces still let 7.9% of hard sessions show the same time
+    // three or more times, because it only blocked A A and never A B A B A.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const times = GuessTimeGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.correctAnswer);
+
+        expect(new Set(times).size, difficulty).toBe(rounds);
+      }
+    }
+  });
 });
 
 function cyclingRngFactory(values) {

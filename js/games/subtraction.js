@@ -1,4 +1,5 @@
 import { OBJECT_CATEGORIES } from './object-categories.js';
+import { drawDistinct } from '../engine/unique.js';
 
 const MAX = { easy: 5, normal: 10, hard: 20 };
 const CHOICE_COUNT = 5;
@@ -11,12 +12,14 @@ export const SubtractionGame = {
   rounds: { easy: 5, normal: 10, hard: 20 },
   layoutClass: 'num-game-layout',
 
+  // Keyed on the pair, not the difference: 9-4 and 7-2 are different exercises
+  // for a child crossing objects out, and answer-keying would collapse hard
+  // from 190 combinations to about 19.
   generate(difficulty, ctx) {
     const { rng, t, count } = ctx;
     const max = MAX[difficulty];
-    const exercises = [];
 
-    for (let i = 0; i < count; i++) {
+    return drawDistinct(count, () => {
       // 2..max, so there is always at least one object left to count.
       const minuend = Math.floor(rng() * (max - 1)) + 2;
       // 1..minuend-1, so the answer is never zero and never the whole set.
@@ -26,7 +29,7 @@ export const SubtractionGame = {
       const category = OBJECT_CATEGORIES[Math.floor(rng() * OBJECT_CATEGORIES.length)];
       const emoji = category.emojis[Math.floor(rng() * category.emojis.length)];
 
-      exercises.push({
+      return {
         minuend,
         subtrahend,
         emoji,
@@ -36,10 +39,8 @@ export const SubtractionGame = {
           '<div class="op-question">' + minuend + ' − ' + subtrahend + ' = ?</div>' +
           '<div class="op-hint">' + t('subtractionPrompt') + '</div>',
         choices: buildChoices(correctAnswer, max, rng),
-      });
-    }
-
-    return exercises;
+      };
+    }, exercise => exercise.minuend + '-' + exercise.subtrahend);
   },
 };
 

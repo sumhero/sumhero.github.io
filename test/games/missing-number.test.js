@@ -127,4 +127,45 @@ describe('MissingNumberGame', () => {
     expect(a.map(e => e.promptHtml)).toEqual(b.map(e => e.promptHtml));
     expect(a.map(e => e.correctAnswer)).toEqual(b.map(e => e.correctAnswer));
   });
+
+  it('never repeats the same run-and-blank back-to-back', () => {
+    // A weaker, independent property than full-session distinctness below:
+    // even if two identical run-and-blank combinations ever did land in one
+    // session, they must never be adjacent — the specific guarantee
+    // drawDistinct's exhaustion path protects, since it re-seeds with only
+    // the last emitted key.
+    //
+    // 100 sessions, not 30: unlike the full-distinctness test below, this
+    // property only fires when two *adjacent* draws collide, which is far
+    // rarer than any-pair-in-the-session colliding (no birthday-paradox
+    // boost). Measured against an undeduplicated generator: an adjacent
+    // collision lands in only ~5.2%/2.4%/2.2% of easy/normal/hard sessions,
+    // so 30 sessions caught the mutation only ~93% of the time (2/30 runs
+    // stayed green in testing) - below this repo's "red on all ten" bar.
+    // 100 sessions per difficulty pushes the miss probability under 0.01%.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 100; session++) {
+        const keys = MissingNumberGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.terms.join(',') + ':' + ex.blankIndex);
+
+        for (let i = 1; i < keys.length; i++) {
+          expect(keys[i], difficulty).not.toBe(keys[i - 1]);
+        }
+      }
+    }
+  });
+
+  it('never repeats the same run-and-blank in a session', () => {
+    // The same run with a different blank is a different question: "2 _ 4 5"
+    // and "2 3 4 _" ask different things. Spaces are roughly 68, 388 and 1100
+    // against 5, 10 and 20 rounds.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const keys = MissingNumberGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.terms.join(',') + ':' + ex.blankIndex);
+
+        expect(new Set(keys).size, difficulty).toBe(rounds);
+      }
+    }
+  });
 });

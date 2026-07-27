@@ -45,6 +45,8 @@ js/
   animation.js         Celebration / confetti / Lottie
   engine/
     game-engine.js       GameEngine: the shared session loop (see Architecture)
+    unique.js            drawDistinct(count, draw, keyOf) — the shared
+                          no-repeat exercise sampler (see Architecture)
     registry.js          GAMES list + DOMAINS, gamesByDomain() (filters out
                           empty domains; optional `(domains, games)` params
                           let a test inject a synthetic empty domain)
@@ -184,6 +186,78 @@ js/
   This one convention — no hidden inputs besides `ctx` — is what makes every
   migrated game's `generate()` unit-testable with a plain seeded call, no DOM
   and no mocking.
+- **Session distinctness — `drawDistinct`**: a `generate()` must not hand the
+  child the same exercise twice *adjacently* in one session — not "never
+  repeats at all", which is impossible for several games (`dice_recognition`
+  hard still shows every one of its 5 faces about 4 times each across 20
+  rounds; that repetition is unavoidable and fine). Before this work, fifteen
+  of the twenty engine-driven games could show the same exercise three or
+  more times with nothing between the repeats: `dice_recognition` normal did
+  so in 97% of sessions, `money` hard in 92.5%. Every game that draws its
+  rounds independently now wraps the round body in
+  `drawDistinct(count, draw, keyOf)` (`js/engine/unique.js`) — a **bounded
+  rejection sampler**. `draw(i)` builds a whole candidate exercise and closes
+  over `ctx.rng`; `keyOf(exercise)` returns a **string** naming that
+  exercise's identity.
+  - **The key is usually not `correctAnswer`.** It is wrong for most games and
+    harmful in several: `parity` has two possible answers, `compare` three,
+    and `chess`'s answer is a *set* of squares. Each game names its own key —
+    `subtraction` uses `minuend-subtrahend`, `money` uses the purse
+    composition in count mode and the price in pay mode, `shapes` includes the
+    mode *and* the rotation. `dice_recognition` and `guess_time` are the two
+    reviewed exceptions where the answer genuinely *is* the identity — a die
+    face and a formatted `HH:MM` time each have exactly one exercise per
+    value — so keying on `correctAnswer` there is correct, not an oversight.
+    There is no useful engine-level default, which is why this is not a
+    purely central fix.
+  - **Exhaustion is normal, not exceptional.** `dice_recognition` hard has five
+    faces over twenty rounds. When a round burns its 40-try budget the used-set
+    is cleared and **re-seeded with the exercise just emitted**, so a refill can
+    never place a repeat next to its previous occurrence. Behaviour degrades to
+    "cycle the space evenly, never twice in a row", and the loop is bounded so
+    it cannot hang.
+  - **`DRAW_TRIES` is 40 and is load-bearing.** Big enough to complete a
+    permutation of 20; small enough that the constant-rng determinism tests do
+    not burn a 500-try budget every round; and **it must be even** —
+    `test/games/chess.test.js`'s anti-repeat test drives `generate` with a
+    12-value cycling rng and a `keyOf` → constant mutant, and measuring
+    directly (not deriving from arithmetic) is what settled this: budgets
+    20/30/40/50 all catch the mutant, and 39/41/45 all let it escape. The
+    property is `DRAW_TRIES`'s parity, nothing else — earlier drafts of this
+    project claimed the reason was "`40 × 3` is a multiple of 12" and that
+    "30 or 50 would pass on broken code"; both claims were measured and found
+    false. See `test/games/chess.test.js`'s own comment for the full
+    derivation; don't restate the reasoning elsewhere, to avoid a fourth copy
+    drifting from the truth the way the first three did. If `DRAW_TRIES` ever
+    changes, re-run that test's mutation before trusting it.
+  - **The sampler is never given the engine's job.** `js/engine/game-engine.js`
+    is untouched. The tempting "over-generate `count * 3` and filter" design
+    breaks index-dependent generators (`number_words` alternates its irregular
+    French band on even `i`, `count_objects` cycles emoji on `i`), still cannot
+    guarantee the count when the space is too small, and triples render cost.
+  - **Seven games are deliberately exempt** and are not a mistake: `memory`
+    and `double_crash` are `legacy: true` (own loop / no exercise concept);
+    `dice_addition`, `countries` and `capitals` already deduplicate for the
+    whole session; `count_objects` already scores 0% because its emoji cycle
+    makes every field distinct; `ordering`'s `pickDistinct` has a deterministic
+    top-up that must not be disturbed.
+    `test/engine/unique-coverage.test.js` holds that list as an independent,
+    duplicated literal (not derived from the games) and fails if a new
+    engine-driven game appears in `js/engine/registry.js` without either
+    calling `drawDistinct` or being added to the exempt list with a reason —
+    that guard, not this paragraph, is what stops a future game 23 from
+    silently reintroducing the bug.
+  - **`shapes` hard is a deliberate, documented exception to "no repeated
+    answer."** Its key includes the rotation and scale, so the same shape
+    *name* can still be the correct answer four or five times across twenty
+    rounds, adjacently — measured at ~99.5% of hard sessions showing at least
+    one adjacent same-name pair. This was judged **not a bug**: recognising a
+    shape through rotation is the band's taught content, each occurrence is a
+    genuinely different image (never the same exercise twice, key-wise), and
+    with only four hard-band names, forcing "never the same name twice in a
+    row" would behave like the rejected `parity`/`compare` case — the last
+    three rounds would start narrowing which name comes next, which is worse
+    pedagogy than an occasional repeated word. No secondary guard was added.
 - **The legacy escape hatch**: two games are `legacy: true` and keep their own
   session loop instead of going through `GameEngine` — `memory`
   (`js/games/memory.js`) and `double_crash` (`js/games/double-crash.js`).
@@ -228,7 +302,10 @@ js/
 Adding a game touches more than one file — do all of these, then verify:
 
 1. Create `js/games/<id>.js` exporting a game object with a pure
-   `generate(difficulty, ctx)`. Mirror `js/games/dice-addition.js`.
+   `generate(difficulty, ctx)` that draws its rounds through
+   `drawDistinct(count, draw, keyOf)` (see "Session distinctness" above) — or
+   add the game to the exempt list in `test/engine/unique-coverage.test.js`
+   with a reason. Mirror `js/games/tens-units.js`.
 2. Add it to `GAMES` in `js/engine/registry.js` (import + one line in the
    array) with a `domain` matching one of `DOMAINS`.
 3. Add the game-name (`nameKey`) translation key — and any new exercise

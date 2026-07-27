@@ -1,4 +1,5 @@
 import { ShapeRenderer, SHAPE_KEYS, SHAPE_SIDES, SHAPE_CORNERS } from '../render/shapes.js';
+import { drawDistinct } from '../engine/unique.js';
 
 const NAME_KEYS = {
   square: 'shapeSquare',
@@ -41,25 +42,28 @@ export const ShapesGame = {
   layoutClass: 'shape-game-layout',
   choiceClass: 'shape-choice-btn',
 
+  // The key carries the mode as well as the figure: a square's sides and a
+  // square's corners are two different questions that share the answer 4, and
+  // on hard the rotation and the scale ARE the exercise, because recognising a
+  // shape through rotation is the skill the band teaches. Easy and normal
+  // always carry rotate 0 and scale 1, so one expression covers all three
+  // bands. The square-only 45-degree exclusion stays inside the draw, where it
+  // already is.
   generate(difficulty, ctx) {
     const { rng, t, count } = ctx;
-    const exercises = [];
 
-    for (let i = 0; i < count; i++) {
-      if (difficulty === 'normal') {
-        exercises.push(countExercise(rng, t));
-      } else if (difficulty === 'hard') {
+    return drawDistinct(count, () => {
+      if (difficulty === 'normal') return countExercise(rng, t);
+
+      if (difficulty === 'hard') {
         const shape = pick(HARD_SHAPES, rng);
         const rotations = shape === 'square' ? HARD_ROTATIONS_SQUARE : HARD_ROTATIONS_FULL;
-        exercises.push(nameExercise(
-          rng, t, shape, pick(rotations, rng), pick(HARD_SCALES, rng)
-        ));
-      } else {
-        exercises.push(nameExercise(rng, t, pick(SHAPE_KEYS, rng), 0, 1));
-      }
-    }
 
-    return exercises;
+        return nameExercise(rng, t, shape, pick(rotations, rng), pick(HARD_SCALES, rng));
+      }
+
+      return nameExercise(rng, t, pick(SHAPE_KEYS, rng), 0, 1);
+    }, exercise => exercise.shape + ':' + exercise.mode + ':' + exercise.rotate + ':' + exercise.scale);
   },
 };
 

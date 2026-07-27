@@ -169,4 +169,32 @@ describe('TensUnitsGame', () => {
     expect(a.map(e => e.promptHtml)).toEqual(b.map(e => e.promptHtml));
     expect(a.map(e => JSON.stringify(e.choices))).toEqual(b.map(e => JSON.stringify(e.choices)));
   });
+
+  it('never shows the same number twice in a session', () => {
+    // easy draws 10-39 (30 values) over 5 rounds, normal and hard draw 10-99
+    // (90 values) over 10 and 20. Full distinctness held in 500 000 of 500 000
+    // simulated sessions. This is the game the repetition report came from.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const numbers = TensUnitsGame.generate(difficulty, ctx(rounds)).map(ex => ex.number);
+
+        expect(new Set(numbers).size, difficulty).toBe(rounds);
+      }
+    }
+  });
+
+  it('never puts the same number in two consecutive rounds', () => {
+    // A weaker, direct check of the no-adjacent-repeats guarantee drawDistinct
+    // provides: even if full-session distinctness were ever relaxed for a
+    // larger round count, back-to-back repeats must still never happen.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const numbers = TensUnitsGame.generate(difficulty, ctx(rounds)).map(ex => ex.number);
+
+        for (let i = 1; i < numbers.length; i++) {
+          expect(numbers[i], difficulty + ' round ' + i).not.toBe(numbers[i - 1]);
+        }
+      }
+    }
+  });
 });

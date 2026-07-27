@@ -1,4 +1,5 @@
 import { OBJECT_CATEGORIES } from './object-categories.js';
+import { drawDistinct } from '../engine/unique.js';
 
 const MAX = { easy: 10, normal: 20, hard: 100 };
 
@@ -18,12 +19,16 @@ export const ParityGame = {
   layoutClass: 'parity-layout',
   choiceClass: 'parity-choice-btn',
 
+  // Keyed on the number, never on correctAnswer: there are exactly two
+  // possible answers, so an answer-keyed sampler would exhaust after two
+  // rounds and alternate even/odd for the rest of the session. The question is
+  // the number; the emoji is decoration, and two exercises showing "7" with
+  // different objects are the same maths question.
   generate(difficulty, ctx) {
     const { rng, t, count } = ctx;
     const max = MAX[difficulty];
-    const exercises = [];
 
-    for (let i = 0; i < count; i++) {
+    return drawDistinct(count, () => {
       const number = 1 + Math.floor(rng() * max);
       // The object set is drawn here rather than asked for on a pre-screen: a
       // six-year-old should reach the first question in one tap.
@@ -31,7 +36,7 @@ export const ParityGame = {
       const emoji = category.emojis[Math.floor(rng() * category.emojis.length)];
       const showObjects = difficulty === 'easy';
 
-      exercises.push({
+      return {
         number,
         emoji: showObjects ? emoji : null,
         correctAnswer: number % 2 === 0 ? 'even' : 'odd',
@@ -44,10 +49,8 @@ export const ParityGame = {
           ANSWERS.map(answer => ({ value: answer.value, html: t(answer.labelKey) })),
           rng
         ),
-      });
-    }
-
-    return exercises;
+      };
+    }, exercise => String(exercise.number));
   },
 };
 
