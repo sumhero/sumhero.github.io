@@ -2060,3 +2060,30 @@ body.time-theme-night {
         font-size: min(4vw, 8vh);
     }
 }
+
+/* Numbers in words: one long word — quatre-vingt-dix-neuf is 21 characters —
+   that must wrap rather than overflow, answered with numerals up to 100. */
+.number-word {
+    font-size: min(9vw, 7vh);
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    text-align: center;
+    max-width: 92%;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.num-game-layout .number-words-choice-btn {
+    font-size: min(6.5vw, 6.5vh);
+}
+
+@media (orientation: landscape) {
+    .number-word {
+        font-size: min(5vw, 9vh);
+    }
+
+    .num-game-layout .number-words-choice-btn {
+        font-size: min(4vw, 8vh);
+    }
+}
