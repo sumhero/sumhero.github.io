@@ -64,8 +64,8 @@ input, textarea {
     100% { opacity: 0; transform: translateY(-16px); }
 }
 
-/* Auth Screen */
-.auth-container {
+/* Loading Screen */
+.loading-container {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -1720,8 +1720,8 @@ body.time-theme-night {
         font-size: min(3.5vw, 6vh) !important;
     }
 
-    /* Auth landscape */
-    .auth-container {
+    /* Loading landscape */
+    .loading-container {
         flex-direction: row;
         gap: 48px;
     }
