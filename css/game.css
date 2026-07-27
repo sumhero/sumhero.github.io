@@ -1770,3 +1770,55 @@ body.time-theme-night {
         font-size: min(3vw, 5vh);
     }
 }
+
+/* Shared layout for the CP number games (complements, subtraction, doubles,
+   missing number): a stacked prompt above the default five-choice grid. */
+.num-game-layout .dice-container {
+    flex-direction: column;
+    flex: 1;
+    gap: min(2vh, 12px);
+}
+
+.op-question {
+    font-size: min(9vw, 7vh);
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+.op-hint {
+    font-size: min(4.5vw, 3.5vh);
+    color: rgba(255,255,255,0.9);
+    text-align: center;
+}
+
+/* The ten-frame is a wide rectangle; the default `.dice-container svg` rule
+   sizes svgs square, so override both axes. */
+.ten-frame {
+    width: min(80vw, 42vh) !important;
+    height: auto !important;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
+
+@media (orientation: landscape) {
+    .num-game-layout {
+        flex-direction: row !important;
+    }
+
+    .num-game-layout .dice-container {
+        flex: 2;
+    }
+
+    .op-question {
+        font-size: min(5vw, 9vh);
+    }
+
+    .op-hint {
+        font-size: min(2.5vw, 4vh);
+    }
+
+    .ten-frame {
+        width: min(45vw, 60vh) !important;
+    }
+}

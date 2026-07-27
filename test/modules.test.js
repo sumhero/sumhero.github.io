@@ -18,10 +18,13 @@ describe('ES module conversion', () => {
     expect(DiceRenderer.render(3)).toContain('<svg');
   });
 
-  it('exports all ten existing games', () => {
-    expect(GAMES.map(g => g.id).sort()).toEqual([
-      'capitals', 'chess', 'count_objects', 'countries', 'dice_addition',
-      'dice_recognition', 'double_crash', 'guess_time', 'memory', 'uno',
-    ]);
+  // The authoritative game inventory lives in test/engine/registry.test.js.
+  // Here we only prove the whole import graph resolves — importing registry.js
+  // pulls in every game module, so a broken import anywhere fails this.
+  it('exports the game registry with a unique id per game', () => {
+    const ids = GAMES.map(g => g.id);
+    expect(ids.length).toBeGreaterThan(0);
+    expect(ids.every(id => typeof id === 'string' && id.length > 0)).toBe(true);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
