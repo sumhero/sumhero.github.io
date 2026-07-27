@@ -18,9 +18,9 @@ copy-pasted games onto a shared `GameEngine` (see
 Open `index.html` directly, or serve the root over a static server (needed for
 the service worker / PWA features), e.g. `python3 -m http.server`. Install dev
 dependencies once with `npm install` (Vitest + jsdom; the runtime itself has no
-dependencies). Run `npm test` before committing — 22 files, 235+ tests as of
-this writing. Verification is tests plus playing the changed game in the
-browser and checking the console for errors.
+dependencies). Run `npm test` before committing — it must stay green.
+Verification is tests plus playing the changed game in the browser and
+checking the console for errors.
 
 ## Layout
 
@@ -86,12 +86,12 @@ js/
   session loop (`showExercise` → `answer` → advance/`completeGame`), the
   default choice rendering, scoring (`wrongAttempts`), the celebration
   screen, spoken prompts (`Speech`), and saving the result
-  (`js/engine/results.js`). This is what let nine of the ten original games
+  (`js/engine/results.js`). This is what let eight of the ten original games
   drop their duplicated `answer()`/`updateProgress()`/`completeGame()`.
 - **Optional seams on a game object** (all checked in `game-engine.js`; only
   define one if the default doesn't fit):
   - `renderPrompt(el, exercise, submit)` — custom prompt rendering instead of
-    `exercise.promptHtml` (used by `chess`, `uno`).
+    `exercise.promptHtml` (used by `chess`).
   - `renderChoices(el, exercise, submit)` — custom choice rendering instead
     of the default button grid (used by `chess`, `uno`).
   - `isCorrect(value, exercise)` — custom correctness check instead of

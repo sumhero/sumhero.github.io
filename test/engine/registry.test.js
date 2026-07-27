@@ -46,6 +46,8 @@ describe('registry', () => {
     expect(grouped[1].games.map(g => g.id)).toEqual(['guess_time']);
     expect(grouped[2].games.map(g => g.id))
       .toEqual(['uno', 'memory', 'chess', 'double_crash']);
+    expect(grouped[3].games.map(g => g.id))
+      .toEqual(['countries', 'capitals']);
   });
 
   it('leaves geometrie empty until Tier 3 adds shapes', () => {

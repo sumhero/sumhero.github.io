@@ -94,33 +94,6 @@ input, textarea {
     text-align: center;
 }
 
-.auth-form {
-    width: 100%;
-    max-width: 320px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.auth-form input {
-    padding: 16px 20px;
-    border: none;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    background: rgba(255,255,255,0.95);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    outline: none;
-}
-
-.auth-form input:focus {
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-}
-
-.auth-buttons {
-    display: flex;
-    gap: 12px;
-}
-
 .error-message {
     color: #ffcdd2;
     text-align: center;

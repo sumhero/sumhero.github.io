@@ -150,3 +150,76 @@ describe('MemoryGame tile-group behaviour', () => {
     expect(document.querySelector('.memory-grid').classList.contains('locked')).toBe(true);
   });
 });
+
+// Pins the exact two behaviours that justify keeping `memory` off the
+// GameEngine: the fourth "Peeks" stats line, and the stricter perfect-score
+// rule (a peek disqualifies a perfect score even with zero wrong attempts).
+// GameEngine.completeGame() can express neither today — see the "legacy
+// escape hatch" section of CLAUDE.md. completeGame() is synchronous once
+// invoked, so no fake timers are needed here.
+describe('MemoryGame completeGame', () => {
+  function mountDom() {
+    document.body.className = '';
+    document.body.innerHTML = `
+      <div id="screen-games" class="screen active"></div>
+      <div id="screen-game" class="screen">
+        <div id="progress-fill"></div>
+        <div id="game-score"></div>
+        <div class="game-body">
+          <div id="dice-container"></div>
+          <div id="choices-container"></div>
+        </div>
+      </div>
+      <div id="screen-celebration" class="screen">
+        <div id="dancing-animals"></div>
+        <h2 id="celebration-title"></h2>
+        <div id="celebration-stats"></div>
+        <div id="confetti-container"></div>
+      </div>
+    `;
+  }
+
+  beforeEach(() => {
+    mountDom();
+    vi.useFakeTimers();
+    MemoryGame.start('easy');
+  });
+
+  afterEach(() => {
+    MemoryGame.clearTimers();
+    vi.useRealTimers();
+    document.body.innerHTML = '';
+  });
+
+  it('renders a fourth "Peeks" stats line reflecting peeksUsed', () => {
+    MemoryGame.wrongAttempts = 0;
+    MemoryGame.peeksUsed = 2;
+
+    MemoryGame.completeGame();
+
+    const stats = document.getElementById('celebration-stats').innerHTML;
+    expect(stats).toContain('Peeks: 2');
+  });
+
+  it('titles perfectScore only when wrongAttempts and peeksUsed are both zero', () => {
+    MemoryGame.wrongAttempts = 0;
+    MemoryGame.peeksUsed = 0;
+
+    MemoryGame.completeGame();
+
+    expect(document.getElementById('celebration-title').textContent).toBe('Perfect Score!');
+  });
+
+  it('does not award perfectScore when the player peeked, even with zero wrong attempts', () => {
+    // The discriminating case: GameEngine's rule (wrongAttempts === 0) would
+    // wrongly call this perfect. memory requires peeksUsed === 0 too, because
+    // a child who peeked at the hidden tiles did not solve the board from
+    // memory.
+    MemoryGame.wrongAttempts = 0;
+    MemoryGame.peeksUsed = 1;
+
+    MemoryGame.completeGame();
+
+    expect(document.getElementById('celebration-title').textContent).not.toBe('Perfect Score!');
+  });
+});

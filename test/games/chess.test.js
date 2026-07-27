@@ -85,7 +85,40 @@ describe('ChessGame', () => {
   });
 
   it('never repeats the same piece and square consecutively', () => {
-    const keys = ChessGame.generate('hard', ctx(20)).map(e => e.piece + e.row + e.col);
+    // Seeded, cycling rng (length 12: 4 triples of 3 draws each) instead of
+    // Math.random, so this is deterministic rather than "usually" catching a
+    // regression:
+    //  - draws 0-2 give exercise 0: queen at (1,1) (has legal moves).
+    //  - draws 3-5 replay the exact same triple, so a correct anti-repeat
+    //    check must reject it as exercise 1 and retry.
+    //  - draws 6-8 give a rook at (0,0) (also has legal moves, and differs
+    //    from queen(1,1)), which the loop must accept as exercise 1.
+    //  - draws 9-11 are unused padding by correct code (which already
+    //    resolved exercise 1 at draws 6-8) but matter for the mutant below.
+    // A mutant that hardcodes `key` to a constant can never satisfy
+    // `key !== previousKey`, so its retry loop always burns the full 500-try
+    // guard budget for exercise 1. 500 tries * 3 draws/try = 1500 draws,
+    // starting right after exercise 0's 3 draws — draw index 1500 lands
+    // exactly on cycle position 0 (1500 is a multiple of the 12-value cycle
+    // length), reproducing exercise 0's own queen(1,1) as exercise 1. That
+    // makes the mutant's exercise 1 equal to exercise 0 — caught by both the
+    // explicit piece/row/col assertions below and the loop's key check.
+    const rng = cyclingRngFactory([
+      0.65, 0.5, 0.5,
+      0.65, 0.5, 0.5,
+      0.3, 0.1, 0.1,
+      0.5, 0.5, 0.5,
+    ]);
+    const exercises = ChessGame.generate('easy', ctx(2, rng));
+
+    expect(exercises[0].piece).toBe('queen');
+    expect(exercises[0].row).toBe(1);
+    expect(exercises[0].col).toBe(1);
+    expect(exercises[1].piece).toBe('rook');
+    expect(exercises[1].row).toBe(0);
+    expect(exercises[1].col).toBe(0);
+
+    const keys = exercises.map(e => e.piece + e.row + e.col);
     for (let i = 1; i < keys.length; i++) {
       expect(keys[i]).not.toBe(keys[i - 1]);
     }

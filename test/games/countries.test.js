@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { CountriesGame } from '../../js/games/countries.js';
-import { getCountryPool } from '../../js/data/countries.js';
+import { getCountryPool, getCountryName } from '../../js/data/countries.js';
 
 function ctx(count, rng = Math.random, lang = 'fr') {
   return { rng, t: k => k, lang, count, category: null };
@@ -30,6 +30,15 @@ describe('CountriesGame', () => {
   it('always includes the correct country name', () => {
     for (const ex of CountriesGame.generate('normal', ctx(10))) {
       expect(ex.choices).toContain(ex.correctAnswer);
+    }
+  });
+
+  it('offers country names, not capital cities, as choices', () => {
+    const countries = getCountryPool('easy').map(c => getCountryName(c, 'fr'));
+    for (const ex of CountriesGame.generate('easy', ctx(10))) {
+      for (const choice of ex.choices) {
+        expect(countries).toContain(choice);
+      }
     }
   });
 
