@@ -312,3 +312,14 @@ engine that should inform how the later game plans are written.
   `localStorage`, so this later becomes a UI-only change.
 - Any backend or account system. The removed auth remnants are not replaced.
 - Multiplication and division — CE1 material, not CP.
+
+## Deviations from this design as built
+
+- `memory` also stayed `legacy: true`, alongside `double_crash` — this design's
+  "`double_crash` is exempt" section (and the build-order note above) only
+  named `double_crash` as the sole exception, which is no longer accurate.
+  `memory` fits the exercise/scoring shape but needs a fourth "peeks used"
+  stats line and a stricter perfect-score rule
+  (`wrongAttempts === 0 && peeksUsed === 0`) that `GameEngine.completeGame()`
+  can't express yet. See `CLAUDE.md`'s "legacy escape hatch" section for the
+  unblocking route.
