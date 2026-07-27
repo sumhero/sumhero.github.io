@@ -132,10 +132,13 @@ describe('DoublesGame', () => {
     // perfect permutation is reachable but not guaranteed: 14.4% of hard
     // sessions legitimately refill once, because asHalf is an independent
     // per-round coin flip and the two ten-value bands are never balanced.
-    // These floors are independent literals set below the worst coverage seen
-    // in 500 000 simulated sessions (4, 7 and 16 respectively). Do NOT tighten
-    // them to "all distinct" — that would be a flaky test asserting something
-    // the generator does not promise.
+    // These floors are independent literals. Easy and normal (4, 7) are set AT
+    // the worst coverage seen in 500 000 simulated sessions, not below it —
+    // there is no headroom to spare at those sizes, and mutation testing
+    // (a neutered sampler) still goes red 10/10 against them. Hard (15) does
+    // have one round of headroom below its observed worst of 16. Do NOT
+    // tighten any of them to "all distinct" — that would be a flaky test
+    // asserting something the generator does not promise.
     const floors = { easy: 4, normal: 7, hard: 15 };
 
     for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {

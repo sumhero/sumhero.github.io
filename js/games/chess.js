@@ -68,9 +68,16 @@ export const ChessGame = {
   // Two different rejections, kept apart on purpose. A knight on the centre
   // square of a 3x3 board has zero legal targets — an unanswerable board, so
   // that rejection is a *validity* rule and stays inside the draw, bounded by
-  // its own guard. Whether a board has been seen before is an *identity*
-  // question and belongs to drawDistinct. Folding validity into keyOf would
-  // make an unanswerable board reachable.
+  // its own guard — which happens to borrow DRAW_TRIES's value below rather
+  // than defining a separate one; the two budgets are semantically unrelated
+  // (this loop retries a piece placement, not a session-level identity check)
+  // and are only numerically coupled. Harmless: only 1 of the 45
+  // piece+square combinations is invalid (a knight on the centre square), so
+  // the chance of this loop burning all DRAW_TRIES attempts without finding a
+  // legal placement is (1/45)^40, not a figure anyone is tuning. Whether a
+  // board has been seen before is a separate *identity* question and belongs
+  // to drawDistinct. Folding validity into keyOf would make an unanswerable
+  // board reachable.
   generate(difficulty, ctx) {
     const { rng, count } = ctx;
 

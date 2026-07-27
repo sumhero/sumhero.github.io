@@ -25,11 +25,13 @@ describe('DRAW_TRIES', () => {
   it('is 40', () => {
     // Deliberately an independent literal compared against the module's own
     // value, not derived from it. 40 is load-bearing in two directions: big
-    // enough to complete a permutation of 20, small enough that the constant-rng
-    // determinism tests do not burn a 500-try budget every round, and — the
-    // sharp one — 40 * 3 rng draws per chess try is a multiple of the 12-value
-    // cycling rng in test/games/chess.test.js, which is what keeps that test's
-    // mutation argument valid. 30 or 50 would make it pass on broken code.
+    // enough to complete a permutation of 20, and small enough that the
+    // constant-rng determinism tests do not burn a 500-try budget every
+    // round. It must also stay EVEN, or test/games/chess.test.js's anti-repeat
+    // test silently passes on broken code (measured: 20/30/40/50 all catch its
+    // keyOf-> constant mutant, 39/41/45 all let it escape) — see that test's
+    // own comment for the full, measured derivation rather than restating it
+    // here a third time.
     expect(DRAW_TRIES).toBe(40);
   });
 });

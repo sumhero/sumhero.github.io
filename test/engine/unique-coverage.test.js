@@ -9,6 +9,13 @@ import { GAMES } from '../../js/engine/registry.js';
 const EXEMPT = {
   memory: 'legacy: true — own session loop, fixed pair set, shuffled',
   double_crash: 'legacy: true — a continuous betting session with no exercises',
+  // Full-session dedup on op1:op2, with no re-seed, and dedups before the
+  // easy sort. Safe today (0.000% adjacent-identical at counts 1-10, the only
+  // counts reachable), but that safety depends entirely on
+  // js/engine/game-list.js's exercise picker capping the count at 10, which
+  // exactly matches this game's easy space (10). At count 20 this would give
+  // 52.6% adjacent-identical exercises and only 10 distinct of 20 (measured).
+  // If that picker cap is ever raised, this exemption must be re-checked.
   dice_addition: 'already full-session deduped on op1:op2; dedups before the easy sort',
   countries: 'already full-session deduped in pickCountries, with a pool-exhaustion escape',
   capitals: 'shares pickCountries with countries',

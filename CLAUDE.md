@@ -187,10 +187,14 @@ js/
   migrated game's `generate()` unit-testable with a plain seeded call, no DOM
   and no mocking.
 - **Session distinctness — `drawDistinct`**: a `generate()` must not hand the
-  child the same exercise twice in one session. Fifteen of the twenty
-  engine-driven games used to; `dice_recognition` normal repeated one three or
-  more times in 97% of sessions and `money` hard in 92.5%. Every game that
-  draws its rounds independently now wraps the round body in
+  child the same exercise twice *adjacently* in one session — not "never
+  repeats at all", which is impossible for several games (`dice_recognition`
+  hard still shows every one of its 5 faces about 4 times each across 20
+  rounds; that repetition is unavoidable and fine). Before this work, fifteen
+  of the twenty engine-driven games could show the same exercise three or
+  more times with nothing between the repeats: `dice_recognition` normal did
+  so in 97% of sessions, `money` hard in 92.5%. Every game that draws its
+  rounds independently now wraps the round body in
   `drawDistinct(count, draw, keyOf)` (`js/engine/unique.js`) — a **bounded
   rejection sampler**. `draw(i)` builds a whole candidate exercise and closes
   over `ctx.rng`; `keyOf(exercise)` returns a **string** naming that
@@ -214,14 +218,18 @@ js/
     it cannot hang.
   - **`DRAW_TRIES` is 40 and is load-bearing.** Big enough to complete a
     permutation of 20; small enough that the constant-rng determinism tests do
-    not burn a 500-try budget every round; and `40 × 3` is a multiple of the
-    12-value cycling rng in `test/games/chess.test.js`, which is what keeps
-    that test's mutation argument valid — **this was measured, not assumed**:
-    the underlying property is parity (any *even* budget of 20/30/40/50 catches
-    the mutant; odd budgets of 39/41/45 let it escape), not the "multiple of
-    12" arithmetic the plan first proposed, which was independently wrong
-    twice before landing on the parity explanation. 30 or 50 leave it green on
-    broken code.
+    not burn a 500-try budget every round; and **it must be even** —
+    `test/games/chess.test.js`'s anti-repeat test drives `generate` with a
+    12-value cycling rng and a `keyOf` → constant mutant, and measuring
+    directly (not deriving from arithmetic) is what settled this: budgets
+    20/30/40/50 all catch the mutant, and 39/41/45 all let it escape. The
+    property is `DRAW_TRIES`'s parity, nothing else — earlier drafts of this
+    project claimed the reason was "`40 × 3` is a multiple of 12" and that
+    "30 or 50 would pass on broken code"; both claims were measured and found
+    false. See `test/games/chess.test.js`'s own comment for the full
+    derivation; don't restate the reasoning elsewhere, to avoid a fourth copy
+    drifting from the truth the way the first three did. If `DRAW_TRIES` ever
+    changes, re-run that test's mutation before trusting it.
   - **The sampler is never given the engine's job.** `js/engine/game-engine.js`
     is untouched. The tempting "over-generate `count * 3` and filter" design
     breaks index-dependent generators (`number_words` alternates its irregular
