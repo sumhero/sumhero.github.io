@@ -37,14 +37,17 @@ flags/                ~195 country flag SVGs (used by countries/capitals)
 images/               PWA icons
 tools/build-sw.js     Regenerates sw.js from sw-template.js + a directory scan
 test/                 Vitest suite, mirrors the js/ tree (engine/, games/,
-                       i18n/, tools/) plus test/docs/claude-md.test.js
+                       render/, data/, i18n/, tools/) plus
+                       test/docs/claude-md.test.js
 js/
   app.js               App controller: screen switching, init, translations
   sound.js             Sound.play('correct'|'wrong'|'victory')
   animation.js         Celebration / confetti / Lottie
   engine/
     game-engine.js       GameEngine: the shared session loop (see Architecture)
-    registry.js          GAMES list + DOMAINS, gamesByDomain()
+    registry.js          GAMES list + DOMAINS, gamesByDomain() (filters out
+                          empty domains; optional `(domains, games)` params
+                          let a test inject a synthetic empty domain)
     game-list.js         GameList controller: renders cards, routes clicks,
                           difficulty/category/count pickers, settings screen
     screens.js           showScreen(), setLayoutClass(), onScreenChange()
@@ -83,9 +86,21 @@ js/
   legacy games, by removing their classes explicitly (see below).
 - **Game registry**: `GAMES` in `js/engine/registry.js` lists every game
   object. `GameList.load()` (`js/engine/game-list.js`) renders one card per
-  game, grouped by `domain` (`js/engine/registry.js`'s `DOMAINS`), and its
-  click handler routes each card to either `game.start(difficulty)` (legacy
-  games), a category/count picker, or `GameEngine.start(game, options)`.
+  game, grouped by `domain` via `gamesByDomain()`, which pairs each entry in
+  `DOMAINS` with its games and **filters out any domain with no games**.
+  That guard's test used to rely on `geometrie` being the one empty domain —
+  until this checkpoint's `shapes` game filled it, making the assertion
+  false. Its first replacement, "every returned group is non-empty" over the
+  live registry, went vacuous instead: once all five real domains are
+  populated, that's trivially true and no longer proves the filter does
+  anything. `gamesByDomain()` therefore takes optional
+  `(domains = DOMAINS, games = GAMES)` parameters purely so a test can
+  construct its own synthetic empty domain and prove the filter still drops
+  it, independent of whether the live registry happens to have one — those
+  parameters are a load-bearing test seam, not dead code; do not remove them
+  as unused. `GameList`'s click handler routes each card to either
+  `game.start(difficulty)` (legacy games), a category/count picker, or
+  `GameEngine.start(game, options)`.
 - **Difficulty**: stored in `localStorage` (`game_difficulty`), one of
   `easy` / `normal` / `hard`. Convention: `easy` 5 rounds, `normal` 10,
   `hard` 20 (a game can opt out with `rounds: 'ask'`, which shows a count

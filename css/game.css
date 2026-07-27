@@ -2236,7 +2236,7 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
     line-height: 1;
 }
 
-.parity-pairs {
+.parity-layout .parity-pairs {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -2245,7 +2245,7 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
     max-width: 94%;
 }
 
-.parity-pair {
+.parity-layout .parity-pair {
     display: flex;
     gap: min(0.6vw, 4px);
     padding: min(1.2vw, 8px);
@@ -2253,13 +2253,13 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
     background: rgba(255,255,255,0.18);
 }
 
-.parity-lonely {
+.parity-layout .parity-lonely {
     background: rgba(255,255,255,0.4);
     outline: 3px dashed rgba(255,255,255,0.85);
     outline-offset: 2px;
 }
 
-.parity-object {
+.parity-layout .parity-object {
     font-size: min(7vw, 6vh);
     line-height: 1;
 }
@@ -2287,7 +2287,7 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
         font-size: min(14vw, 30vh);
     }
 
-    .parity-object {
+    .parity-layout .parity-object {
         font-size: min(4vw, 8vh);
     }
 
