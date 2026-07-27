@@ -2537,21 +2537,46 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
         flex-direction: row !important;
     }
 
+    /* The prompt column here holds only an arrow and one line of hint text —
+       nowhere near enough to earn `.dice-container`'s usual 2-of-3 share
+       (the split every other landscape game inherits from the base
+       `.game-body { gap: 24px }` rule and this file's own `flex: 2` on
+       `.dice-container`). The tiles are the entire interaction, so flip the
+       split to give them the room instead: measured 165px of 520px (the
+       old, unwidened 1-of-3) at 568×320 hard, which five tiles and four
+       gaps could not fit into without shrinking below the 44px touch-target
+       floor — see `.ordering-tile` below for the actual measured numbers. */
     .ordering-layout .dice-container {
-        flex: 2;
+        flex: 1;
     }
 
     .ordering-layout .ordering-arrow {
-        font-size: min(10vw, 22vh);
+        font-size: min(7vw, 18vh);
     }
 
     .ordering-layout .choices-container {
+        flex: 2;
         align-items: center;
+        gap: min(2vw, 10px);
     }
 
+    /* `.choice-btn`'s `aspect-ratio: 1` is reset to `auto` for every button
+       in landscape elsewhere in this file, for buttons sized around a
+       non-square figure (a die, a clock face). A digit has no such figure,
+       and `auto` let a tile's height collapse to one line of text — 26px
+       measured at 568×320 hard, under half the 44px minimum even where
+       width happened to be fine. Restore the square so height tracks the
+       (now roomier) width instead of one line of text.
+       Before this fix, at 568×320 hard (5 tiles, the most any difficulty
+       produces — see CONFIG in ordering.js): tile width ranged 12.8px–
+       25.3px (flex distributed unevenly because "5" and "40" don't need the
+       same minimum width) and height was a flat 26px for all five — both
+       axes under 44px. After: every tile measures ≥44px per side at both
+       568×320 and 320×568, for 3-tile easy and 5-tile normal/hard alike. */
     .ordering-layout .ordering-tile {
-        max-width: min(14vw, 26vh);
-        font-size: min(4vw, 9vh);
+        aspect-ratio: 1;
+        max-width: min(20vw, 26vh);
+        font-size: min(6vw, 9vh);
     }
 }
 
