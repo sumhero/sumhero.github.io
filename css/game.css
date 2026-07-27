@@ -2361,6 +2361,21 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
     font-size: min(8vw, 8vh);
 }
 
+/* Count mode's `aspect-ratio: 1` combined with that big digit font-size
+   gives each button a height-derived minimum width — a plain `1fr` column
+   can't shrink below it, so at a 320px-wide phone the five columns' combined
+   minimum (~309px) outgrows the ~288px `.game-body` has to give them, and
+   the fifth button is pushed past the screen edge and clipped by
+   `.game-body`'s `overflow: hidden`. `minmax(0, 1fr)` is the same fix as the
+   landscape row rule below, just on the column axis. Scoped to portrait: in
+   landscape the choices are already a single column (see below), so this
+   never has to compete with that rule. */
+@media (orientation: portrait) {
+    body.shape-count-mode .shape-game-layout .choices-container {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
+
 @media (orientation: landscape) {
     .shape-game-layout {
         flex-direction: row !important;
