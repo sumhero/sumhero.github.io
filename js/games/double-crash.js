@@ -1,4 +1,4 @@
-import { App } from './app.js';
+import { showScreen } from '../engine/screens.js';
 
 const ROULETTE_NUMBERS = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
@@ -30,6 +30,12 @@ const MIN_BET = 0.1;
 const MAX_BET = 100;
 
 export const DoubleCrashGame = {
+    id: 'double_crash',
+    nameKey: 'doubleCrash',
+    emoji: '🎡',
+    domain: 'logique',
+    legacy: true,
+
     balance: START_BALANCE,
     state: GAME_STATES.IDLE,
     round: null,
@@ -57,7 +63,7 @@ export const DoubleCrashGame = {
         document.getElementById('progress-fill').style.width = '0%';
 
         this.startNewRound();
-        App.showScreen('game');
+        showScreen('game');
     },
 
     // ---- math helpers ----

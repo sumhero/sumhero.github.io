@@ -8,7 +8,7 @@ import { DiceRecognitionGame } from './games/dice-recognition.js';
 import { CountriesGame } from './games/countries.js';
 import { CapitalsGame } from './games/capitals.js';
 import { GuessTimeGame } from './games/guess-time.js';
-import { DoubleCrashGame } from './double-crash-game.js';
+import { DoubleCrashGame } from './games/double-crash.js';
 import { MemoryGame } from './games/memory.js';
 import { ChessGame } from './games/chess.js';
 import { GameEngine } from './engine/game-engine.js';
