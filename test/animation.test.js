@@ -118,6 +118,99 @@ describe('Animation.showCelebration', () => {
     expect(container.querySelector('canvas')).toBeNull();
   });
 
+  it('falls back to dancing animals when the load event never arrives (hung fetch)', () => {
+    vi.useFakeTimers();
+
+    Animation.showCelebration(container);
+    expect(container.querySelector('canvas.lottie-canvas')).not.toBeNull();
+
+    // No `load` and no `loadError` ever fires — a captive portal or a CDN
+    // that accepts the connection and stalls produces exactly this silence.
+    vi.advanceTimersByTime(6000);
+
+    expect(container.querySelectorAll('.dancing-animal')).toHaveLength(3);
+    expect(container.querySelector('canvas')).toBeNull();
+    expect(calls[0].destroyed).toBe(true);
+    expect(Animation.lottieInstance).toBeNull();
+
+    vi.useRealTimers();
+  });
+
+  it('cancels the load timeout once `load` fires, so the fallback never runs', () => {
+    vi.useFakeTimers();
+
+    Animation.showCelebration(container);
+    calls[0].emit('load');
+
+    vi.advanceTimersByTime(6000);
+
+    // Still the lottie canvas — the timeout was cancelled, not merely raced.
+    expect(container.querySelector('canvas.lottie-canvas')).not.toBeNull();
+    expect(container.querySelectorAll('.dancing-animal')).toHaveLength(0);
+    expect(calls[0].destroyed).toBe(false);
+    expect(Animation.lottieInstance).toBe(calls[0]);
+
+    vi.useRealTimers();
+  });
+
+  it('ignores a stale timeout from a celebration that has been superseded', () => {
+    vi.useFakeTimers();
+
+    Animation.showCelebration(container);
+    const stale = calls[0];
+
+    // Stand in for the case where the superseded instance's own timer is
+    // still live (e.g. the guard is what protects it, not just the clear) by
+    // preventing the newer celebration's destroyLottie() from cancelling it.
+    const clearSpy = vi.spyOn(globalThis, 'clearTimeout').mockImplementation(() => {});
+
+    Animation.showCelebration(container);
+    expect(calls).toHaveLength(2);
+
+    clearSpy.mockRestore();
+
+    // Clear the second celebration's OWN timeout the normal way, so the only
+    // one still pending when we advance is the stale, uncleared one — that
+    // isolates the guard from the second instance's unrelated timeout, which
+    // would otherwise also fire at the same virtual tick and confuse the
+    // assertion below.
+    calls[1].emit('load');
+
+    // The stale instance's timeout still fires, but only its own guard —
+    // `this.lottieInstance !== instance` — is left standing between it and
+    // clobbering the second celebration.
+    vi.advanceTimersByTime(6000);
+
+    expect(container.querySelector('canvas.lottie-canvas')).not.toBeNull();
+    expect(container.querySelectorAll('.dancing-animal')).toHaveLength(0);
+    expect(Animation.lottieInstance).toBe(calls[1]);
+    expect(calls[1].destroyed).toBe(false);
+    expect(stale.destroyed).toBe(true); // destroyed by the second showCelebration's own teardown
+
+    vi.useRealTimers();
+  });
+
+  it('clears the load timeout on destroyLottie, not only via the instance guard', () => {
+    // The `this.lottieInstance !== instance` guard inside the timeout
+    // callback would ALSO stop a stray fallback here, since destroyLottie()
+    // nulls `lottieInstance` regardless. That would let this test pass even
+    // if destroyLottie() forgot to clear the timer — so assert the clear
+    // directly (the mechanism CLAUDE.md's fix asks for) rather than only its
+    // now-doubly-guarded outward effect.
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+
+    Animation.showCelebration(container);
+    const timeoutId = Animation.loadTimeoutId;
+    expect(timeoutId).not.toBeNull();
+
+    Animation.destroyLottie();
+
+    expect(clearTimeoutSpy).toHaveBeenCalledWith(timeoutId);
+    expect(Animation.loadTimeoutId).toBeNull();
+
+    clearTimeoutSpy.mockRestore();
+  });
+
   it('picks three distinct animals for the fallback', () => {
     Animation.DotLottie = null;
     // Pin the rng so the mutation this guards against — drawing without

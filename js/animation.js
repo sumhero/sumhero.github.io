@@ -1,6 +1,7 @@
 export const Animation = {
     DotLottie: null,
     lottieInstance: null,
+    loadTimeoutId: null,
 
     celebrationAnimations: [
         'https://assets2.lottiefiles.com/packages/lf20_touohxv0.json',
@@ -57,8 +58,27 @@ export const Animation = {
             const instance = this.lottieInstance;
             instance.addEventListener('loadError', () => {
                 if (this.lottieInstance !== instance) return;
+                this.clearLoadTimeout();
                 this.destroyLottie();
                 this.showDancingAnimalsFallback(container);
+            });
+
+            // `loadError` only fires when the fetch *fails*. A fetch that never
+            // settles — captive portal, DNS blackhole, a CDN that accepts the
+            // connection and stalls — fires neither `load` nor `loadError`, so
+            // without a timeout the canvas stays blank forever. 6s is generous
+            // enough for a slow mobile connection to still finish (these are a
+            // few KB of animation JSON) but short enough that a child is not
+            // staring at an empty canvas for the whole celebration screen.
+            this.loadTimeoutId = setTimeout(() => {
+                if (this.lottieInstance !== instance) return;
+                this.destroyLottie();
+                this.showDancingAnimalsFallback(container);
+            }, 6000);
+
+            instance.addEventListener('load', () => {
+                if (this.lottieInstance !== instance) return;
+                this.clearLoadTimeout();
             });
         } catch (e) {
             this.destroyLottie();
@@ -97,7 +117,18 @@ export const Animation = {
         }
     },
 
+    clearLoadTimeout() {
+        if (this.loadTimeoutId) {
+            clearTimeout(this.loadTimeoutId);
+            this.loadTimeoutId = null;
+        }
+    },
+
     destroyLottie() {
+        // Clear the timeout here too — otherwise leaving the celebration
+        // screen (Play Again, exit) abandons the instance but the timer keeps
+        // running and fires a stray fallback into whatever is on screen next.
+        this.clearLoadTimeout();
         if (this.lottieInstance) {
             this.lottieInstance.destroy();
             this.lottieInstance = null;
