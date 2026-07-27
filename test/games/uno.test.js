@@ -89,6 +89,25 @@ describe('UnoGame', () => {
     expect(ex.promptHtml).toContain(cv);
   });
 
+  it('does not always place the correct card at the same position', () => {
+    // A seeded, cycling rng keeps this deterministic (no flakiness), while
+    // still driving the shuffle differently across exercises. This guards
+    // against a regression where the correct card is always at a fixed
+    // index (e.g. index 0), which would let a child win by always tapping
+    // the same spot without learning to match colour or number.
+    const values = [0.11, 0.83, 0.42, 0.07, 0.95, 0.28, 0.64, 0.5, 0.19, 0.76];
+    let i = 0;
+    const rng = () => values[i++ % values.length];
+    const exercises = UnoGame.generate('hard', ctx(20, rng));
+
+    const positions = exercises.map(ex =>
+      ex.choices.findIndex(c => c.value === ex.correctAnswer)
+    );
+    const distinctPositions = new Set(positions);
+
+    expect(distinctPositions.size).toBeGreaterThan(1);
+  });
+
   it('is deterministic for a fixed rng', () => {
     const seeded = () => 0.5;
     const a = UnoGame.generate('normal', ctx(5, seeded));
