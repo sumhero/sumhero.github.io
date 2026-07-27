@@ -10,6 +10,11 @@ html {
     height: 100%;
     overflow: hidden;
     touch-action: manipulation;
+    /* Paint the root too, not just body: with viewport-fit=cover the notch and
+       home-indicator areas sit outside body's box and would otherwise show the
+       browser's white canvas. */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-attachment: fixed;
 }
 
 body {
@@ -32,7 +37,8 @@ input, textarea {
 #app {
     max-width: 500px;
     margin: 0 auto;
-    padding: 16px;
+    padding: calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+             calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
     min-height: 100%;
     display: flex;
     flex-direction: column;
@@ -202,14 +208,18 @@ input, textarea {
 }
 
 /* Game List */
+/* Children are <section class="game-group">, so this stacks the domain groups.
+   Card layout belongs to .game-group-cards below — a wrapping flex here would
+   flow the *groups* side by side into narrow columns. */
 #game-list {
     display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .game-card {
-    width: 20vw;
+    /* Width comes from the grid track in .game-group-cards. */
+    container-type: inline-size;
     background: rgba(255,255,255,0.95);
     border-radius: 20px;
     padding: 12px 8px;
@@ -228,33 +238,51 @@ input, textarea {
     transform: scale(0.95);
 }
 
+/* Sized against the card, not the viewport: a card is a grid track now, so vw
+   units made the emoji tiny in portrait and enormous in landscape. */
 .game-card-emoji {
-    font-size: 10vw;
+    font-size: 2.5rem;
+    line-height: 1;
 }
 
 .game-card-name {
-    font-size: 2vw;
+    font-size: 0.85rem;
     font-weight: 700;
     color: #4a90d9;
     text-align: center;
     line-height: 1.2;
 }
 
+@supports (container-type: inline-size) {
+    .game-card-emoji {
+        font-size: 42cqi;
+    }
+
+    .game-card-name {
+        font-size: clamp(0.7rem, 11cqi, 1rem);
+    }
+}
+
 .game-group {
-    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .game-group-title {
-    font-size: 1rem;
-    font-weight: 600;
-    opacity: 0.7;
-    margin: 0 0 0.5rem 0.25rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.92);
+    margin: 0 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .game-group-cards {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 0.75rem;
+    gap: 12px;
 }
 
 /* Exercise Picker */
@@ -1576,8 +1604,28 @@ body.time-theme-night {
 @media (orientation: landscape) {
     #app {
         max-width: 100%;
-        padding: 8px 24px;
+        padding: calc(8px + env(safe-area-inset-top)) calc(24px + env(safe-area-inset-right))
+                 calc(8px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-left));
         min-height: 100vh;
+    }
+
+    /* Height is the scarce axis here: four group headings plus four card rows
+       have to share a short viewport, so keep the cards compact. */
+    #game-list {
+        gap: 14px;
+    }
+
+    .game-group {
+        gap: 6px;
+    }
+
+    .game-group-title {
+        font-size: 0.95rem;
+    }
+
+    .game-group-cards {
+        grid-template-columns: repeat(auto-fill, minmax(min(140px, 26vh), 1fr));
+        gap: 10px;
     }
 
     #screen-game {
