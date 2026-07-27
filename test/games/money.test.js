@@ -226,12 +226,43 @@ describe('MoneyGame', () => {
     }
   });
 
+  it('can offer two different purses that share the same total in one session', () => {
+    // The decisive test for the count-mode key. A `total` key is not merely
+    // "close enough" to the composition key — it is strictly stronger:
+    // distinct sums always imply distinct coin arrays, so a session keyed on
+    // `total` can never show two different purses with the same total. The
+    // shipped key (`coins.join('-')`) allows exactly that, because a purse of
+    // 2+2+1 and a single 5 € note are different counting tasks for a
+    // six-year-old even though they add to the same total. Measured with the
+    // shipped key: this occurs in 56% of easy sessions and 92% of normal
+    // sessions; with a `total` key it is 0.00%. 50 sessions makes a miss
+    // astronomically unlikely (for easy, (1 - 0.56)^50 ~= 3e-17).
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10]]) {
+      let sawSameTotalDifferentCoins = false;
+
+      for (let session = 0; session < 50 && !sawSameTotalDifferentCoins; session++) {
+        const byTotal = new Map();
+        for (const ex of MoneyGame.generate(difficulty, ctx(rounds))) {
+          const key = ex.coins.join('-');
+          if (!byTotal.has(ex.total)) byTotal.set(ex.total, new Set());
+          byTotal.get(ex.total).add(key);
+        }
+        if ([...byTotal.values()].some(keys => keys.size > 1)) {
+          sawSameTotalDifferentCoins = true;
+        }
+      }
+
+      expect(sawSameTotalDifferentCoins, difficulty).toBe(true);
+    }
+  });
+
   it('never asks for the same price twice in a row on hard', () => {
     // buildPayment draws target from 3..20 — eighteen prices against twenty
     // rounds, so uniqueness is impossible and back-to-back avoidance is the
     // whole promise. Before this change 66.1% of hard sessions repeated a
-    // price back-to-back.
-    for (let session = 0; session < 20; session++) {
+    // price back-to-back. 200 sessions (up from 20) gives roughly 1e-5
+    // false-green odds against a broken re-seed, for about 113ms extra cost.
+    for (let session = 0; session < 200; session++) {
       const targets = MoneyGame.generate('hard', ctx(20)).map(ex => ex.target);
 
       for (let i = 1; i < targets.length; i++) {

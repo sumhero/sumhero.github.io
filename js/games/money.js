@@ -23,11 +23,13 @@ export const MoneyGame = {
 
   // The identity of a money exercise depends on the mode. In count mode the
   // question *is* the purse, so two purses that both total 12 with different
-  // coins are different exercises — keying on the total would collapse easy's
-  // 23 purses to about 9 reachable totals and make an achievable band
-  // impossible. In pay mode the question is the price; the distractor purses
-  // are redrawn every round and are not part of it. Hard has eighteen prices
-  // against twenty rounds, so it lives in drawDistinct's refill path.
+  // coins are different exercises — keying on the total instead would let a
+  // 2+2+1 purse and a single 5 € note collide as "the same question" and
+  // silently drop one of them from the session, even though a six-year-old
+  // counting pieces sees them as two different counting tasks. In pay mode
+  // the question is the price; the distractor purses are redrawn every round
+  // and are not part of it. Hard has eighteen prices against twenty rounds,
+  // so it lives in drawDistinct's refill path.
   generate(difficulty, ctx) {
     const { rng, t, count } = ctx;
     const config = CONFIG[difficulty];
