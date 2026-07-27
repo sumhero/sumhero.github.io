@@ -2165,3 +2165,207 @@ body.time-theme-night {
         font-size: min(4vw, 8vh);
     }
 }
+
+/* Formes géométriques. The figure svg is square (200x200), so the default
+   `.dice-container svg` sizing already fits it; only the drop-shadow and a
+   slightly larger cap are added. The two answer modes need different choice
+   grids — five shape *words* do not fit five columns on a phone, five *numbers*
+   do — so the game sets `exercise.bodyClass` and the grid follows from it. */
+.shape-game-layout .dice-container {
+    flex-direction: column;
+    flex: 1;
+    gap: min(2vh, 12px);
+}
+
+.shape-game-layout .shape-figure {
+    width: min(46vw, 34vh);
+    height: min(46vw, 34vh);
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
+
+.shape-game-layout .shape-choice-btn {
+    aspect-ratio: auto;
+    font-size: min(5vw, 4vh);
+    padding: min(2vh, 14px) 6px;
+}
+
+body.shape-name-mode .shape-game-layout .choices-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+
+body.shape-count-mode .shape-game-layout .shape-choice-btn {
+    aspect-ratio: 1;
+    font-size: min(8vw, 8vh);
+}
+
+@media (orientation: landscape) {
+    .shape-game-layout {
+        flex-direction: row !important;
+    }
+
+    .shape-game-layout .dice-container {
+        flex: 2;
+    }
+
+    .shape-game-layout .shape-figure {
+        width: min(30vw, 52vh);
+        height: min(30vw, 52vh);
+    }
+
+    .shape-game-layout .shape-choice-btn {
+        font-size: min(3vw, 5vh);
+    }
+
+    body.shape-count-mode .shape-game-layout .shape-choice-btn {
+        font-size: min(4vw, 8vh);
+    }
+}
+
+/* Pair ou impair. Two choices, not five, so the grid is overridden — and the
+   labels are words rather than digits, so the square aspect-ratio the default
+   `.choice-btn` imposes is dropped. On easy the objects are laid out as
+   complete pairs with any odd one left visibly alone. */
+.parity-layout .dice-container {
+    flex-direction: column;
+    flex: 1;
+    gap: min(2vh, 12px);
+}
+
+.parity-layout .op-question {
+    font-size: min(26vw, 20vh);
+    line-height: 1;
+}
+
+.parity-layout .parity-pairs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: min(4vw, 24px);
+    max-width: 94%;
+}
+
+.parity-layout .parity-pair {
+    display: flex;
+    gap: min(0.6vw, 4px);
+    padding: min(1.2vw, 8px);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.18);
+}
+
+.parity-layout .parity-lonely {
+    background: rgba(255,255,255,0.4);
+    outline: 3px dashed rgba(255,255,255,0.85);
+    outline-offset: 2px;
+}
+
+.parity-layout .parity-object {
+    font-size: min(7vw, 6vh);
+    line-height: 1;
+}
+
+.parity-layout .choices-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+
+.parity-layout .parity-choice-btn {
+    aspect-ratio: auto;
+    font-size: min(8vw, 6vh);
+    padding: min(3vh, 20px) 8px;
+}
+
+@media (orientation: landscape) {
+    .parity-layout {
+        flex-direction: row !important;
+    }
+
+    .parity-layout .dice-container {
+        flex: 2;
+    }
+
+    .parity-layout .op-question {
+        font-size: min(14vw, 30vh);
+    }
+
+    .parity-layout .parity-object {
+        font-size: min(4vw, 8vh);
+    }
+
+    .parity-layout .choices-container {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: repeat(2, 1fr) !important;
+        align-content: center !important;
+    }
+
+    .parity-layout .parity-choice-btn {
+        font-size: min(4vw, 9vh);
+    }
+}
+
+/* Ranger dans l'ordre. The tiles replace the default five-column choice grid
+   with a centred flex row, so three tiles and five tiles both look deliberate
+   rather than left-aligned in a five-slot grid. Each tile keeps the base
+   `.choice-btn` class, so `.choice-btn.wrong` and `.choice-btn.correct` supply
+   the app's shared shake and pulse with nothing reimplemented. */
+.ordering-layout .dice-container {
+    flex-direction: column;
+    flex: 1;
+    gap: min(2vh, 12px);
+}
+
+.ordering-layout .ordering-arrow {
+    font-size: min(20vw, 18vh);
+    line-height: 1;
+}
+
+.ordering-layout .choices-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: min(3vw, 16px);
+}
+
+.ordering-layout .ordering-tile {
+    position: relative;
+    flex: 1 1 0;
+    max-width: min(24vw, 20vh);
+    font-size: min(8vw, 7vh);
+}
+
+.ordering-layout .ordering-tile.picked {
+    background: #ffe082;
+    transform: scale(0.94);
+}
+
+.ordering-layout .ordering-rank {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    font-size: min(3.5vw, 3vh);
+    font-weight: 700;
+    color: #2e5c8a;
+    line-height: 1;
+}
+
+@media (orientation: landscape) {
+    .ordering-layout {
+        flex-direction: row !important;
+    }
+
+    .ordering-layout .dice-container {
+        flex: 2;
+    }
+
+    .ordering-layout .ordering-arrow {
+        font-size: min(10vw, 22vh);
+    }
+
+    .ordering-layout .choices-container {
+        align-items: center;
+    }
+
+    .ordering-layout .ordering-tile {
+        max-width: min(14vw, 26vh);
+        font-size: min(4vw, 9vh);
+    }
+}

@@ -17,6 +17,9 @@ import { TensUnitsGame } from '../games/tens-units.js';
 import { MoneyGame } from '../games/money.js';
 import { NumberWordsGame } from '../games/number-words.js';
 import { WordProblemsGame } from '../games/word-problems.js';
+import { ShapesGame } from '../games/shapes.js';
+import { ParityGame } from '../games/parity.js';
+import { OrderingGame } from '../games/ordering.js';
 
 export const DOMAINS = [
   { key: 'nombres', labelKey: 'domainNombres', emoji: '🔢' },
@@ -46,10 +49,16 @@ export const GAMES = [
   MoneyGame,
   NumberWordsGame,
   WordProblemsGame,
+  ShapesGame,
+  ParityGame,
+  OrderingGame,
 ];
 
-export function gamesByDomain() {
-  return DOMAINS
-    .map(domain => ({ domain, games: GAMES.filter(g => g.domain === domain.key) }))
+// domains/games default to the real registry; a test can pass its own
+// synthetic lists to prove the empty-domain filter without depending on the
+// live registry happening to contain an unpopulated domain.
+export function gamesByDomain(domains = DOMAINS, games = GAMES) {
+  return domains
+    .map(domain => ({ domain, games: games.filter(g => g.domain === domain.key) }))
     .filter(group => group.games.length > 0);
 }
