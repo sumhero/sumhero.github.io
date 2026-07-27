@@ -745,9 +745,19 @@ input, textarea {
     flex: 1;
 }
 
+/* minmax(0, 1fr), not 1fr, for the same reason as `.choices-container` in the
+   landscape block: a plain `1fr` row floors at its content's min-content
+   height, and these labels are country and capital *names*, which wrap. At
+   568x320 the five base sizes total ~157px in a ~177px track, so two wrapped
+   labels overflow — and `align-content: end` below sends that overflow upward,
+   so `.game-body { overflow: hidden }` clips the *top* button and the child
+   gets an answer they cannot reach. Names long enough to wrap exist in every
+   language (de has six, fr has "Papouasie-Nouvelle-Guinée", and the capital
+   "Sri Jayawardenepura Kotte" is 25 characters), so this is roughly 1-2% of
+   hard rounds, not a theoretical case. */
 .geo-game-layout .choices-container {
     grid-template-columns: 1fr !important;
-    grid-template-rows: repeat(5, 1fr) !important;
+    grid-template-rows: repeat(5, minmax(0, 1fr)) !important;
     flex: 1 !important;
     align-content: end !important;
 }
@@ -1755,8 +1765,8 @@ body.time-theme-night {
        that control row's bottom padding (it is the last thing on screen, so the
        24px it inherits buys nothing) hands 16px back to the board. */
     .memory-game-layout .memory-grid {
-        max-width: min(92vw, 62vh, calc(100vh - 184px));
-        max-width: min(92vw, 62vh, calc(100svh - 184px));
+        max-width: min(92vw, 62vh, calc(100vh - 184px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+        max-width: min(92vw, 62vh, calc(100svh - 184px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
     }
 
     .memory-game-layout .choices-container {
@@ -2207,11 +2217,14 @@ body.time-theme-night {
 
     /* On hard the purse moves into the choice buttons, and with the rows now
        able to shrink a button can be 35px tall at 844x320. `max-height: 88%`
-       is a percentage of the button's *border* box while `padding: 6px` eats
-       the content box, so the purse ended up 8px taller than the button it sits
-       in and spilled over the edge. Trim the padding and let the purse fill
-       what is left. */
-    .money-choice-btn {
+       is a percentage of the button's *border* box while the padding eats the
+       content box, so the purse ended up 8px taller than the button it sits in
+       and spilled over the edge. `max-height: 100%` is what actually contains
+       it; trimming the padding is what stops the purse being squeezed to 23px
+       of a 35px button. That trim has to be written at
+       `.money-game-layout .money-choice-btn` — the bare class loses to the
+       two-class selector that sets `padding: 6px`, so it would be dead. */
+    .money-game-layout .money-choice-btn {
         padding: 2px;
     }
 
