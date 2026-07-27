@@ -12,7 +12,7 @@ describe('registry', () => {
       'capitals', 'chess', 'compare', 'complements', 'count_objects',
       'countries', 'dice_addition', 'dice_recognition', 'double_crash',
       'doubles', 'guess_time', 'memory', 'missing_number', 'money',
-      'number_words', 'subtraction', 'tens_units', 'uno',
+      'number_words', 'subtraction', 'tens_units', 'uno', 'word_problems',
     ]);
   });
 
@@ -47,7 +47,7 @@ describe('registry', () => {
       .toEqual([
         'dice_addition', 'count_objects', 'dice_recognition', 'complements',
         'subtraction', 'doubles', 'compare', 'missing_number', 'tens_units',
-        'number_words',
+        'number_words', 'word_problems',
       ]);
     expect(grouped[1].games.map(g => g.id)).toEqual(['guess_time', 'money']);
     expect(grouped[2].games.map(g => g.id))

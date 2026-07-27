@@ -16,6 +16,7 @@ import { MissingNumberGame } from '../games/missing-number.js';
 import { TensUnitsGame } from '../games/tens-units.js';
 import { MoneyGame } from '../games/money.js';
 import { NumberWordsGame } from '../games/number-words.js';
+import { WordProblemsGame } from '../games/word-problems.js';
 
 export const DOMAINS = [
   { key: 'nombres', labelKey: 'domainNombres', emoji: '🔢' },
@@ -44,6 +45,7 @@ export const GAMES = [
   TensUnitsGame,
   MoneyGame,
   NumberWordsGame,
+  WordProblemsGame,
 ];
 
 export function gamesByDomain() {

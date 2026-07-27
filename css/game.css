@@ -2087,3 +2087,59 @@ body.time-theme-night {
         font-size: min(4vw, 8vh);
     }
 }
+
+/* Word problems: an object icon plus a read-aloud sentence. This is the first
+   game to set `exercise.speak`, so the 🔊 replay button the engine appends to
+   #dice-container gets its styling here — `.speak-btn` had no rule before. */
+.wp-icon {
+    font-size: min(18vw, 16vh);
+    line-height: 1;
+}
+
+.wp-sentence {
+    font-size: min(5.5vw, 4.5vh);
+    font-weight: 600;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    text-align: center;
+    max-width: 92%;
+    line-height: 1.3;
+}
+
+.speak-btn {
+    border: none;
+    border-radius: 50%;
+    width: min(16vw, 12vh);
+    height: min(16vw, 12vh);
+    font-size: min(8vw, 6vh);
+    background: rgba(255,255,255,0.95);
+    color: #333;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    cursor: pointer;
+    touch-action: manipulation;
+    flex: none;
+}
+
+.speak-btn:active {
+    transform: scale(0.9);
+}
+
+.num-game-layout .wp-choice-btn {
+    font-size: min(7vw, 7vh);
+}
+
+@media (orientation: landscape) {
+    .wp-icon {
+        font-size: min(9vw, 14vh);
+    }
+
+    .wp-sentence {
+        font-size: min(3vw, 5vh);
+    }
+
+    .speak-btn {
+        width: min(8vw, 12vh);
+        height: min(8vw, 12vh);
+        font-size: min(4vw, 6vh);
+    }
+}
