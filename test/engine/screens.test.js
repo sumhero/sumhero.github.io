@@ -99,3 +99,34 @@ describe('showScreen game-body cleanup', () => {
     expect(document.querySelector('.game-body').classList.contains('memory-game-layout')).toBe(true);
   });
 });
+
+describe('showScreen speech cleanup', () => {
+  beforeEach(mountScreens);
+
+  let cancels;
+
+  beforeEach(() => {
+    cancels = 0;
+    vi.stubGlobal('SpeechSynthesisUtterance', class {
+      constructor(text) { this.text = text; }
+    });
+    vi.stubGlobal('speechSynthesis', {
+      speak: () => {},
+      cancel: () => { cancels++; },
+    });
+  });
+
+  it('cancels any in-flight speech when leaving the game screen', () => {
+    showScreen('game');
+    showScreen('games');
+    expect(cancels).toBeGreaterThan(0);
+  });
+
+  it('does not need to cancel speech when entering the game screen', () => {
+    // Nothing has spoken yet at this point, so this just documents that
+    // entering 'game' does not go through the leave-game cleanup branch.
+    cancels = 0;
+    showScreen('game');
+    expect(cancels).toBe(0);
+  });
+});

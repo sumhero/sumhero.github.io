@@ -1,3 +1,5 @@
+import { Speech } from './speech.js';
+
 let activeLayoutClass = null;
 const listeners = [];
 
@@ -46,6 +48,13 @@ export function showScreen(name) {
     setLayoutClass(null);
     const gameBody = document.querySelector('.game-body');
     if (gameBody) gameBody.classList.remove(...KNOWN_LAYOUT_CLASSES);
+    // The engine only cancels speech on a correct answer (game-engine.js), so
+    // leaving the game screen any other way (tapping the exit button mid
+    // prompt) would otherwise leave a spoken word problem talking over the
+    // games list. This path — not game-engine.js, which stays untouched this
+    // checkpoint — is the single place every exit from the game screen
+    // funnels through.
+    Speech.cancel();
   }
 
   listeners.forEach(fn => fn(name));

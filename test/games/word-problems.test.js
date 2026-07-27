@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { WordProblemsGame, MIN_TWO_STEP_TOTAL } from '../../js/games/word-problems.js';
+import { WordProblemsGame } from '../../js/games/word-problems.js';
 import { OBJECT_CATEGORIES } from '../../js/games/object-categories.js';
 import { TRANSLATIONS } from '../../js/i18n/translations.js';
 
@@ -117,12 +117,21 @@ describe('WordProblemsGame', () => {
     // 1+1+1 - arithmetically easier than a normal one-step problem summing
     // to, say, 18. The floor keeps every addAdd total above what a one-step
     // problem could trivially match.
+    //
+    // The 12 below is written out literally and deliberately duplicated from
+    // MIN_TWO_STEP_TOTAL in js/games/word-problems.js rather than imported:
+    // this is a guard on that constant, so the test must state independently
+    // what the CP hard ladder requires. Importing the constant here would
+    // make the assertion tautological — setting MIN_TWO_STEP_TOTAL = 6 (which
+    // lets hard serve 2+2+2=6, the exact defect this floor exists to prevent)
+    // left every test in this file green when it read MIN_TWO_STEP_TOTAL
+    // instead of 12. Do not "de-duplicate" this back to an import.
     let sawAddAdd = false;
     for (let i = 0; i < 20; i++) {
       for (const ex of WordProblemsGame.generate('hard', ctx(20))) {
         if (ex.kind === 'addAdd') {
           sawAddAdd = true;
-          expect(ex.a + ex.b + ex.c).toBeGreaterThanOrEqual(MIN_TWO_STEP_TOTAL);
+          expect(ex.a + ex.b + ex.c).toBeGreaterThanOrEqual(12);
         }
       }
     }
@@ -134,12 +143,17 @@ describe('WordProblemsGame', () => {
     // so hard could serve e.g. 2 + 2 - 3 = 1 - arithmetically easier than a
     // normal one-step problem. The same floor addAddStory applies to its
     // total applies here to the pre-subtraction sum (a + b).
+    //
+    // Same deliberate duplication as the addAdd guard above: 12 is written
+    // out literally instead of importing MIN_TWO_STEP_TOTAL, so this test
+    // states the CP ladder's requirement independently of the generator's
+    // own floor. Do not "de-duplicate" this back to an import.
     let sawAddSub = false;
     for (let i = 0; i < 20; i++) {
       for (const ex of WordProblemsGame.generate('hard', ctx(20))) {
         if (ex.kind === 'addSub') {
           sawAddSub = true;
-          expect(ex.a + ex.b).toBeGreaterThanOrEqual(MIN_TWO_STEP_TOTAL);
+          expect(ex.a + ex.b).toBeGreaterThanOrEqual(12);
         }
       }
     }

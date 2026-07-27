@@ -1991,7 +1991,7 @@ body.time-theme-night {
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
 }
 
-.tens-units-choice-btn {
+.num-game-layout .tens-units-choice-btn {
     font-size: min(6.5vw, 6.5vh);
     padding: 6px;
 }
@@ -2024,13 +2024,22 @@ body.time-theme-night {
     gap: min(2vh, 12px);
 }
 
+/* Hard's pay prompt is a full sentence (money.js's buildPayment), so it needs
+   the same wrap guard as `.num-game-layout .op-question` — money's layout
+   class is `money-game-layout`, not `num-game-layout`, so that rule never
+   applies here. */
+.money-game-layout .op-question {
+    max-width: 92%;
+    line-height: 1.2;
+}
+
 .coin-purse {
     width: min(80vw, 46vh) !important;
     height: auto !important;
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
 }
 
-.money-choice-btn {
+.money-game-layout .money-choice-btn {
     font-size: min(6.5vw, 6.5vh);
     padding: 6px;
 }
@@ -2141,5 +2150,18 @@ body.time-theme-night {
         width: min(8vw, 12vh);
         height: min(8vw, 12vh);
         font-size: min(4vw, 6vh);
+    }
+}
+
+/* Word problems' choice-button landscape override was missing — the existing
+   landscape block above only covers `.wp-icon`, `.wp-sentence` and
+   `.speak-btn`, so `.wp-choice-btn` alone kept its portrait font-size in
+   landscape. Appended as a new block rather than edited into the one above,
+   matching every sibling num-game-layout choice button
+   (`.missing-number-choice-btn`, `.number-words-choice-btn`,
+   `.tens-units-choice-btn`). */
+@media (orientation: landscape) {
+    .num-game-layout .wp-choice-btn {
+        font-size: min(4vw, 8vh);
     }
 }
