@@ -1,4 +1,5 @@
 import { OBJECT_CATEGORIES } from './object-categories.js';
+import { drawDistinct } from '../engine/unique.js';
 
 const CHOICE_CEILING = { easy: 10, normal: 20, hard: 20 };
 const MAX_TWO_STEP = 20;
@@ -26,11 +27,16 @@ export const WordProblemsGame = {
   layoutClass: 'num-game-layout',
   choiceClass: 'wp-choice-btn',
 
+  // Keyed on kind:a:b:c, never on the answer: two different stories that both
+  // total 14 are different exercises to a child who reads a sentence, and
+  // answer-keying would make hard impossible (addAdd reaches only nine totals,
+  // 12..20, across twenty rounds). Every floor in buildStory survives
+  // untouched — a rejection wrapper only ever discards a fully-built
+  // candidate, it never constructs one.
   generate(difficulty, ctx) {
     const { rng, t, count } = ctx;
-    const exercises = [];
 
-    for (let i = 0; i < count; i++) {
+    return drawDistinct(count, () => {
       const story = buildStory(difficulty, rng);
       // Interpolated, never concatenated: the templates differ in word order
       // between the five languages, so the quantities have to be placeholders.
@@ -39,7 +45,7 @@ export const WordProblemsGame = {
       const category = OBJECT_CATEGORIES[Math.floor(rng() * OBJECT_CATEGORIES.length)];
       const emoji = category.emojis[Math.floor(rng() * category.emojis.length)];
 
-      exercises.push({
+      return {
         kind: story.kind,
         a: story.a,
         b: story.b,
@@ -52,10 +58,8 @@ export const WordProblemsGame = {
           '<div class="wp-icon">' + emoji + '</div>' +
           '<div class="wp-sentence">' + sentence + '</div>',
         choices: buildChoices(story.answer, CHOICE_CEILING[difficulty], rng),
-      });
-    }
-
-    return exercises;
+      };
+    }, exercise => exercise.kind + ':' + exercise.a + ':' + exercise.b + ':' + exercise.c);
   },
 };
 

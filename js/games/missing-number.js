@@ -1,3 +1,5 @@
+import { drawDistinct } from '../engine/unique.js';
+
 const RUN_LENGTH = 4;
 const CHOICE_COUNT = 5;
 const CONFIG = {
@@ -15,12 +17,13 @@ export const MissingNumberGame = {
   layoutClass: 'num-game-layout',
   choiceClass: 'missing-number-choice-btn',
 
+  // Keyed on the run and the blank together: "2 _ 4 5" and "2 3 4 _" are the
+  // same run but different questions.
   generate(difficulty, ctx) {
     const { rng, t, count } = ctx;
     const { max, steps } = CONFIG[difficulty];
-    const exercises = [];
 
-    for (let i = 0; i < count; i++) {
+    return drawDistinct(count, () => {
       const step = steps[Math.floor(rng() * steps.length)];
       // Keep the last term inside the ceiling: start at most max - step * 3.
       const highestStart = max - step * (RUN_LENGTH - 1);
@@ -32,7 +35,7 @@ export const MissingNumberGame = {
       const blankIndex = Math.floor(rng() * RUN_LENGTH);
       const correctAnswer = terms[blankIndex];
 
-      exercises.push({
+      return {
         terms,
         step,
         blankIndex,
@@ -45,10 +48,8 @@ export const MissingNumberGame = {
           '</div>' +
           '<div class="op-hint">' + t('missingNumberPrompt') + '</div>',
         choices: buildChoices(correctAnswer, step, max, rng),
-      });
-    }
-
-    return exercises;
+      };
+    }, exercise => exercise.terms.join(',') + ':' + exercise.blankIndex);
   },
 };
 

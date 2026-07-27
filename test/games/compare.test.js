@@ -117,4 +117,56 @@ describe('CompareGame', () => {
     expect(a.map(e => e.correctAnswer)).toEqual(b.map(e => e.correctAnswer));
     expect(a.map(e => e.promptHtml)).toEqual(b.map(e => e.promptHtml));
   });
+
+  it('never poses the same pair back-to-back', () => {
+    // A weaker, independent property than full-session distinctness below:
+    // even if two identical pairs ever did land in one session, they must
+    // never be adjacent — the specific guarantee drawDistinct's exhaustion
+    // path protects, since it re-seeds with only the last emitted key.
+    //
+    // 200 sessions, not 30: this property only fires on an *adjacent*
+    // collision, far rarer than any-pair-in-the-session colliding. Measured
+    // against an undeduplicated generator: adjacent collisions land in only
+    // ~4.1%/3.4%/1.0% of easy/normal/hard sessions, so 30 sessions per
+    // difficulty caught the mutation only ~93% of the time overall — below
+    // this repo's "red on all ten" bar. 200 sessions pushes the miss
+    // probability to effectively zero.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 200; session++) {
+        const keys = CompareGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.left + ':' + ex.right);
+
+        for (let i = 1; i < keys.length; i++) {
+          expect(keys[i], difficulty).not.toBe(keys[i - 1]);
+        }
+      }
+    }
+  });
+
+  it('never poses the same pair twice in a session', () => {
+    // Keyed on the ordered pair, never on the answer — there are only three
+    // possible answers (lt, eq, gt), so answer-keying is meaningless here.
+    // Spaces are 100, 400 and 10 000 pairs against 5, 10 and 20 rounds.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const keys = CompareGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.left + ':' + ex.right);
+
+        expect(new Set(keys).size, difficulty).toBe(rounds);
+      }
+    }
+  });
+
+  it('still produces equal pairs after deduplication', () => {
+    // Deduplicating on left:right slightly reduces the observed '=' rate,
+    // because eq cases are only `max` of the `max²` ordered pairs. That is
+    // accepted, but it must not become zero. Over 30 easy sessions of 5 rounds
+    // with a 20% equal chance, seeing no eq at all has probability about
+    // 0.8^150 — vanishingly small, so this is not flaky.
+    const answers = Array.from({ length: 30 }, () =>
+      CompareGame.generate('easy', ctx(5)).map(ex => ex.correctAnswer)
+    ).flat();
+
+    expect(answers).toContain('eq');
+  });
 });

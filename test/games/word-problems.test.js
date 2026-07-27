@@ -239,6 +239,40 @@ describe('WordProblemsGame', () => {
     expect(a.map(e => e.correctAnswer)).toEqual(b.map(e => e.correctAnswer));
     expect(a.map(e => e.promptHtml)).toEqual(b.map(e => e.promptHtml));
   });
+
+  it('never tells the same story back-to-back', () => {
+    // A weaker, independent property than full-session distinctness below:
+    // even if two identical stories ever did land in one session, they must
+    // never be adjacent — the specific guarantee drawDistinct's exhaustion
+    // path protects, since it re-seeds with only the last emitted key.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const keys = WordProblemsGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.kind + ':' + ex.a + ':' + ex.b + ':' + ex.c);
+
+        for (let i = 1; i < keys.length; i++) {
+          expect(keys[i], difficulty).not.toBe(keys[i - 1]);
+        }
+      }
+    }
+  });
+
+  it('never tells the same story twice in a session', () => {
+    // Keyed on kind:a:b:c, never on the answer. Two different stories that
+    // both total 14 are different exercises to a child who reads a
+    // sentence; and answer-keying would make hard impossible, since addAdd
+    // totals live in 12..20 — nine values against twenty rounds. Spaces are
+    // roughly 45, 380 and 1400; full distinctness held in 500 000 of
+    // 500 000 sessions.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const keys = WordProblemsGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.kind + ':' + ex.a + ':' + ex.b + ':' + ex.c);
+
+        expect(new Set(keys).size, difficulty).toBe(rounds);
+      }
+    }
+  });
 });
 
 describe('word problem templates (shipped translations)', () => {
