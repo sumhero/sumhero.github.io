@@ -12,9 +12,10 @@ html {
     touch-action: manipulation;
     /* Paint the root too, not just body: with viewport-fit=cover the notch and
        home-indicator areas sit outside body's box and would otherwise show the
-       browser's white canvas. */
+       browser's white canvas. No `background-attachment: fixed` here — see
+       the comment further down this file where `html`'s background-color is
+       set for why that would clip the gradient itself. */
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    background-attachment: fixed;
 }
 
 body {
@@ -2709,22 +2710,32 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
     flex: 2;
 }
 
-/* The white strip under the gradient at the very bottom edge. `html` carries
-   the gradient, but a gradient is a background *image*, and `html` has no
-   background-color at all (computed: rgba(0,0,0,0)). The root's background is
-   propagated to the canvas, and with `background-attachment: fixed` its
-   painting area is exactly the viewport box — which `html { position: fixed;
-   height: 100% }` also pins to. Any pixel the browser reveals *outside* that
-   box — the home-indicator strip, an overscroll bounce, the sliver a dynamic
-   bottom toolbar uncovers as it retracts — falls through to the canvas
-   colour, and a transparent canvas is painted white. So the strip is
-   revealed by the browser but coloured by us: nothing in the page is white
-   there, we simply supply no fallback for the browser to use. A
-   background-color does the job the gradient cannot, and cannot regress
-   anything because the gradient paints over it everywhere inside the
-   viewport. #764ba2 is the gradient's end colour, which is what the bottom
-   edge is already fading into; the top edge is separately handled by the
-   `theme-color` meta, which is the gradient's start colour. */
+/* The strip under the gradient at the very bottom edge, revealed by the
+   home-indicator area, an overscroll bounce, or the sliver a dynamic bottom
+   toolbar uncovers as it retracts. `html` carries the gradient (the rule at
+   the very top of this file), and that used to be paired with
+   `background-attachment: fixed`, which pins a background image's painting
+   area to exactly the *layout viewport* box. Any pixel the browser reveals
+   outside that box falls through to `html`'s background-color, which had no
+   value of its own (computed: rgba(0,0,0,0)) until this rule set one — a
+   plain white strip is what a transparent canvas paints there otherwise.
+   A flat colour was the wrong fix, though: #764ba2 is the gradient's *end*
+   stop, correct only at the strip's right end. At a 135deg angle the
+   strip's left end should read much closer to the *start* stop, #667eea, so
+   a single flat colour left the strip looking like a solid purple slab
+   against a diagonal that is blue-ish over there.
+   The real fix is above, on `html`'s own rule: `background-attachment: fixed`
+   is gone, so the gradient *image* is no longer clipped to the layout
+   viewport and instead repaints across whatever the browser actually reveals
+   for `html`'s box, continuing the same diagonal into the strip instead of
+   stopping dead at its edge. `body` was never `fixed` to begin with and
+   needs no change — its own copy of the gradient (declared separately,
+   further up this file) was already unclipped. What's left here is now only
+   a defensive fallback for the moment before the image paints (or any
+   browser that still clips a `scroll`-attachment canvas background): #764ba2
+   remains the closest single-colour approximation on average, and the
+   `theme-color` meta tag separately covers the top edge with the gradient's
+   start colour. */
 html {
     background-color: #764ba2;
 }
