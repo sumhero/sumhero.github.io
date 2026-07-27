@@ -1628,8 +1628,20 @@ body.time-theme-night {
         gap: 10px;
     }
 
+    /* The game screen is a single-screen layout: nothing inside it may scroll
+       the page. It needs an explicit cap to hold that. `#app` has `min-height`
+       only — its used height is auto, and a flex container with an auto height
+       is sized from its items' max-content contributions, so a `.game-body`
+       whose natural height exceeds the viewport silently grows `#app` instead
+       of being squeezed. `body { overflow: auto }` then scrolls, and the choice
+       buttons end up below the fold rather than being clipped by
+       `.game-body { overflow: hidden }`. Neither `min-height: 0` on the screen
+       nor on the body prevents this — max-content contributions ignore
+       min-height — so a max-height is the only thing that does. The subtraction
+       mirrors `#app`'s landscape padding above. */
     #screen-game {
         flex-direction: column;
+        max-height: calc(100vh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     }
 
     .game-header {
@@ -1666,7 +1678,14 @@ body.time-theme-night {
         padding-bottom: 8px;
         flex: 1;
         grid-template-columns: 1fr;
-        grid-template-rows: repeat(5, 1fr);
+        /* minmax(0, 1fr), not 1fr: a plain 1fr row floors at its content's
+           min-content height, which for a choice button holding an svg (the
+           base-ten blocks and coin purses on hard) is the svg's intrinsic
+           height — five 172px rows in a 303px body. The row could then never
+           shrink, and with the screen capped above the surplus is clipped
+           instead of scrolled. Allowing the row to shrink lets the svg's own
+           `max-height: 88%` do its job. No effect when there is room. */
+        grid-template-rows: repeat(5, minmax(0, 1fr));
         align-content: center;
     }
 
@@ -1684,9 +1703,37 @@ body.time-theme-night {
         font-size: min(12vw, 15vh);
     }
 
-    /* Uno landscape */
+    /* Uno landscape. Uno and dice recognition are the two games that keep
+       `flex-direction: column` in landscape, so unlike every row-layout game
+       they have to fit the prompt *and* the choices into the short axis. Both
+       were sized off the long axis instead: the card's height came from
+       `width` via `aspect-ratio`, and the choice buttons' height came from the
+       grid column width, so a wide-and-short viewport made them taller, not
+       shorter. Driving both from vh is what keeps them inside the body. */
     .uno-card-main {
-        width: min(20vw, 30vh);
+        width: min(14vw, 22vh);
+    }
+
+    .uno-game-body .uno-choice-btn {
+        height: min(20vw, 26vh);
+        width: auto;
+        justify-self: center;
+    }
+
+    /* Dice recognition landscape — same column-layout problem as Uno above:
+       six choice columns across a landscape viewport gave 120px-wide buttons,
+       which `aspect-ratio: 5 / 7` turned into 168px-tall ones, and that plus a
+       48vh die did not fit. Sizing the die and the buttons from vh (and
+       letting the 5/7 ratio derive the *width* from that height) does. */
+    .dice-recognition-layout .dice-container svg {
+        width: min(30vw, 34vh);
+        height: min(30vw, 34vh);
+    }
+
+    .dice-recognition-layout .choice-btn {
+        height: min(20vw, 26vh);
+        width: auto;
+        justify-self: center;
     }
 
     /* Geo landscape */
@@ -2216,7 +2263,14 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
         font-size: min(3vw, 5vh);
     }
 
+    /* Count mode's square buttons are a portrait idea: there the choices are a
+       five-column row, so `aspect-ratio: 1` sizes them off a fifth of the
+       width. In landscape the same buttons are a five-row *column* the full
+       width of the choice track, so the ratio turned a 285px-wide button into
+       a 285px-tall one — five of those in a 341px body. Height comes from the
+       grid row here, not from the width. */
     body.shape-count-mode .shape-game-layout .shape-choice-btn {
+        aspect-ratio: auto;
         font-size: min(4vw, 8vh);
     }
 }
