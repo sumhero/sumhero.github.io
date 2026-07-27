@@ -2165,3 +2165,58 @@ body.time-theme-night {
         font-size: min(4vw, 8vh);
     }
 }
+
+/* Formes géométriques. The figure svg is square (200x200), so the default
+   `.dice-container svg` sizing already fits it; only the drop-shadow and a
+   slightly larger cap are added. The two answer modes need different choice
+   grids — five shape *words* do not fit five columns on a phone, five *numbers*
+   do — so the game sets `exercise.bodyClass` and the grid follows from it. */
+.shape-game-layout .dice-container {
+    flex-direction: column;
+    flex: 1;
+    gap: min(2vh, 12px);
+}
+
+.shape-figure {
+    width: min(46vw, 34vh) !important;
+    height: min(46vw, 34vh) !important;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
+
+.shape-game-layout .shape-choice-btn {
+    aspect-ratio: auto;
+    font-size: min(5vw, 4vh);
+    padding: min(2vh, 14px) 6px;
+}
+
+body.shape-name-mode .shape-game-layout .choices-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+
+body.shape-count-mode .shape-game-layout .shape-choice-btn {
+    aspect-ratio: 1;
+    font-size: min(8vw, 8vh);
+}
+
+@media (orientation: landscape) {
+    .shape-game-layout {
+        flex-direction: row !important;
+    }
+
+    .shape-game-layout .dice-container {
+        flex: 2;
+    }
+
+    .shape-figure {
+        width: min(30vw, 52vh) !important;
+        height: min(30vw, 52vh) !important;
+    }
+
+    .shape-game-layout .shape-choice-btn {
+        font-size: min(3vw, 5vh);
+    }
+
+    body.shape-count-mode .shape-game-layout .shape-choice-btn {
+        font-size: min(4vw, 8vh);
+    }
+}

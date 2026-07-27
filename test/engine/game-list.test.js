@@ -22,7 +22,7 @@ describe('GameList.load', () => {
 
   it('renders one group section per non-empty domain', () => {
     GameList.load();
-    expect(document.querySelectorAll('.game-group')).toHaveLength(4);
+    expect(document.querySelectorAll('.game-group')).toHaveLength(5);
   });
 
   it('renders a card for every registered game', () => {
