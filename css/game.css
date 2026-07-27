@@ -1980,3 +1980,36 @@ body.time-theme-night {
         font-size: min(4vw, 8vh);
     }
 }
+
+/* Tens and units: base-ten blocks. The prompt svg is tall and narrow, so it
+   has to escape the square `.dice-container svg` sizing — hence !important,
+   the same escape `.ten-frame` needs. On hard the blocks move into the choice
+   buttons, where `.dice-container svg` does not reach but `.base-ten` does. */
+.base-ten {
+    width: auto !important;
+    height: min(34vh, 34vw) !important;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
+
+.tens-units-choice-btn {
+    font-size: min(6.5vw, 6.5vh);
+    padding: 6px;
+}
+
+.tens-units-choice-btn .base-ten {
+    width: auto !important;
+    height: auto !important;
+    max-width: 92%;
+    max-height: 88%;
+    filter: none;
+}
+
+@media (orientation: landscape) {
+    .base-ten {
+        height: min(52vh, 30vw) !important;
+    }
+
+    .tens-units-choice-btn {
+        font-size: min(4vw, 8vh);
+    }
+}
