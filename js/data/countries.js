@@ -1,5 +1,3 @@
-import { I18n } from './i18n/i18n.js';
-
 export const COUNTRIES_EUROPE = [
     {name: 'Albania', flag: 'al', capital: 'Tirana', t: {fr: {name: 'Albanie', capital: 'Tirana'}, de: {name: 'Albanien', capital: 'Tirana'}, uk: {name: 'Албанія', capital: 'Тирана'}, ru: {name: 'Албания', capital: 'Тирана'}}},
     {name: 'Andorra', flag: 'ad', capital: 'Andorra la Vella', t: {fr: {name: 'Andorre', capital: 'Andorre-la-Vieille'}, de: {name: 'Andorra', capital: 'Andorra la Vella'}, uk: {name: 'Андорра', capital: 'Андорра-ла-Велья'}, ru: {name: 'Андорра', capital: 'Андорра-ла-Велья'}}},
@@ -205,15 +203,11 @@ export const COUNTRIES_REST = [
     {name: 'Zimbabwe', flag: 'zw', capital: 'Harare', t: {fr: {name: 'Zimbabwe', capital: 'Harare'}, de: {name: 'Simbabwe', capital: 'Harare'}, uk: {name: 'Зімбабве', capital: 'Хараре'}, ru: {name: 'Зимбабве', capital: 'Хараре'}}},
 ];
 
-export function getCountryName(country) {
-    const lang = I18n.getLanguage();
-
+export function getCountryName(country, lang) {
     return (lang !== 'en' && country.t && country.t[lang] && country.t[lang].name) || country.name;
 }
 
-export function getCapitalName(country) {
-    const lang = I18n.getLanguage();
-
+export function getCapitalName(country, lang) {
     return (lang !== 'en' && country.t && country.t[lang] && country.t[lang].capital) || country.capital;
 }
 

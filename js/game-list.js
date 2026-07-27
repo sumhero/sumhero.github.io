@@ -5,8 +5,8 @@ import { OBJECT_CATEGORIES } from './games/object-categories.js';
 import { CountObjectsGame } from './games/count-objects.js';
 import { UnoGame } from './games/uno.js';
 import { DiceRecognitionGame } from './games/dice-recognition.js';
-import { CountriesGame } from './countries-game.js';
-import { CapitalsGame } from './capitals-game.js';
+import { CountriesGame } from './games/countries.js';
+import { CapitalsGame } from './games/capitals.js';
 import { GuessTimeGame } from './guess-time-game.js';
 import { DoubleCrashGame } from './double-crash-game.js';
 import { MemoryGame } from './memory-game.js';
@@ -117,9 +117,9 @@ export const GameList = {
                 } else if (this.selectedGame === 'dice_recognition') {
                     GameEngine.start(DiceRecognitionGame, { difficulty: this.getDifficulty() });
                 } else if (this.selectedGame === 'countries') {
-                    CountriesGame.start(this.getDifficulty());
+                    GameEngine.start(CountriesGame, { difficulty: this.getDifficulty() });
                 } else if (this.selectedGame === 'capitals') {
-                    CapitalsGame.start(this.getDifficulty());
+                    GameEngine.start(CapitalsGame, { difficulty: this.getDifficulty() });
                 } else if (this.selectedGame === 'guess_time') {
                     GuessTimeGame.start(this.getDifficulty());
                 } else if (this.selectedGame === 'double_crash') {
