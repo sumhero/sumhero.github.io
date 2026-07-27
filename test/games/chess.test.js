@@ -95,14 +95,19 @@ describe('ChessGame', () => {
     //    from queen(1,1)), which the loop must accept as exercise 1.
     //  - draws 9-11 are unused padding by correct code (which already
     //    resolved exercise 1 at draws 6-8) but matter for the mutant below.
-    // A mutant that hardcodes `key` to a constant can never satisfy
-    // `key !== previousKey`, so its retry loop always burns the full 500-try
-    // guard budget for exercise 1. 500 tries * 3 draws/try = 1500 draws,
-    // starting right after exercise 0's 3 draws — draw index 1500 lands
-    // exactly on cycle position 0 (1500 is a multiple of the 12-value cycle
-    // length), reproducing exercise 0's own queen(1,1) as exercise 1. That
-    // makes the mutant's exercise 1 equal to exercise 0 — caught by both the
-    // explicit piece/row/col assertions below and the loop's key check.
+    // A mutant whose keyOf returns a constant can never satisfy the
+    // used-set check, so exercise 1 burns drawDistinct's full budget of
+    // DRAW_TRIES (40) tries. 40 tries * 3 draws/try = 120 draws, starting
+    // right after exercise 0's 3 draws — draw index 120 + 3 lands back on
+    // cycle position 3, and the 40th try reads cycle positions 0-2, which
+    // reproduce exercise 0's own queen(1,1) as exercise 1. That makes the
+    // mutant's exercise 1 equal to exercise 0 — caught by both the explicit
+    // piece/row/col assertions below and the loop's key check.
+    //
+    // THIS ARGUMENT DEPENDS ON 40 * 3 BEING A MULTIPLE OF 12. A budget of 30
+    // or 50 makes the mutant land elsewhere and produce the *correct* output,
+    // leaving this test green on broken code. If DRAW_TRIES ever changes,
+    // re-run the mutation in this file's plan step before trusting this test.
     const rng = cyclingRngFactory([
       0.65, 0.5, 0.5,
       0.65, 0.5, 0.5,
@@ -247,6 +252,22 @@ describe('ChessGame', () => {
     const el = document.getElementById('choices');
     ChessGame.renderChoices(el, ChessGame.generate('easy', ctx(1))[0], vi.fn());
     expect(el.innerHTML).toBe('');
+  });
+
+  it('never repeats a piece-and-square across a whole session', () => {
+    // Five pieces x nine squares minus the centre knight = 44 answerable
+    // boards, against at most twenty rounds. Full distinctness held in 500 000
+    // of 500 000 simulated sessions. Before this change 30.7% of hard sessions
+    // showed the same board three or more times, despite the one-slot
+    // previousKey guard — A B A B A reads to a child exactly as badly as A A A.
+    for (const [difficulty, rounds] of [['easy', 5], ['normal', 10], ['hard', 20]]) {
+      for (let session = 0; session < 30; session++) {
+        const keys = ChessGame.generate(difficulty, ctx(rounds))
+          .map(ex => ex.piece + ex.row + ex.col);
+
+        expect(new Set(keys).size, difficulty).toBe(rounds);
+      }
+    }
   });
 });
 

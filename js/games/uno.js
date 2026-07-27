@@ -1,3 +1,5 @@
+import { drawDistinct } from '../engine/unique.js';
+
 const UNO_COLORS = ['red', 'blue', 'green', 'yellow'];
 
 const UNO_COLOR_VALUES = {
@@ -22,11 +24,19 @@ export const UnoGame = {
   rounds: { easy: 5, normal: 10, hard: 20 },
   layoutClass: 'uno-game-body',
 
+  // Keyed on the card lying on the table, not on correctAnswer — the answer is
+  // a whole card object, and the same table card dealt with different
+  // distractors is the same question to the child. Forty cards against at most
+  // twenty rounds, so the sampler never has to refill.
   generate(difficulty, ctx) {
     const { rng, count } = ctx;
     const deck = buildDeck();
 
-    return Array.from({ length: count }, () => buildExercise(deck, rng));
+    return drawDistinct(
+      count,
+      () => buildExercise(deck, rng),
+      exercise => exercise.mainCard.color + ':' + exercise.mainCard.number
+    );
   },
 
   renderChoices(el, exercise, submit) {
