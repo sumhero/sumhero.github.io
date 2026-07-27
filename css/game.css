@@ -2539,3 +2539,166 @@ body.shape-count-mode .shape-game-layout .shape-choice-btn {
         font-size: min(4vw, 9vh);
     }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Prompt figures fill the prompt column.
+
+   Every prompt svg used to be sized off the *viewport* — `min(35vw, 35vh)`
+   in portrait, `min(25vw, 50vh)` in landscape, plus a per-figure variant for
+   each of the six renderers. But the box the figure actually lives in is
+   `#dice-container`, which is `flex: 3` against the choices' `flex: 1`: it
+   already owns roughly three quarters of the game body. A viewport fraction
+   and a container share are unrelated numbers, so the figure sat in a small
+   patch of a large empty column — a 234x91 coin purse in a 515x303 landscape
+   column (14% of it), base-ten blocks filling 3% of a 358x380 portrait one.
+
+   Sizing the figure from its container instead is what closes that gap, and
+   it needs no renderer change: every renderer emits a `viewBox` and none
+   sets `preserveAspectRatio`, so the default `xMidYMid meet` applies. The
+   drawn figure scales to the largest size that *fits* its box and centres
+   itself in the leftover, which means growing the box can never stretch a
+   coin or square a rectangle — `shapes`' geometry stays truthful for free.
+
+   The mechanism is flex sizing, not percentages, and that distinction is the
+   whole fix. `width/height: 100%` looks equivalent and is not: a percentage
+   height resolves against the parent's height, and where that height is
+   itself content-derived the percentage degrades to `auto` — which on an svg
+   with a `viewBox` means "derive the height from the resolved width via the
+   intrinsic ratio". That is circular, and it does not fail quietly. Measured
+   at 844x390 on dice_recognition, `height: 100%` gave the die the column's
+   full 796px width, derived a 796px height from it, and pushed all six
+   answer buttons off the screen; at 390x844 on tens_units the base-ten
+   blocks (a 33x132 figure, so a very tall ratio) became 357x1429 and took
+   six buttons with them.
+
+   `flex: 1 1 0` + `align-self: stretch` says the same thing without ever
+   resolving a percentage: the *main* axis comes from free-space distribution
+   inside the column, the *cross* axis is the flex line's cross size. Both
+   are computed by the parent, neither can feed back into it, and — the
+   property that matters most here — both are by construction no larger than
+   the container. `.dice-container` is never larger than `.game-body`, and
+   `.game-body` is capped and `overflow: hidden` in landscape, so the figure
+   grows *into* the height budget and stops at it rather than being silently
+   clipped with no scroll affordance. `width`/`height: auto` is required for
+   `align-self: stretch` to apply at all (stretch only acts on an `auto`
+   cross size) and is what neutralises the `width=`/`height=` attributes the
+   renderers emit; `min-width`/`min-height: 0` removes the automatic minimum
+   size a replaced element would otherwise floor at, which is what lets the
+   figure shrink on a short viewport instead of overflowing.
+
+   No `@media (orientation: landscape)` copy is needed: this block sits after
+   the landscape base rule in source order at equal specificity, so it wins
+   in both orientations, and being container-relative it needs no separate
+   number for each. */
+.dice-container svg {
+    flex: 1 1 0;
+    align-self: stretch;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* The column itself must take its size from the flex layout, not from the
+   figure inside it, or the loop closes one level up: a flex item's automatic
+   minimum size is content-based, and an svg's content-based height is its
+   aspect-derived height, so the column grew to whatever the figure claimed.
+   At 844x390 dice_recognition's column went to 796x796 inside a 303px body
+   even with the figure itself sized by flex. `min-height: 0` is what makes
+   the column's height purely its flex share, which is definite, which is
+   what the figure then fills. Crash Roulette is excluded: it is the one
+   prompt column with no figure at all — a continuous betting session whose
+   own tall content is what sizes it — so it keeps the content-based minimum
+   it was built against. */
+.dice-container {
+    min-width: 0;
+    min-height: 0;
+}
+
+.crash-game-layout .dice-container {
+    min-height: auto;
+}
+
+/* dice_addition wraps each die in `.dice-with-number` so the addend can sit
+   under it. That wrapper is the flex item `.dice-container` actually lays
+   out, so it needs the same treatment as the svg: without it the wrapper is
+   still only as wide as the number underneath (120px measured), and the die
+   dutifully fills that. Written as a descendant of the prompt column so it
+   cannot reach a copy of the wrapper anywhere else. */
+.dice-container .dice-with-number {
+    flex: 1 1 0;
+    align-self: stretch;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* These four figures carry their own `!important` sizing from when each had
+   to escape the square `.dice-container svg` default. `!important` is not
+   beaten by source order, so the rules above are dead against them until
+   out-specified. Scoped to their layout class so they cannot reach the
+   copies of the same figures that live *inside choice buttons* on hard
+   (`.money-choice-btn .coin-purse`, `.tens-units-choice-btn .base-ten`),
+   which must stay sized to their button and not to the prompt column. */
+.num-game-layout .dice-container .base-ten,
+.num-game-layout .dice-container .ten-frame,
+.money-game-layout .dice-container .coin-purse,
+.time-game-layout .dice-container .clock-svg {
+    width: auto !important;
+    height: auto !important;
+}
+
+/* Same, for the two that beat `.dice-container svg` on specificity rather
+   than on `!important`. */
+.shape-game-layout .dice-container svg,
+.dice-recognition-layout .dice-container svg {
+    width: auto;
+    height: auto;
+}
+
+/* Guess-time's prompt column is `flex: 1` against the choices' `flex: 1`, a
+   50/50 split it never actually got: the clock's old fixed size inflated the
+   column past its share (434px of 681 measured at 390x844, so 64%). Now that
+   the column takes its size from the flex layout that inflation is gone, and
+   a clock sized to fill the column came out *smaller* than the one that
+   overflowed it — 235px against 273px. `flex: 2` is not a new number: it is
+   what the landscape block below already gives this same column, and it puts
+   the split back where the old layout effectively had it. The choices keep a
+   two-column grid of four buttons in the remaining third, which is the same
+   room they had before the prompt column stopped inflating. */
+.time-game-layout .dice-container {
+    flex: 2;
+}
+
+/* The white strip under the gradient at the very bottom edge. `html` carries
+   the gradient, but a gradient is a background *image*, and `html` has no
+   background-color at all (computed: rgba(0,0,0,0)). The root's background is
+   propagated to the canvas, and with `background-attachment: fixed` its
+   painting area is exactly the viewport box — which `html { position: fixed;
+   height: 100% }` also pins to. Any pixel the browser reveals *outside* that
+   box — the home-indicator strip, an overscroll bounce, the sliver a dynamic
+   bottom toolbar uncovers as it retracts — falls through to the canvas
+   colour, and a transparent canvas is painted white. So the strip is
+   revealed by the browser but coloured by us: nothing in the page is white
+   there, we simply supply no fallback for the browser to use. A
+   background-color does the job the gradient cannot, and cannot regress
+   anything because the gradient paints over it everywhere inside the
+   viewport. #764ba2 is the gradient's end colour, which is what the bottom
+   edge is already fading into; the top edge is separately handled by the
+   `theme-color` meta, which is the gradient's start colour. */
+html {
+    background-color: #764ba2;
+}
+
+/* Dice recognition is the one game whose figure is now limited by the
+   column's *width* rather than its height (a square die in a tall portrait
+   column), so the die ends up exactly as wide as the column — and
+   `.dice-container svg`'s `drop-shadow(0 4px 8px)` then paints ~12px past
+   that on each side, which `.game-body { overflow: hidden }` trims. Measured
+   3-6px of horizontal overflow at 320/360/390 wide, at every difficulty and
+   every seed. Only the shadow is lost, never a pip or a tap target, but the
+   fix is a gutter wide enough for the blur rather than a smaller die: 16px
+   against a ~12px reach, and it costs the die about 7% of a 91% gain. */
+.dice-recognition-layout .dice-container {
+    padding-left: min(4vw, 16px);
+    padding-right: min(4vw, 16px);
+}
