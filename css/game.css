@@ -755,12 +755,27 @@ input, textarea {
    gets an answer they cannot reach. Names long enough to wrap exist in every
    language (de has six, fr has "Papouasie-Nouvelle-Guinée", and the capital
    "Sri Jayawardenepura Kotte" is 25 characters), so this is roughly 1-2% of
-   hard rounds, not a theoretical case. */
+   hard rounds, not a theoretical case.
+
+   padding-top: 12px closes the one gap that comment left open. Rows 2-5
+   each sit below a 12px `gap`, so a row's centered text can overflow its own
+   box by up to ~6px in either direction before it reaches the row above or
+   below. Row 1 has no such cushion — it sits flush against the container's
+   (and `.game-body`'s) own top edge — so any overflow above its box is
+   clipped immediately, with zero margin. Confirmed at 568x320, hard,
+   capitals: uk/ru transliterate "Sri Jayawardenepura Kotte" as
+   "Шрі-Джаяварденепура-Котте" / "Шри-Джаяварденепура-Котте" (26 chars with
+   hyphens), which wraps to 3 lines at this column's width and overflowed
+   `.game-body`'s top edge by ~4px when shuffled into row 1 — an unreachable
+   answer. This padding gives row 1 the same ~12px cushion the other rows get
+   from `gap`, at the cost of ~2.4px less height per row (12px / 5 rows),
+   which every row already had to spare. */
 .geo-game-layout .choices-container {
     grid-template-columns: 1fr !important;
     grid-template-rows: repeat(5, minmax(0, 1fr)) !important;
     flex: 1 !important;
     align-content: end !important;
+    padding-top: 12px;
 }
 
 .geo-game-layout .choice-btn {
