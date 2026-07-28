@@ -784,9 +784,26 @@ input, textarea {
     padding: 8px 12px;
 }
 
+/* min-width/min-height: 0, same reason as `.dice-container svg` further down:
+   an `<img>` is a replaced element, and as a flex item (`.dice-container` is
+   `display: flex`) its automatic minimum size defaults to its content size —
+   here the flag's aspect-corrected intrinsic size — which floors it above
+   `max-height: 70%` and stops it shrinking no matter how little room
+   `.dice-container` actually has. The `.dice-container svg` rule doesn't
+   reach this element because a country flag is loaded as an `<img src>`,
+   not an inline `<svg>`, so it needs its own copy of the same fix. Verified
+   this is required, not redundant with the `#screen-game` cap below: capping
+   the screen alone squeezed `.dice-container` to its correct flex share but
+   left the *flag* still floored at its old intrinsic size, so it overflowed
+   `.dice-container` and got clipped at the top by `.game-body`'s
+   `overflow: hidden` — a cropped flag, not a missing button, but still
+   wrong. Adding this alongside the cap is what lets the flag actually
+   shrink to fit. */
 .geo-flag {
     max-height: 70%;
     max-width: 90%;
+    min-height: 0;
+    min-width: 0;
     object-fit: contain;
     border-radius: 8px;
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
@@ -1624,6 +1641,36 @@ body.time-theme-night {
 @keyframes dice-roll {
     0% { transform: scale(0) rotate(-180deg); opacity: 0; }
     100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* Portrait adaptation.
+
+   Same bug the landscape block below already fixes for `#screen-game`, just
+   never mirrored to portrait: `#app` only has `min-height: 100%` (line 43),
+   so its used height is auto — a flex container with an auto height sizes
+   from its items' max-content contributions, and a `.game-body` whose
+   natural height exceeds the viewport silently grows `#app` instead of
+   being squeezed. `body { overflow: auto }` then scrolls, and choice buttons
+   end up below the fold rather than clipped by `.game-body { overflow:
+   hidden }` — reachable only by scrolling, which a young child playing this
+   is not expected to discover. Confirmed reachable, not theoretical: at
+   320x568, hard, capitals renders an `<img>` flag plus a `.geo-country-name`
+   caption in `.dice-container`; the flag is a replaced element whose
+   automatic minimum size (its aspect-corrected intrinsic size, since
+   `.dice-container svg`'s reset below doesn't reach an `<img>`) floors
+   `.dice-container` above what `.game-body` has room for, `#app` grows to
+   ~635-647px, and the 5th choice button lands past 568px — confirmed in
+   en/fr/de/uk/ru. `min-height: 0` on the screen alone does not fix this
+   (max-content contributions ignore min-height, per the landscape comment
+   below); the max-height cap is what does, same formula as `#app`'s own
+   portrait padding (16px + safe-area-inset on top and on bottom, so 32px
+   total) instead of landscape's 8px-per-side one. */
+@media (orientation: portrait) {
+    #screen-game {
+        min-height: 0;
+        max-height: calc(100vh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        max-height: calc(100svh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    }
 }
 
 /* Landscape adaptation */
