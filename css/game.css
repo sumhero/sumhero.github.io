@@ -818,6 +818,72 @@ input, textarea {
     margin-top: 8px;
 }
 
+/* Portrait touch-target rebalance: 34.5px choice buttons in portrait were
+   never a deliberate 50/50 split between `.dice-container` and
+   `.choices-container` — `.choices-container`'s own `min-height: auto`
+   (default, never reset the way `.dice-container`'s is) floors it at its
+   buttons' own content size, and `.dice-container`, having `min-height: 0`,
+   absorbs whatever's left. Three pots of pure whitespace were being spent
+   that no button or flag ever used: `.dice-container`'s `margin: 24px 0`
+   (48px), `.choices-container`'s `padding-bottom: 24px`, and — unlike
+   those two — the `padding-top: 12px` above is NOT one of them: it's the
+   row-1 cushion from the choices-container clip fix and stays untouched,
+   same as the 12px row `gap`, because both exist to stop adjacent-tap
+   misfires and the row-1 clip.
+   Reclaiming just the first two (margin down to 8px/8px, padding-bottom
+   down to 8px) frees ~48px — enough to raise the buttons without taking a
+   single pixel from the flag, because the flag never used its full
+   container to begin with: at 320x568 today it renders at ~141x106px
+   inside a 149px-tall `.dice-container` (it's centered and object-fit:
+   contain, so the aspect-ratio, not the box, decides its final size).
+   The arithmetic (capitals, worse case — it renders the flag *and* the
+   `.geo-country-name` caption sharing `.dice-container`, `countries` has
+   more room to spare): `.game-body` measures 453.5px at 320x568.
+   `.choices-container` needs 5 rows + 4 gaps + top/bottom padding =
+   5×H + 4×12 + 12 + 8. `.dice-container` needs its own 8+8 margin, and the
+   flag needs `.dice-container`'s height minus a fixed ~43.3px (the gap to
+   the caption, the caption's own margin-top, and the caption's line
+   height) to stay at ~106px. Solving for the largest H that leaves the
+   flag at least at its current ~105.7px lands at H≈44.1 — a margin of
+   under half a pixel over the actual constraint, not a real safety
+   margin. H = 43px was chosen instead: it measures at 111.2px flag height
+   (≈5px / ~5% of headroom above today's 105.7px), a number that survives
+   ordinary sub-pixel rounding instead of sitting exactly on the line.
+   44px was within reach on paper; 43px is what's actually being shipped,
+   because the alternative was zero margin for one pixel of button height.
+   Gated to `min-height: 568px` — the shortest of the two viewports this
+   change is verified against (320x568) — because the margin above
+   collapses fast on shorter screens: the same math at 565px already
+   drops the flag to ~103px (below today's size), and at 560px to ~98px.
+   Below the gate, today's already-safe (if uneven) 50/50-ish split is
+   left alone; it was swept clean at 320x480 and 320x420 with 0 clipped or
+   unreachable elements. */
+@media (orientation: portrait) and (min-height: 568px) {
+    .geo-game-layout .dice-container {
+        margin: 8px 0;
+    }
+
+    /* flex: none, not flex: 1 with a shrunk flex-basis, because
+       flex-shrink silently misdistributes this exact split — confirmed by
+       removing the DOM piece by piece. With `.geo-flag` still in the tree,
+       `flex-basis: 283px; flex-shrink: 1` (even with `min-height: 0` on
+       both this element and `.geo-flag`) rendered at 231.8/173.7px instead
+       of the requested 283/122.5px split; deleting the `<img>` alone,
+       nothing else, produced the correct split every time. The aspect-
+       ratio'd replaced element pollutes the shrink calculation somewhere
+       upstream of any min-height reset reachable from here. `flex-shrink:
+       0` sidesteps it entirely, which only reads as safe *because* the
+       `min-height: 568px` gate above guarantees there's room for this
+       fixed height without shrinking — do not drop shrink to 0 outside a
+       gate that guarantees that. */
+    .geo-game-layout .choices-container {
+        padding-bottom: 8px;
+        min-height: 0;
+        flex: none !important;
+        height: 283px; /* 5×43px + 4×12px gaps + 12px pad-top + 8px pad-bottom */
+    }
+}
+
 /* Guess time game layout */
 .time-game-layout {
     flex-direction: column !important;
@@ -1868,6 +1934,18 @@ body.time-theme-night {
         gap: 0;
     }
 
+    /* ~33px buttons here (568x320, hard) are a deliberate geometric limit,
+       not an oversight — do not "fix" it by shrinking the flag further.
+       Five 44px rows need 44*5 + 12px*4 gaps + 12px pad-top + 24px
+       pad-bottom = 304px; this track only has ~233.5px total (viewport
+       height minus the header and #app's landscape padding), and that
+       233.5px is the *entire* cross-size .dice-container and this share
+       between them — landscape splits the row into columns, not the
+       column into rows, so there is no separate "flag budget" to raid the
+       way portrait's stacked layout has one. The only way to reach 44px
+       here would be to shrink the flag, which is the thing this game
+       teaches, or to shrink the header, which every other game also
+       depends on. Measured and left as-is. */
     .geo-game-layout .choices-container {
         flex: 1 !important;
     }
