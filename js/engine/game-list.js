@@ -37,9 +37,22 @@ export const GameList = {
         });
     },
 
+    // Games hidden from the list unless the current difficulty is 'hard'.
+    HARD_ONLY_GAMES: ['double_crash'],
+
+    isGameVisible(game) {
+        if (this.HARD_ONLY_GAMES.includes(game.id)) {
+            return this.getDifficulty() === 'hard';
+        }
+        return true;
+    },
+
     load() {
         const container = document.getElementById('game-list');
-        container.innerHTML = gamesByDomain().map(({ domain, games }) =>
+        container.innerHTML = gamesByDomain()
+            .map(({ domain, games }) => ({ domain, games: games.filter(g => this.isGameVisible(g)) }))
+            .filter(group => group.games.length > 0)
+            .map(({ domain, games }) =>
             '<section class="game-group">' +
                 '<h3 class="game-group-title">' + domain.emoji + ' ' + I18n.t(domain.labelKey) + '</h3>' +
                 '<div class="game-group-cards">' +

@@ -25,9 +25,25 @@ describe('GameList.load', () => {
     expect(document.querySelectorAll('.game-group')).toHaveLength(5);
   });
 
-  it('renders a card for every registered game', () => {
+  it('renders a card for every registered game except hard-only ones under easy', () => {
     GameList.load();
+    expect(document.querySelectorAll('.game-card')).toHaveLength(GAMES.length - GameList.HARD_ONLY_GAMES.length);
+  });
+
+  it('hides the roulette game by default (easy) and shows it under hard', () => {
+    GameList.load();
+    expect(document.querySelector('[data-id="double_crash"]')).toBeNull();
+
+    localStorage.setItem('game_difficulty', 'hard');
+    GameList.load();
+    expect(document.querySelector('[data-id="double_crash"]')).not.toBeNull();
     expect(document.querySelectorAll('.game-card')).toHaveLength(GAMES.length);
+  });
+
+  it('keeps the roulette game hidden under normal difficulty', () => {
+    localStorage.setItem('game_difficulty', 'normal');
+    GameList.load();
+    expect(document.querySelector('[data-id="double_crash"]')).toBeNull();
   });
 
   it('labels each group with its domain emoji and name', () => {
@@ -57,6 +73,7 @@ describe('GameList.load', () => {
     const memorySpy = vi.spyOn(memory, 'start').mockImplementation(() => {});
     const doubleCrashSpy = vi.spyOn(doubleCrash, 'start').mockImplementation(() => {});
 
+    localStorage.setItem('game_difficulty', 'hard'); // roulette is hard-only
     GameList.load();
     document.querySelector('[data-id="memory"]').click();
     document.querySelector('[data-id="double_crash"]').click();
