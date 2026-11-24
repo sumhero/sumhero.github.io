@@ -1,4 +1,4 @@
-const CACHE_VERSION = '2026112409';
+const CACHE_VERSION = '2026112411';
 const CACHE_NAME = `sumhero-v${CACHE_VERSION}`;
 
 const ASSETS = [
@@ -48,6 +48,8 @@ const ASSETS = [
   "/js/render/shapes.js",
   "/js/render/ten-frame.js",
   "/js/sound.js",
+  "/js/update-check.js",
+  "/js/version.js",
   "/css/game.css",
   "/images/icon-192.png",
   "/images/icon-512.png",
@@ -252,7 +254,10 @@ const ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    // cache: 'reload' skips the browser's HTTP cache, so a new version never
+    // gets cached together with stale copies of files from the previous one.
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll(ASSETS.map((url) => new Request(url, { cache: 'reload' }))))
   );
   self.skipWaiting();
 });

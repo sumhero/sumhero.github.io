@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, sep } from 'node:path';
-import { buildAssetList, nextVersion } from '../../tools/build-sw.js';
+import { buildAssetList, nextVersion, buildVersionJson, buildVersionModule } from '../../tools/build-sw.js';
 
 const assets = buildAssetList(process.cwd());
 
@@ -140,5 +140,27 @@ describe('nextVersion', () => {
 
   it('keeps widening on subsequent same-day builds past the boundary', () => {
     expect(nextVersion('20260727100', '20260727')).toBe('20260727101');
+  });
+});
+
+describe('version files', () => {
+  const swVersion = /CACHE_VERSION = '([^']*)'/.exec(readFileSync(join(process.cwd(), 'sw.js'), 'utf8'))[1];
+
+  // The update prompt compares version.json (what is deployed) with
+  // js/version.js (what the page is running). If a build left them out of step
+  // with sw.js, every user would be prompted forever, or never.
+  it('committed version.json and js/version.js match the CACHE_VERSION in sw.js', () => {
+    expect(JSON.parse(readFileSync(join(process.cwd(), 'version.json'), 'utf8')).version).toBe(swVersion);
+    expect(readFileSync(join(process.cwd(), 'js', 'version.js'), 'utf8')).toContain(`APP_VERSION = '${swVersion}'`);
+  });
+
+  it('caches js/version.js but never version.json', () => {
+    expect(assets).toContain('/js/version.js');
+    expect(assets).not.toContain('/version.json');
+  });
+
+  it('writes the version into both files', () => {
+    expect(JSON.parse(buildVersionJson('2026112407'))).toEqual({ version: '2026112407' });
+    expect(buildVersionModule('2026112407')).toContain("export const APP_VERSION = '2026112407';");
   });
 });

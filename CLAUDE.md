@@ -32,19 +32,24 @@ index.html            App shell: all screens, loads js/app.js as a module
 manifest.json         PWA manifest
 sw.js                 GENERATED — do not hand-edit, see "Offline / PWA" below
 sw-template.js        Service-worker source template, edited by hand instead
+version.json          GENERATED with sw.js: the deployed version, never cached
 css/game.css          All styles, including per-game layout classes
 flags/                ~195 country flag SVGs (used by countries/capitals)
 images/               PWA icons
 pages/                Self-contained pages a game loads in an iframe —
                        currently only crash-roulette.html (see the legacy
                        section below)
-tools/build-sw.js     Regenerates sw.js from sw-template.js + a directory scan
+tools/build-sw.js     Regenerates sw.js from sw-template.js + a directory scan,
+                       plus version.json and js/version.js
 test/                 Vitest suite, mirrors the js/ tree (engine/, games/,
                        render/, data/, i18n/, tools/) plus
                        test/docs/claude-md.test.js
 js/
   app.js               App controller: screen switching, init, translations
   sound.js             Sound.play('correct'|'wrong'|'victory')
+  version.js           GENERATED with sw.js: APP_VERSION of the running code
+  update-check.js      Every 10 min, offers to update when a newer version is
+                        deployed (see "Offline / PWA")
   animation.js         Celebration / confetti / Lottie
   engine/
     game-engine.js       GameEngine: the shared session loop (see Architecture)
@@ -315,6 +320,14 @@ js/
   for the asset list and computes the next `CACHE_VERSION` itself (same day →
   bump the counter, new day → reset to `01`). A hand-edit to `sw.js` will be
   silently overwritten the next time the build runs.
+  The same build writes the version into `version.json` (left out of the
+  service-worker cache) and `js/version.js` (cached), and a test fails if
+  either disagrees with `sw.js`. `js/update-check.js` fetches `version.json`
+  every 10 minutes (and when the app returns to the foreground) and, when it
+  is newer than the running `APP_VERSION`, shows an Update / Later prompt.
+  Later silences it for an hour (`update_snooze_until` in localStorage);
+  Update installs the new service worker and reloads. Commit all three
+  generated files together.
 
 ## Adding a new game
 

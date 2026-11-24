@@ -2406,3 +2406,45 @@ html {
     padding-left: min(4vw, 16px);
     padding-right: min(4vw, 16px);
 }
+
+/* "A new version is available" prompt (js/update-check.js). Fixed at the
+   bottom above everything, including the Crash Roulette iframe. */
+.update-toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: max-content;
+    max-width: calc(100vw - 24px);
+    padding: 10px 12px 10px 16px;
+    border-radius: 14px;
+    background: rgba(30, 27, 60, 0.95);
+    color: white;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    font-size: 0.95rem;
+    animation: update-toast-in 0.3s ease-out;
+}
+
+.update-toast-text {
+    flex: 1 1 auto;
+}
+
+.update-toast .btn {
+    flex: none;
+    min-height: 40px;
+    padding: 8px 14px;
+    font-size: 0.9rem;
+}
+
+.update-toast .btn-primary {
+    background: #4CAF50;
+}
+
+@keyframes update-toast-in {
+    from { opacity: 0; transform: translate(-50%, 12px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
