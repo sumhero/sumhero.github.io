@@ -280,8 +280,8 @@ js/
     hiding the screen alone keeps the page's timers and sound running. Edit
     the game in the page itself; its payout math (98% RTP odds, cash-out at
     0.95 of fair value) must stay fair for every strategy. The odds already
-    price in the lucky-pocket multipliers and the craps refund on the
-    player's chosen number, so any new bonus must be priced into the odds the
+    price in the lucky-pocket multipliers, the craps refund on the player's
+    chosen number and the stake-back on doubles, so any new bonus must be priced into the odds the
     same way, not paid on top. The
     sector-by-sector reveal must leave the final number equally likely to be
     any number still on the wheel.
