@@ -17,14 +17,14 @@ function parseCommittedAssets(rootDir) {
   return JSON.parse(match[1]);
 }
 
-// An independent recursive walk of the same four asset directories, using a
+// An independent recursive walk of the same five asset directories, using a
 // different mechanism (Node's own recursive readdirSync) than build-sw.js's
 // hand-rolled walk(), so it can catch a bug in that recursion rather than
 // agreeing with it by construction. Dotfiles/dot-directories are skipped to
 // match buildAssetList's own filtering, so a stray .DS_Store can't cause a
 // spurious failure.
 function independentWalk(rootDir) {
-  const dirs = ['js', 'css', 'images', 'flags'];
+  const dirs = ['js', 'css', 'images', 'flags', 'pages'];
   const found = [];
 
   for (const dir of dirs) {
@@ -68,6 +68,10 @@ describe('buildAssetList', () => {
     expect(assets).toContain('/images/icon-192.png');
   });
 
+  it('includes the Crash Roulette page the game loads in an iframe', () => {
+    expect(assets).toContain('/pages/crash-roulette.html');
+  });
+
   it('includes every flag svg', () => {
     expect(assets.filter(a => a.startsWith('/flags/')).length).toBeGreaterThan(150);
   });
@@ -104,7 +108,7 @@ describe('buildAssetList', () => {
 
     expect(
       missing,
-      'buildAssetList is missing files that exist on disk under js/, css/, images/, or flags/ — ' +
+      'buildAssetList is missing files that exist on disk under js/, css/, images/, flags/, or pages/ — ' +
         'walk() may have stopped recursing into a subdirectory.'
     ).toEqual([]);
   });

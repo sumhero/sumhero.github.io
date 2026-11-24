@@ -35,6 +35,9 @@ sw-template.js        Service-worker source template, edited by hand instead
 css/game.css          All styles, including per-game layout classes
 flags/                ~195 country flag SVGs (used by countries/capitals)
 images/               PWA icons
+pages/                Self-contained pages a game loads in an iframe —
+                       currently only crash-roulette.html (see the legacy
+                       section below)
 tools/build-sw.js     Regenerates sw.js from sw-template.js + a directory scan
 test/                 Vitest suite, mirrors the js/ tree (engine/, games/,
                        render/, data/, i18n/, tools/) plus
@@ -266,6 +269,19 @@ js/
   - `double_crash` (Crash Roulette) has no exercises, no difficulty, and no
     win/lose completion at all — it's a continuous betting session, so the
     engine's generate/answer/celebrate contract simply doesn't apply to it.
+    It is also the one game that deliberately looks unlike the rest: a
+    casino-style design that lives entirely in
+    `pages/crash-roulette.html` (its own game logic, CSS, canvas effects and
+    WebAudio sound, no external scripts). `js/games/double-crash.js` is only a
+    launcher that puts that page in an iframe on the game screen. The iframe
+    is needed because the page's full-page CSS (`body`, `header`, `main`,
+    `dialog`, `:root` variables) would collide with `css/game.css`. The
+    launcher removes the iframe whenever the game screen is left, because
+    hiding the screen alone keeps the page's timers and sound running. Edit
+    the game in the page itself; its payout math (98% RTP odds, cash-out at
+    0.95 of fair value) must stay fair for every strategy, and the
+    sector-by-sector reveal must leave the final number equally likely to be
+    any number still on the wheel.
   - `memory` *does* fit the exercise-and-scoring shape, but
     `GameEngine.completeGame()` hardcodes a three-line stats block
     (exercises/wrongAttempts/time) and the rule
@@ -292,7 +308,7 @@ js/
   `js/i18n/translations.js` (en is the fallback).
 - **Offline / PWA**: `sw.js` is **generated** — never hand-edit it, and never
   hand-bump `CACHE_VERSION`. Run `npm run build:sw` (`tools/build-sw.js`),
-  which scans `js/`, `css/`, `images/`, and `flags/`
+  which scans `js/`, `css/`, `images/`, `flags/`, and `pages/`
   for the asset list and computes the next `CACHE_VERSION` itself (same day →
   bump the counter, new day → reset to `01`). A hand-edit to `sw.js` will be
   silently overwritten the next time the build runs.

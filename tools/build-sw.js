@@ -2,7 +2,7 @@ import { readdirSync, statSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ASSET_DIRS = ['js', 'css', 'images', 'flags'];
+const ASSET_DIRS = ['js', 'css', 'images', 'flags', 'pages'];
 const SHELL = ['/', '/index.html', '/manifest.json'];
 
 function walk(dir, acc = []) {
