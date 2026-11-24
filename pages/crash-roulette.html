@@ -492,6 +492,7 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
 #tut .trow2{display:flex;gap:12px;width:100%}
 #tut .tb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:14px 12px;border-radius:16px;border:2px solid;font-weight:800;letter-spacing:.06em;font-size:16px;transition:opacity .3s,box-shadow .3s,transform .15s;text-align:center}
 #tut .tb em{font-style:normal;font-weight:600;font-size:13px;opacity:.9;letter-spacing:0}
+#tut .tb.C{background:rgba(224,178,92,.18);border-color:#e0b25c;color:#f6e2b4;flex:.8}#tut .tb.glow.C{box-shadow:0 0 0 3px rgba(240,201,119,.9),0 0 34px rgba(224,178,92,.7)}#tut .mw path.lucky{stroke:#ffd36b;stroke-width:3}
 #tut .tb.H{background:rgba(76,195,138,.2);border-color:#4cc38a;color:#c8f3dc}#tut .tb.L{background:rgba(229,98,122,.2);border-color:#e5627a;color:#fbd0d8}
 #tut .tb.glow.H{box-shadow:0 0 0 3px rgba(126,230,177,.9),0 0 34px rgba(76,195,138,.7)}#tut .tb.glow.L{box-shadow:0 0 0 3px rgba(245,143,163,.9),0 0 34px rgba(229,98,122,.7)}#tut .tb.dim{opacity:.35}
 #tut .tb.hold2{flex:none;width:72%;background:#2a2f55;border-color:#6b74b8;color:#dfe3ff}#tut .tb.hold2.glow{box-shadow:0 0 0 3px #9aa4ee,0 0 30px rgba(107,116,184,.7)}
@@ -536,6 +537,21 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
 .sbar .ball{position:absolute;top:-12px;width:36px;height:36px;margin-left:-18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#e8e2d0 60%,#a9a28c);display:grid;place-items:center;box-shadow:0 3px 10px rgba(0,0,0,.6);transition:left 1.1s cubic-bezier(.2,.9,.25,1)}
 .sbar .ball span{font:800 14px var(--ui);color:#1b1408}
 .sw{font-size:14px;font-weight:700;letter-spacing:.06em}.sw.H{color:#7ee6b1}.sw.L{color:#f58fa3}.sw.C{color:#e0b25c}
+/* ---- CENTER bet + lucky pockets ---- */
+.sides{grid-template-columns:1fr .82fr 1fr!important}
+.side.C{background:rgba(224,178,92,.1);border-color:rgba(224,178,92,.35);color:#f3dfb4}
+.side.C.sel{background:rgba(224,178,92,.26);border-color:#f0c977;animation:glowC 1.6s ease-in-out infinite}
+.side.C.sel::after{background:#f0c977}
+@keyframes glowC{0%,100%{box-shadow:0 0 0 1px rgba(240,201,119,.55),0 0 16px rgba(224,178,92,.35)}50%{box-shadow:0 0 0 3px rgba(240,201,119,.95),0 0 44px rgba(224,178,92,.75)}}
+.act.gC{animation:glowC 1.3s ease-in-out infinite;border-color:#f0c977}
+#pbC.mine{animation:segC 1.5s ease-in-out infinite!important;z-index:2}
+@keyframes segC{0%,100%{box-shadow:inset 0 0 0 2px rgba(255,255,255,.5),0 0 8px 2px rgba(224,178,92,.6)}50%{box-shadow:inset 0 0 0 2px rgba(255,255,255,.85),0 0 26px 7px rgba(240,201,119,.95)}}
+.badge.C{background:rgba(224,178,92,.15);color:#f0c977;border:1px solid rgba(224,178,92,.5)}
+.lx{font:800 13px var(--ui);fill:#ffd36b;text-anchor:middle;dominant-baseline:central;opacity:0;transition:opacity .3s}.lx.on{opacity:1}
+.pk.lucky{stroke:#ffd36b!important;stroke-width:2.4!important;animation:lk 1.2s ease-in-out infinite}
+@keyframes lk{50%{filter:drop-shadow(0 0 7px #ffd36b) brightness(1.5)}}
+#lucky{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:8px}#lucky span{padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;color:#ffe3a0;background:rgba(255,211,107,.12);border:1px solid rgba(255,211,107,.45);white-space:nowrap}#lucky b{color:#ffd36b}
+@media(max-width:700px){.side.C .p{font-size:10px}.side.C .t{font-size:11px}}
 </style>
 </head>
 <body>
@@ -566,7 +582,7 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
       <div id="wheels">
         <div id="chipW"></div>
         <div class="wbox" id="wb0"><div class="wlabel">WHEEL 1</div></div>
-        <div id="eq"><div class="row" id="eqRow"></div><div class="sub" id="eqSub"></div><label class="oddsTog"><input type="checkbox" id="oddsTog" checked> Show my odds on the wheel</label></div>
+        <div id="eq"><div class="row" id="eqRow"></div><div class="sub" id="eqSub"></div><div id="lucky" aria-label="Lucky pockets"></div><label class="oddsTog"><input type="checkbox" id="oddsTog" checked> Show my odds on the wheel</label></div>
         <div class="wbox" id="wb1"><div class="wlabel">WHEEL 2</div></div>
       </div>
       <div id="panel" class="glass">
@@ -598,6 +614,7 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
         <div class="chips" id="chips" role="group" aria-label="Chips"></div>
         <div class="sides">
           <button class="side H" id="sideH" aria-pressed="true"></button>
+          <button class="side C" id="sideC" aria-pressed="false"></button>
           <button class="side L" id="sideL" aria-pressed="false"></button>
         </div>
         <button class="spin" id="spinBtn">SPIN</button>
@@ -630,12 +647,12 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
 
 <dialog id="rules">
   <h2>HOW IT WORKS</h2>
-  <p>Two roulette wheels (0–36) each lock on a hidden number. <b>Final score = Wheel 1 + Wheel 2</b> (0–72). Bet <b>HIGHER</b> (score above the target) or <b>LOWER</b> (below). If the score equals the target it is <b>CENTER</b> and both sides lose.</p>
-  <h5>The reveal</h5><p>Each wheel narrows down in 5 steps. Every step knocks out a whole <b>sector</b> (a run of 8, 7, 7, 7 or 7 neighbouring pockets), so you are predicting where the ball will land. One pocket is left at the end. Wheel 1 resolves first, then Wheel 2. Odds, win chance and the wheel colours update after every step.</p>
+  <p>Two roulette wheels (0–36) each lock on a hidden number. <b>Final score = Wheel 1 + Wheel 2</b> (0–72). The target is 12–60 (middle targets are rare). Bet <b>HIGHER</b> (score above the target), <b>LOWER</b> (below) or <b>CENTER</b> (exactly the target — a long shot with a big payout). If the score hits the target, HIGHER and LOWER both lose.</p>
+  <h5>The reveal</h5><p>Each wheel narrows down in 5 steps. Every step knocks out a whole <b>sector</b> (a run of 5, 6, 7, 8 and finally 10 neighbouring pockets), so you are predicting where the ball will land. One pocket is left at the end. Wheel 1 resolves first, then Wheel 2. Odds, win chance and the wheel colours update after every step.</p>
   <h5>Your decisions</h5>
   <ul><li><b>Hold</b> – keep your position, reveal the next step.</li><li><b>Boost</b> – buy more potential win on your side at today's odds (doubles your potential payout).</li><li><b>Flip</b> – sell your position, buy the opposite side for the same potential payout.</li><li><b>Cash out</b> – take the cash value now and end the round. The real numbers are still revealed afterwards.</li></ul>
-  <h5>Auto-hold</h5><p>When every remaining pair already wins for one side the outcome is decided, so the rest plays out automatically.</p>
-  <h5>Fairness</h5><p>Odds = 98% × possible pairs ÷ winning pairs (RTP 98%), rounded down. Position value = Σ stake × odds × win chance. Cash-out = value × 0.95, capped at 95% of the stake. Rounding always favours the house.</p>
+  <h5>Lucky pockets</h5><p>Each round 1–2 pockets are marked gold with a multiplier (×2 to ×10). If a winning result lands on one, every winning bet pays that many times more. The odds already include this, so the game stays 98% fair.</p><h5>Auto-hold</h5><p>When every remaining pair already wins for one side the outcome is decided, so the rest plays out automatically.</p>
+  <h5>Fairness</h5><p>Odds = 98% × possible pairs ÷ winning pairs, each pair counted with its lucky multiplier (RTP 98%), rounded down. Position value = Σ stake × odds × win chance. Cash-out = value × 0.95, capped at 95% of the stake. Rounding always favours the house.</p>
   <h5>Wheel colours</h5><p>The glowing ring marks each number: ▲ green = good for your side (over half of the other wheel's numbers win with it), ▼ red = bad, – grey = even.</p>
   <p style="margin-top:10px;color:var(--mute)">Demo credits only. No real money.</p>
   <button class="ib x" id="rulesClose">Got it</button>
@@ -646,11 +663,12 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
 const Engine = (function () {
   'use strict';
   const EPS = 1e-9;
-  const STEPS = [8, 7, 7, 7, 7];
+  const STEPS = [5, 6, 7, 8, 10];     /* sector sizes per spin (36 of 37 pockets); the last spin is the big one */
+  const T_MIN = 12, T_MAX = 60, LUCKY_MULTS = [[2, .35], [3, .3], [5, .2], [10, .15]], LUCKY_COUNT = [[1, .65], [2, .35]];
   const WHEEL_ORDER = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
   const RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
   const MIN_BET = 0.10, MAX_BET = 100, START_BALANCE = 1000, RTP = 0.98;
-  const SIDE_NAME = { H: 'HIGHER', L: 'LOWER' };
+  const SIDE_NAME = { H: 'HIGHER', L: 'LOWER', C: 'CENTER' };
 
   const floor2 = v => Math.floor(v * 100 + EPS) / 100;
   const ceil2 = v => Math.ceil(v * 100 - EPS) / 100;
@@ -663,22 +681,25 @@ const Engine = (function () {
     return a;
   }
   const other = s => (s === 'H' ? 'L' : 'H');
-  const beats = (side, sum, thr) => (side === 'H' ? sum > thr : sum < thr);
+  const beats = (side, sum, thr) => (side === 'H' ? sum > thr : side === 'L' ? sum < thr : sum === thr);
 
   /* ---- odds / probability on the *current remaining numbers* ---- */
+  const pairMult = (g, a, b) => Math.max((g.mul && g.mul[0][a]) || 1, (g.mul && g.mul[1][b]) || 1);
   function counts(g) {
     const r1 = g.remaining[0], r2 = g.remaining[1], t = g.threshold;
-    let H = 0, L = 0, C = 0;
+    let H = 0, L = 0, C = 0, HW = 0, LW = 0, CW = 0;
     for (let i = 0; i < r1.length; i++) for (let j = 0; j < r2.length; j++) {
-      const s = r1[i] + r2[j];
-      if (s > t) H++; else if (s < t) L++; else C++;
+      const s = r1[i] + r2[j], m = pairMult(g, r1[i], r2[j]);
+      if (s > t) { H++; HW += m; } else if (s < t) { L++; LW += m; } else { C++; CW += m; }
     }
-    return { pp: r1.length * r2.length, H, L, C };
+    return { pp: r1.length * r2.length, H, L, C, HW, LW, CW };
   }
+  /* prob = plain win chance (shown to the player); ev = lucky-weighted chance (what the payout is worth);
+     odds = 98% x pairs / weighted winning pairs, so the bet is exactly 98% fair WITH the lucky multipliers. */
   function stats(g) {
     const c = counts(g);
-    const mk = wp => ({ wp, prob: c.pp ? wp / c.pp : 0, odds: wp === 0 ? null : floor3(RTP * c.pp / wp) });
-    return { pp: c.pp, H: mk(c.H), L: mk(c.L), C: { wp: c.C, prob: c.pp ? c.C / c.pp : 0 } };
+    const mk = k => { const wp = c[k], w = c[k + 'W']; return { wp, prob: c.pp ? wp / c.pp : 0, ev: c.pp ? w / c.pp : 0, odds: wp === 0 ? null : floor3(RTP * c.pp / w) }; };
+    return { pp: c.pp, H: mk('H'), L: mk('L'), C: mk('C') };
   }
   function numberColors(g, w, side) {
     const mine = g.remaining[w], oth = g.remaining[1 - w], out = {};
@@ -686,7 +707,7 @@ const Engine = (function () {
       let win = 0;
       for (const m of oth) if (beats(side, n + m, g.threshold)) win++;
       const p = oth.length ? win / oth.length : 0;
-      out[n] = p > 0.5 ? 'good' : p < 0.5 ? 'bad' : 'even';
+      out[n] = side === 'C' ? (win ? 'good' : 'bad') : p > 0.5 ? 'good' : p < 0.5 ? 'bad' : 'even';   /* CENTER: good = this number can still hit the target exactly */
     }
     return out;
   }
@@ -705,6 +726,21 @@ const Engine = (function () {
     return { plan, final: ring[0] };
   }
 
+  /* Targets are U-shaped: the middle (around 36) is rare, the long-shot ends are common -> more volatility. */
+  const tWeight = t => 0.3 + Math.pow(Math.abs(t - 36) / 24, 1.5);
+  function pickTarget(rng) {
+    let tot = 0; for (let t = T_MIN; t <= T_MAX; t++) tot += tWeight(t);
+    let r = rng() * tot; for (let t = T_MIN; t <= T_MAX; t++) { r -= tWeight(t); if (r < 0) return t; }
+    return T_MAX;
+  }
+  const pick = (tbl, rng) => { let r = rng(); for (const [v, p] of tbl) { r -= p; if (r < 0) return v; } return tbl[tbl.length - 1][0]; };
+  /* Lucky pockets (shown before the bet): if the winning pair contains one, a winning bet pays x its multiplier. */
+  function pickLucky(rng) {
+    const k = pick(LUCKY_COUNT, rng), out = [], seen = new Set();
+    while (out.length < k) { const w = rng() < .5 ? 0 : 1, n = Math.floor(rng() * 37), key = w * 100 + n; if (seen.has(key)) continue; seen.add(key); out.push({ w, n, m: pick(LUCKY_MULTS, rng) }); }
+    return out;
+  }
+
   /* ---- round lifecycle ---- */
   function createGame(opts) {
     opts = opts || {};
@@ -715,7 +751,8 @@ const Engine = (function () {
   function prepareRound(g) {
     if (g.phase === 'live' || g.phase === 'cashed') throw new Error('round in progress');
     const rng = g.rng;
-    g.threshold = 21 + Math.floor(rng() * 31);
+    g.threshold = pickTarget(rng);
+    g.lucky = pickLucky(rng); g.mul = [{}, {}]; for (const l of g.lucky) g.mul[l.w][l.n] = l.m;
     const pw = [planWheel(rng), planWheel(rng)];
     g.plans = pw.map(x => x.plan);          /* per wheel: the sector removed at each of the 5 steps */
     g.finals = pw.map(x => x.final);        /* the survivor of the last step */
@@ -744,8 +781,9 @@ const Engine = (function () {
     if (g.phase !== 'idle') return { ok: false, error: 'Round already running' };
     const v = validateStake(g, stake);
     if (!v.ok) return v;
-    const st = stats(g), o = st[side].odds;
+    const st = stats(g), o = st[side] ? st[side].odds : null;
     if (o === null) return { ok: false, error: 'That side cannot win' };
+    if (!(side in SIDE_NAME)) return { ok: false, error: 'Unknown side' };
     g.startBalance = g.balance;
     g.balance = round2(g.balance - v.stake);
     g.bets.push({ type: 'INITIAL', side, stake: v.stake, lockedOdds: o, status: 'OPEN' });
@@ -779,14 +817,14 @@ const Engine = (function () {
   function finish(g) {
     const score = g.finals[0] + g.finals[1];
     const winner = score > g.threshold ? 'H' : score < g.threshold ? 'L' : 'C';
-    let payout = 0;
+    let payout = 0; const mult = pairMult(g, g.finals[0], g.finals[1]);
     for (const b of g.bets) {
       if (b.status !== 'OPEN') continue;
-      if (b.side === winner) { b.status = 'WON'; payout += floor2(b.stake * b.lockedOdds); } else b.status = 'LOST';
+      if (b.side === winner) { b.status = 'WON'; payout += floor2(b.stake * b.lockedOdds * mult); } else b.status = 'LOST';
     }
     payout = round2(payout);
     g.balance = round2(g.balance + payout);
-    g.result = { score, winner, payout, finals: g.finals.slice(), threshold: g.threshold, cashedOut: g.cashedOut,
+    g.result = { score, winner, payout, mult, lucky: g.lucky, finals: g.finals.slice(), threshold: g.threshold, cashedOut: g.cashedOut,
       hindsight: g.cashedOut ? hindsightBoost(g) : null, cashout: g.cashoutAmount, net: round2(g.balance - g.startBalance), staked: round2(g.bets.reduce((a, b) => a + b.stake, 0)) };
     g.phase = 'finished';
     log(g, `Final ${g.finals[0]} + ${g.finals[1]} = ${score} vs ${g.threshold} → ${winner === 'C' ? 'CENTER' : SIDE_NAME[winner] + ' won'}${payout ? ` · paid €${payout.toFixed(2)}` : ''} · net ${g.result.net >= 0 ? '+' : ''}€${g.result.net.toFixed(2)}`);
@@ -796,19 +834,20 @@ const Engine = (function () {
   function position(g) {
     const open = openBets(g), side = currentSide(g);
     if (!open.length || !side) return { side, open, stake: 0, potential: 0, value: 0, cash: 0, prob: 0 };
-    const st = stats(g), prob = st[side].prob;
+    const st = stats(g), prob = st[side].ev;   /* ev: chance weighted by the lucky multipliers */
     let stake = 0, potential = 0, value = 0, cash = 0;
     for (const b of open) {
       stake += b.stake; potential += b.stake * b.lockedOdds; value += b.stake * b.lockedOdds * prob;
       cash += floor2(Math.min(b.stake * 0.95, b.stake * b.lockedOdds * prob * 0.95));
     }
-    return { side, open, stake: round2(stake), potential, value, cash: round2(cash), prob };
+    return { side, open, stake: round2(stake), potential, value, cash: round2(cash), prob: st[side].prob, ev: prob };
   }
   function options(g) {
     const live = (g.phase === 'live') && openBets(g).length > 0;
     const res = { hold: { ok: live }, boost: { ok: false, reason: '' }, flip: { ok: false, reason: '' }, cash: { ok: false, reason: '' } };
     if (!live) return res;
     const p = position(g), st = stats(g), side = p.side, oth = other(side);
+    const canFlip = side !== 'C';
     const bo = st[side].odds;
     if (bo === null || bo <= 1.0) res.boost = { ok: false, reason: 'no upside' };
     else {
@@ -816,11 +855,12 @@ const Engine = (function () {
       res.boost = cost > g.balance + EPS ? { ok: false, reason: 'insufficient balance', cost, gain: p.potential, odds: bo }
         : { ok: true, cost, gain: p.potential, odds: bo };
     }
-    const oo = st[oth].odds;
-    if (oo === null) res.flip = { ok: false, reason: 'side cannot win', to: oth };
+    const oo = canFlip ? st[oth].odds : null;
+    if (!canFlip) res.flip = { ok: false, reason: 'n/a for center' };
+    else if (oo === null) res.flip = { ok: false, reason: 'side cannot win', to: oth };
     else {
-      const newStake = ceil2(p.potential / oo); let credit = floor2(p.potential * st[side].prob);
-      if (st[oth].prob < st[side].prob) credit = Math.max(credit, newStake);   /* moving to the LESS likely side never costs you: refund (or free), whatever the rounding */
+      const newStake = ceil2(p.potential / oo); let credit = floor2(p.potential * st[side].ev);
+      if (st[oth].ev < st[side].ev) credit = Math.max(credit, newStake);   /* moving to the LESS likely side never costs you: refund (or free), whatever the rounding */
       const net = floor2(newStake - credit);
       res.flip = net > g.balance + EPS ? { ok: false, reason: 'insufficient balance', to: oth, net, newStake, credit, odds: oo }
         : { ok: true, to: oth, net, newStake, credit, odds: oo };
@@ -848,7 +888,7 @@ const Engine = (function () {
   function cashout(g) {
     const o = options(g).cash; if (!o.ok) return { ok: false, error: o.reason };
     const pos = position(g);
-    g.cashPos = { side: pos.side, potential: pos.potential, openPayout: round2(pos.open.reduce((a, b) => a + floor2(b.stake * b.lockedOdds), 0)) };
+    g.cashPos = { side: pos.side, potential: pos.potential, open: pos.open.map(b => ({ stake: b.stake, odds: b.lockedOdds })) };
     g.cashAt = g.stepsDone[0] + g.stepsDone[1];      /* reveals done when the player cashed out */
     for (const b of openBets(g)) b.status = 'CASHED_OUT';
     g.balance = round2(g.balance + o.amount);
@@ -861,17 +901,18 @@ const Engine = (function () {
      decision point from the cash-out moment on. */
   function hindsightBoost(g) {
     const cp = g.cashPos; if (!cp || !g.cashedOut) return null;
-    const score = g.finals[0] + g.finals[1], winner = score > g.threshold ? 'H' : score < g.threshold ? 'L' : 'C';
-    const out = { side: cp.side, winner, wins: winner === cp.side, cash: g.cashoutAmount, hold: cp.openPayout, best: null };
+    const score = g.finals[0] + g.finals[1], winner = score > g.threshold ? 'H' : score < g.threshold ? 'L' : 'C', fm = pairMult(g, g.finals[0], g.finals[1]);
+    const holdPay = round2(cp.open.reduce((a, b) => a + floor2(b.stake * b.odds * fm), 0));
+    const out = { side: cp.side, winner, wins: winner === cp.side, cash: g.cashoutAmount, hold: winner === cp.side ? holdPay : 0, mult: fm, best: null };
     if (!out.wins) return out;
     const rem = [range37(), range37()];
     for (let r = 1; r <= 9; r++) {
       const w = r <= 5 ? 0 : 1, s = r <= 5 ? r - 1 : r - 6, rm = new Set(g.plans[w][s]);
       rem[w] = rem[w].filter(n => !rm.has(n));
       if (r < g.cashAt) continue;
-      const c = counts({ remaining: rem, threshold: g.threshold }), wp = c[cp.side]; if (!wp) continue;
+      const c = counts({ remaining: rem, threshold: g.threshold, mul: g.mul }), wp = c[cp.side + 'W']; if (!wp) continue;
       const odds = floor3(RTP * c.pp / wp); if (odds <= 1.0) continue;
-      const cost = ceil2(cp.potential / odds), boostPay = floor2(cost * odds), total = round2(cp.openPayout + boostPay), vs = round2(total - cost - g.cashoutAmount);
+      const cost = ceil2(cp.potential / odds), boostPay = floor2(cost * odds * fm), total = round2(holdPay + boostPay), vs = round2(total - cost - g.cashoutAmount);
       const sl = r <= 5 ? r : r - 5, label = `W${w + 1} ${sl === 5 ? 'Final' : 'R' + sl}`;
       if (!out.best || vs > out.best.vs) out.best = { r, label, odds, cost, total, vs };
     }
@@ -882,7 +923,7 @@ const Engine = (function () {
 
   return { STEPS, WHEEL_ORDER, RED, MIN_BET, MAX_BET, SIDE_NAME, floor2, ceil2, round2, floor3, other,
     planWheel, createGame, prepareRound, placeBet, validateStake, reveal, stats, counts, numberColors, position, options,
-    boost, flip, cashout, hold, hindsightBoost, resetBalance, currentSide, openBets };
+    boost, flip, cashout, hold, hindsightBoost, resetBalance, currentSide, openBets, pairMult, T_MIN, T_MAX };
 })();
 if (false && typeof module !== 'undefined') module.exports = Engine;
 
@@ -900,7 +941,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   const ORDER = E.WHEEL_ORDER;
   const IDX = {}; ORDER.forEach((n, i) => IDX[n] = i);
   const NAME = E.SIDE_NAME;
-  const ARROW = { H: '▲', L: '▼' };
+  const ARROW = { H: '▲', L: '▼', C: '◆' };
 
   /* ---------- helpers ---------- */
   const fmt = v => (v < 0 ? '−' : '') + '€' + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -992,7 +1033,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   const wheels = [];
   function buildWheel(i) {
     const box = $('#wb' + i);
-    let halo = '', ring = '', pk = '', pn = '', mk = '', fr = '';
+    let halo = '', ring = '', pk = '', pn = '', mk = '', fr = '', lx = '';
     ORDER.forEach((n, idx) => {
       const a = idx * A, a0 = a - A / 2 + .3, a1 = a + A / 2 - .3;
       const col = n === 0 ? '#1b3625' : E.RED.has(n) ? '#411b18' : '#161312', edge = n === 0 ? '#2f5a40' : E.RED.has(n) ? '#6e2a24' : '#26211e';
@@ -1003,6 +1044,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
       fr += `<path d="M${pol(110, a - A / 2).map(v => v.toFixed(2)).join(' ')}L${pol(166, a - A / 2).map(v => v.toFixed(2)).join(' ')}" stroke="#2a2622" stroke-width="1.2"/>`;
       pn += `<text class="pn" data-n="${n}" x="200" y="48" dominant-baseline="central" transform="rotate(${a.toFixed(3)} 200 200)">${n}</text>`;
       mk += `<path class="mk" data-n="${n}" transform="rotate(${a.toFixed(3)} 200 200)" d=""/>`;
+      lx += `<text class="lx" data-l="${n}" x="200" y="77" transform="rotate(${a.toFixed(3)} 200 200)"></text>`;
     });
     let dia = ''; for (let k = 0; k < 8; k++) dia += `<path d="M200 3l4.5 7-4.5 7-4.5-7z" transform="rotate(${k * 45 + 22.5} 200 200)" fill="#3a342e" stroke="#4a423a" stroke-width=".6"/>`;
     const spokes = '<path d="M200 90V310M90 200H310" stroke="#25211e" stroke-width="1"/>';
@@ -1016,7 +1058,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
         <circle cx="200" cy="200" r="186" fill="#0e0d0b"/><g>${halo}${ring}</g><circle cx="200" cy="200" r="169.5" fill="none" stroke="#1a1816" stroke-width="7"/><circle cx="200" cy="200" r="172.5" fill="none" stroke="#2a2622" stroke-width="1"/><g>${pk}</g><circle cx="200" cy="200" r="137.5" fill="none" stroke="#2a2622" stroke-width="1.2"/><g>${fr}</g><circle cx="200" cy="200" r="110" fill="#151311" stroke="#2a2622" stroke-width="2"/>
         <circle cx="200" cy="200" r="86" fill="none" stroke="#1f1c19" stroke-width="1"/>${spokes}
         
-        <g>${pn}</g><g>${mk}</g></svg>
+        <g>${pn}</g><g>${mk}</g><g>${lx}</g></svg>
       <svg viewBox="0 0 400 400" aria-hidden="true"><defs>
         <linearGradient id="rim${i}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0b0"/><stop offset=".35" stop-color="#d4a017"/><stop offset=".65" stop-color="#fff0b0"/><stop offset="1" stop-color="#8a6a10"/></linearGradient>
         <radialGradient id="ball${i}" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#ddd8c4"/><stop offset="1" stop-color="#8d8878"/></radialGradient></defs>
@@ -1030,6 +1072,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
     const W = { box, rot: rotEl, pf: {}, pk: {}, pn: {}, rg: {}, rh: {}, mk: {}, ball: box.querySelector('.ball'), lt: box.querySelector('.lt'), lockg: box.querySelector('.lockg'), cap: box.querySelector('.cap'),
       spot: box.querySelector('.spot'), zoom: box.querySelector('.zoomnum'), pop: box.querySelector('.pop-ctr') };
     rotEl.querySelectorAll('[data-n]').forEach(el => { const n = +el.dataset.n; if (el.classList.contains('pf')) { W.pf[n] = el; return; } ({ pk: W.pk, pn: W.pn, rg: W.rg, rh: W.rh, mk: W.mk })[el.classList.contains('pk') ? 'pk' : el.classList.contains('pn') ? 'pn' : el.classList.contains('rg') ? 'rg' : el.classList.contains('rh') ? 'rh' : 'mk'][n] = el; });
+    W.lx = {}; rotEl.querySelectorAll('[data-l]').forEach(el => { W.lx[+el.dataset.l] = el; });
     wheels[i] = W;
   }
   buildWheel(0); buildWheel(1);
@@ -1045,6 +1088,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
       W.pk[n].classList.toggle('dead', dead); W.pk[n].classList.remove('flash'); W.pf[n].classList.toggle('dead', dead); W.pf[n].classList.remove('flash', 'hl'); W.pk[n].classList.remove('hl'); W.pn[n].classList.toggle('dead', dead);
       setCls(W.rg[n], 'rg' + (c ? ' ' + c : '')); setCls(W.rh[n], 'rh' + (c ? ' ' + c : '')); W.mk[n].setAttribute('d', c ? MK[c] : '');
     }
+    for (let n = 0; n <= 36; n++) { const m = G.mul && G.mul[w][n], on = !!m && rem.has(n); W.lx[n].textContent = m ? '×' + m : ''; W.lx[n].classList.toggle('on', on); W.pk[n].classList.toggle('lucky', on); }
     const locked = G.stepsDone[w] === 5;
     W.box.classList.toggle('locked', locked);
     W.lockg.style.opacity = locked ? 1 : 0; W.cap.style.opacity = locked ? 0 : 1;
@@ -1067,7 +1111,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   /* ---------- reveal animation ---------- */
   function popCounter(W, txt) { if (reduced) return; W.pop.textContent = txt; W.pop.animate([{ opacity: 0, transform: 'translate(-50%,-30%) scale(.4)' }, { opacity: 1, transform: 'translate(-50%,-90%) scale(1.25)', offset: .3 }, { opacity: 0, transform: 'translate(-50%,-190%) scale(1)' }], { duration: 1100 * spd(), easing: 'ease-out' }); }
   function burnPocket(w, n) {
-    const W = wheels[w], el = W.pk[n];
+    const W = wheels[w], el = W.pk[n]; W.lx[n].classList.remove('on'); el.classList.remove('lucky');
     el.classList.remove('hl'); W.pf[n].classList.remove('hl'); el.classList.add('flash'); W.pf[n].classList.add('flash'); W.pn[n].classList.add('dead');
     setCls(W.rg[n], 'rg'); setCls(W.rh[n], 'rh'); W.mk[n].setAttribute('d', '');
     setTimeout(() => { el.classList.remove('flash'); el.classList.add('dead'); W.pf[n].classList.remove('flash'); W.pf[n].classList.add('dead'); }, 120 * spd() + 10);
@@ -1129,6 +1173,8 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   function renderEq() {
     const l1 = G.stepsDone[0] === 5, l2 = G.stepsDone[1] === 5, a = l1 ? G.remaining[0][0] : '?', b = l2 ? G.remaining[1][0] : '?';
     $('#eqRow').innerHTML = `<span class="${l1 ? '' : 'q'}">${a}</span><span class="plus">+</span><span class="${l2 ? '' : 'q'}">${b}</span><span class="plus">=</span><span class="${l1 && l2 ? 'sum' : 'q'}">${l1 && l2 ? a + b : '?'}</span>`;
+    const lk = (G.lucky || []).filter(l => G.remaining[l.w].includes(l.n));
+    $('#lucky').innerHTML = lk.map(l => `<span>⚡ W${l.w + 1} · ${l.n} <b>×${l.m}</b></span>`).join('');
     $('#eqSub').textContent = G.phase === 'idle' ? 'Wheel 1 + Wheel 2' : `${G.remaining[0].length} × ${G.remaining[1].length} pairs left`;
   }
   function renderMeter() {
@@ -1142,7 +1188,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   function renderProb() {
     const st = E.stats(G);
     const mine = G.phase === 'idle' ? ui.side : E.currentSide(G) || (G.bets.length ? null : ui.side);   /* the side we are betting on glows */
-    $('#pbH').classList.toggle('mine', mine === 'H'); $('#pbL').classList.toggle('mine', mine === 'L'); $('#oH').classList.toggle('mine', mine === 'H'); $('#oL').classList.toggle('mine', mine === 'L'); $('#pbar').classList.toggle('mH', mine === 'H'); $('#pbar').classList.toggle('mL', mine === 'L');
+    $('#pbH').classList.toggle('mine', mine === 'H'); $('#pbL').classList.toggle('mine', mine === 'L'); $('#pbC').classList.toggle('mine', mine === 'C'); $('#oH').classList.toggle('mine', mine === 'H'); $('#oL').classList.toggle('mine', mine === 'L'); $('#pbar').classList.toggle('mH', mine === 'H'); $('#pbar').classList.toggle('mL', mine === 'L');
     $('#pbH').style.flex = `${st.H.prob * 100} 1 0`; $('#pbC').style.flex = `${st.C.prob * 100} 1 0`; $('#pbL').style.flex = `${st.L.prob * 100} 1 0`;
     $('#pbH').textContent = st.H.prob > .07 ? '▲ ' + pct(st.H.prob) : ''; $('#pbL').textContent = st.L.prob > .07 ? '▼ ' + pct(st.L.prob) : ''; $('#pbC').textContent = st.C.prob > .07 ? pct(st.C.prob) : '';
     for (const s of ['H', 'L']) {
@@ -1203,15 +1249,15 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   function renderBet() {
     document.querySelectorAll('#chips .chip').forEach(c => { const on = Math.abs(+c.dataset.v - (ui.stake || 0)) < 1e-9; c.classList.toggle('sel', on); c.setAttribute('aria-pressed', on); });
     const st = E.stats(G), v = E.validateStake(G, ui.stake), msg = $('#msg'); let err = !v.ok ? v.error : '';
-    for (const s of ['H', 'L']) {
+    for (const s of ['H', 'C', 'L']) {
       const b = $('#side' + s), o = st[s].odds; b.classList.toggle('sel', ui.side === s); b.setAttribute('aria-pressed', ui.side === s); b.disabled = o === null || ui.busy;
-      b.innerHTML = `<span class="t">${ARROW[s]} ${NAME[s]} ${s === 'H' ? '&gt;' : '&lt;'} ${G.threshold}</span><span class="o">${fmtOdds(o)}</span><span class="p">win chance ${pct(st[s].prob)}</span>`;
+      b.innerHTML = `<span class="t">${ARROW[s]} ${NAME[s]} ${s === 'H' ? '&gt;' : s === 'L' ? '&lt;' : '='} ${G.threshold}</span><span class="o">${fmtOdds(o)}</span><span class="p">win chance ${pct(st[s].prob)}</span>`;
     }
     if (st[ui.side].odds === null) err = 'This side cannot win';
     if (G.balance < E.MIN_BET - 1e-9) err = 'Balance too low — use Reset balance';
     const ok = !err && !ui.busy && G.phase === 'idle';
     $('#spinBtn').disabled = !ok;
-    msg.className = 'msg' + (err ? ' err' : ''); msg.textContent = err ? err : `Stake ${fmt(v.stake)} · pays ${fmt(E.floor2(v.stake * st[ui.side].odds))} if ${NAME[ui.side]} wins`;
+    msg.className = 'msg' + (err ? ' err' : ''); msg.textContent = err ? err : `Stake ${fmt(v.stake)} · pays ${fmt(E.floor2(v.stake * st[ui.side].odds))} if ${NAME[ui.side]} wins${G.lucky && G.lucky.length ? ' (×lucky)' : ''}`;
   }
   function renderDec(disabled) {
     const o = E.options(G), p = E.position(G), side = p.side, on = !disabled && G.phase === 'live';
@@ -1222,9 +1268,9 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
       const f = o.flip; $('#aFlip').disabled = !(on && f.ok);
       $('#sFlip').textContent = f.to ? (f.reason && !f.ok && f.net == null ? f.reason : `to ${NAME[f.to]} · ${f.net < 0 ? 'Refund ' + fmt(-f.net) : f.net === 0 ? 'Free' : 'Cost ' + fmt(f.net)}${f.ok ? '' : ' — ' + f.reason}`) : '—';
       const pr = side ? E.stats(G)[side].prob : 0, oth = side === 'H' ? 'L' : 'H';   /* glow hints: boost when we are the favourite, flip when we are the underdog */
-      for (const [el, k, col] of [['#aBoost', pr >= .7 && on && b.ok, side], ['#aFlip', pr < .25 && on && f.ok, oth]]) { const e = $(el); e.classList.toggle('gH', !!k && col === 'H'); e.classList.toggle('gL', !!k && col === 'L'); }
+      for (const [el, k, col] of [['#aBoost', pr >= .7 && on && b.ok, side], ['#aFlip', pr < .25 && on && f.ok, oth]]) { const e = $(el); for (const z of ['H', 'L', 'C']) e.classList.toggle('g' + z, !!k && col === z); }
       const c = o.cash; $('#aCash').disabled = !(on && c.ok); setNum($('#bCash'), 'cb', c.amount || 0, fmt, .6); $('#sCash').textContent = c.ok ? `x${(c.amount / p.stake).toFixed(2)}` : 'worth nothing';
-    } else { ['#aBoost', '#aFlip', '#aCash'].forEach(s => { $(s).disabled = true; $(s).classList.remove('gH', 'gL'); }); }
+    } else { ['#aBoost', '#aFlip', '#aCash'].forEach(s => { $(s).disabled = true; $(s).classList.remove('gH', 'gL', 'gC'); }); }
   }
   function renderDock() {
     const ph = G.phase, showBet = ph === 'idle', showEnd = ph === 'finished' && !ui.busy, showDec = !showBet && !showEnd;
@@ -1241,7 +1287,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
     return `💡 Boost once more and you'd have won ${fmt(Math.floor(b.total))}`;
   }
   function endText(R) {
-    const w = R.winner === 'C' ? 'CENTER — both sides lose' : NAME[R.winner] + ' won';
+    const w = R.winner === 'C' ? 'CENTER hit' : NAME[R.winner] + ' won';
     return `Final <b>${R.finals[0]} + ${R.finals[1]} = ${R.score}</b> · Target <b>${R.threshold}</b> · <b>${w}</b><br><span style="color:var(--mute)">Round net <b style="color:${R.net >= 0 ? '#4dffb0' : '#ff8095'}">${R.net >= 0 ? '+' : ''}${fmt(R.net)}</b></span>`;
   }
   function renderAll() {
@@ -1318,7 +1364,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   const banner = $('#banner');
   function scoreBar(R) {   /* where the two wheels' sum ended: ball on a 0–72 bar, winning zone lit */
     const T = R.threshold, W = R.winner, pos = v => ((v + .5) / 73 * 100).toFixed(2) + '%';
-    const lab = W === 'C' ? 'CENTER — both sides lose' : W === 'H' ? '▲ HIGHER wins' : '▼ LOWER wins';
+    const lab = W === 'C' ? '◆ CENTER wins' : W === 'H' ? '▲ HIGHER wins' : '▼ LOWER wins';
     return `<div class="sbar w${W}"><i class="lo" style="flex:${T}"></i><i class="mid"></i><i class="hi" style="flex:${72 - T}"></i><u class="tg" style="left:${pos(T)}"><s>${T}</s></u><b class="ball" data-x="${pos(R.score)}" style="left:${pos(0)}"><span>${R.score}</span></b></div><div class="sw ${W}">${lab}</div>`;
   }
   function dropBall() { const b = document.querySelector('#banner .sbar .ball'); if (!b) return; void b.offsetWidth; requestAnimationFrame(() => { b.style.left = b.dataset.x; }); }
@@ -1337,19 +1383,19 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
     ui.ff = false; ui.ffk = 0; ui.busy = false;
     const kind = R.cashedOut ? 'cash' : R.winner === 'C' ? 'center' : R.payout > 0 ? 'win' : 'loss';
     ui.hist.unshift({ k: kind, score: R.score, t: `Round ${G.roundId}: ${R.score} vs ${R.threshold}` });
-    const wtxt = R.winner === 'C' ? 'CENTER — both sides lose' : NAME[R.winner] + ' won';
+    const wtxt = R.winner === 'C' ? 'CENTER hit' : NAME[R.winner] + ' won';
     if (R.cashedOut) {
       const h = R.hindsight || {}, plus = R.net >= 0;
       const tip = plus ? hindText(R) : h.wins ? `You could have won ${fmt(h.hold)} if you continued` : '✅ Good choice — you would have lost it if you continued';
       showBanner({ cls: 'cashed', b1: plus ? 'YOU\'VE WON' : 'CASHED OUT', b2: plus ? '+' + fmt(R.net) : fmt(R.cashout), html: scoreBar(R), b4: `Staked ${fmt(R.staked)} · Cashed out ${fmt(R.cashout)}`, b5: tip });
       say(`${plus ? 'You won ' + fmt(R.net) + '.' : 'Cashed out ' + fmt(R.cashout) + '.'} ${tip.replace(/^✅ /, '')}.`);
-    } else if (R.winner === 'C') {
+    } else if (R.winner === 'C' && !(R.payout > 0)) {
       showBanner({ cls: 'center', b1: 'CENTER!', b2: 'Both sides lose', html: scoreBar(R), b4: `Round net ${fmt(R.net)}` });
       Snd.center(); $('#eqRow').classList.add('shake'); if (!reduced) { $('#flash').animate([{ opacity: 0 }, { opacity: .35, offset: .2 }, { opacity: 0 }], { duration: 800 }); }
       say(`Center. Final ${R.score} equals the target. Both sides lose.`);
     } else if (R.payout > 0) {
       const mult = R.payout / Math.max(R.staked || init, 1e-9), T = mult >= 10 ? 4 : mult >= 5 ? 3 : mult >= 2 ? 2 : mult >= 1.5 ? 1 : 0;
-      const nm = ['YOU WIN', 'NICE WIN', 'BIG WIN', 'HUGE WIN', 'MEGA WIN'][T];
+      const nm = R.mult > 1 ? `LUCKY ×${R.mult}!` : ['YOU WIN', 'NICE WIN', 'BIG WIN', 'HUGE WIN', 'MEGA WIN'][T];
       showBanner({ cls: T >= 3 ? 'big' : '', b1: mult < 1 ? 'PARTIAL WIN' : nm, ...(R.net >= 0 ? { count: R.net, cfmt: v => '+' + fmt(v) } : { b2: fmt(R.net) }), html: scoreBar(R), b4: `Staked ${fmt(R.staked)} · Paid out ${fmt(R.payout)}` + (mult >= 1.5 ? ` · ×${mult.toFixed(mult >= 10 ? 0 : 1)}` : '') });
       if (mult < 1.5) { if (mult < 1) Snd.lose(); }                  /* under x1.5: no celebration at all */
       else {
@@ -1431,6 +1477,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   $('#chips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b || ui.busy) return; Snd.init(); Snd.chip(); setStake(Math.min(+b.dataset.v, stakeCap() || +b.dataset.v)); });
   $('#sideH').onclick = () => { ui.side = 'H'; Snd.init(); Snd.chip(); syncWheel(0); syncWheel(1); renderBet(); renderProb(); };
   $('#sideL').onclick = () => { ui.side = 'L'; Snd.init(); Snd.chip(); syncWheel(0); syncWheel(1); renderBet(); renderProb(); };
+  $('#sideC').onclick = () => { ui.side = 'C'; Snd.init(); Snd.chip(); syncWheel(0); syncWheel(1); renderBet(); renderProb(); };
   $('#spinBtn').onclick = spin;
   $('#aHold').onclick = () => act('hold'); $('#aBoost').onclick = () => act('boost'); $('#aFlip').onclick = () => act('flip'); $('#aCash').onclick = () => act('cash');
   $('#newBtn').onclick = () => { Snd.init(); newRound(); };
@@ -1484,29 +1531,30 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
         await T.sleep(500); sum.textContent = 41; sum.classList.add('pop', 'g');
         await T.sleep(600); S.querySelector('.verdict').innerHTML = '41 is <b>higher</b> than 36 → <span class="gH">HIGHER wins</span>'; S.querySelector('.verdict').classList.add('on');
       } },
-    { t: 'Pick a side', x: 'Choose HIGHER or LOWER. The number on each button is what you win per €1 staked. Land exactly on the target and it is CENTER — both sides lose.',
+    { t: 'Pick a side', x: 'Choose HIGHER or LOWER — or go for CENTER: the score hits the target exactly, a long shot that pays big. The number on each button is what you win per €1.',
       async run(S, T) {
-        const c = E.counts({ remaining: [FULL, FULL], threshold: 36 }), oh = odds(c, 'H'), ol = odds(c, 'L');
+        const c = E.counts({ remaining: [FULL, FULL], threshold: 36 }), oh = odds(c, 'H'), ol = odds(c, 'L'), oc = odds(c, 'C');
         S.innerHTML = `<div class="bar"><i class="lo"></i><i class="mid"></i><i class="hi"></i><b class="mk"></b><span class="bl">0</span><span class="bm">TARGET 36</span><span class="br">72</span></div>
-          <div class="trow2"><div class="tb L" id="tL">▼ LOWER &lt; 36<em>x${ol.toFixed(2)}</em></div><div class="tb H" id="tH">▲ HIGHER &gt; 36<em>x${oh.toFixed(2)}</em></div></div><div class="verdict"></div>`;
-        const mk = S.querySelector('.mk'), L = S.querySelector('#tL'), H = S.querySelector('#tH'), v = S.querySelector('.verdict');
-        const go = async (pos, on, msg) => { mk.style.left = pos + '%'; await T.sleep(1100); L.classList.toggle('glow', on === 'L'); H.classList.toggle('glow', on === 'H'); L.classList.toggle('dim', on === 'C'); H.classList.toggle('dim', on === 'C'); v.innerHTML = msg; v.classList.add('on'); await T.sleep(900); };
-        await T.sleep(400); await go(27, 'L', 'Score 19 → <span class="gL">LOWER wins</span>'); await go(76, 'H', 'Score 55 → <span class="gH">HIGHER wins</span>'); await go(50, 'C', 'Score 36 → <b>CENTER</b>, both lose');
+          <div class="trow2"><div class="tb L" id="tL">▼ LOWER &lt; 36<em>x${ol.toFixed(2)}</em></div><div class="tb C" id="tC">◆ CENTER = 36<em>x${oc.toFixed(2)}</em></div><div class="tb H" id="tH">▲ HIGHER &gt; 36<em>x${oh.toFixed(2)}</em></div></div><div class="verdict"></div>`;
+        const mk = S.querySelector('.mk'), L = S.querySelector('#tL'), H = S.querySelector('#tH'), Cc = S.querySelector('#tC'), v = S.querySelector('.verdict');
+        const go = async (pos, on, msg) => { mk.style.left = pos + '%'; await T.sleep(1100); L.classList.toggle('glow', on === 'L'); H.classList.toggle('glow', on === 'H'); Cc.classList.toggle('glow', on === 'C'); L.classList.toggle('dim', on === 'C'); H.classList.toggle('dim', on === 'C'); Cc.classList.toggle('dim', on !== 'C'); v.innerHTML = msg; v.classList.add('on'); await T.sleep(900); };
+        await T.sleep(400); await go(27, 'L', 'Score 19 → <span class="gL">LOWER wins</span>'); await go(76, 'H', 'Score 55 → <span class="gH">HIGHER wins</span>'); await go(50, 'C', `Score 36 → <span class="gold">CENTER wins x${oc.toFixed(0)}</span>, HIGHER & LOWER lose`);
       } },
-    { t: 'Sectors disappear', x: 'Every spin knocks a whole sector out of the wheel — the ball can no longer land there. As the wheel narrows, your odds and your payout change. You are predicting where the ball ends up.',
+    { t: 'Sectors disappear', x: 'Every spin knocks a whole sector out of the wheel — the ball can no longer land there — and the last spin is the biggest. Gold pockets are lucky: if the ball ends there, your win is multiplied (×2 to ×10).',
       async run(S, T) {
         let g = null; try { g = E.createGame({}); E.placeBet(g, 'H', 1); } catch (e) { g = null; }
         const st = () => g ? E.stats(g) : { H: { prob: .5, odds: 1.96 }, L: { prob: .5, odds: 1.96 } };
         const line = s => `<span class="ch H">▲ HIGHER <b>${pc(s.H.prob)}</b> <em>${s.H.odds ? 'x' + s.H.odds.toFixed(2) : '—'}</em></span><span class="ch L">▼ LOWER <b>${pc(s.L.prob)}</b> <em>${s.L.odds ? 'x' + s.L.odds.toFixed(2) : '—'}</em></span>`;
         S.innerHTML = `<div class="wbig">${wheel('big')}</div><div class="chs">${line(st())}</div><div class="cap">Spin 0 / 5</div>`;
         const w = S.querySelector('.mw'), chs = S.querySelector('.chs'), cap = S.querySelector('.cap');
+        if (g) (g.lucky || []).filter(l => l.w === 0).forEach(l => w.querySelector(`path[data-n="${l.n}"]`).classList.add('lucky'));
         await T.sleep(600);
         for (let k = 1; k <= 3; k++) {
           let info = null; try { info = E.reveal(g); } catch (e) {}
           cap.textContent = `Spin ${k} / 5`; spinBy(w, 240, 1200); await T.sleep(1100);
           const rm = info ? info.removed : [];
           rm.forEach(n => w.querySelector(`path[data-n="${n}"]`).classList.add('hl')); await T.sleep(600);
-          rm.forEach(n => { const p = w.querySelector(`path[data-n="${n}"]`); p.classList.remove('hl'); p.classList.add('dead'); }); await T.sleep(350);
+          rm.forEach(n => { const p = w.querySelector(`path[data-n="${n}"]`); p.classList.remove('hl', 'lucky'); p.classList.add('dead'); }); await T.sleep(350);
           chs.innerHTML = line(st()); chs.classList.remove('pop'); void chs.offsetWidth; chs.classList.add('pop'); cap.textContent = `Spin ${k} / 5 · −${rm.length} numbers`; await T.sleep(1000);
         }
         cap.textContent = '…and so on until one number is left';
