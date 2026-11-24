@@ -651,7 +651,7 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
   <h5>The reveal</h5><p>Each wheel narrows down in 5 steps. Every step knocks out a whole <b>sector</b> (a run of 5, 6, 7, 8 and finally 10 neighbouring pockets), so you are predicting where the ball will land. One pocket is left at the end. Wheel 1 resolves first, then Wheel 2. Odds, win chance and the wheel colours update after every step.</p>
   <h5>Your decisions</h5>
   <ul><li><b>Hold</b> – keep your position, reveal the next step.</li><li><b>Boost</b> – buy more potential win on your side at today's odds (doubles your potential payout).</li><li><b>Flip</b> – sell your position, buy the opposite side for the same potential payout.</li><li><b>Cash out</b> – take the cash value now and end the round. The real numbers are still revealed afterwards.</li></ul>
-  <h5>Lucky pockets</h5><p>Each round 1–2 pockets are marked gold with a multiplier (×2 to ×10). If a winning result lands on one, every winning bet pays that many times more. The odds already include this, so the game stays 98% fair.</p><h5>Auto-hold</h5><p>When every remaining pair already wins for one side the outcome is decided, so the rest plays out automatically.</p>
+  <h5>Lucky pockets</h5><p>Each round 1–2 pockets are marked gold with a multiplier (×2 to ×10). If the ball ends on one and your side wins, your win is multiplied. To pay for those big wins, an ordinary win pays less: the more likely a lucky win is for your side, the lower the number on its button. That is why a very likely side can show less than <b>x1.00</b> — an ordinary win then gives back less than you staked, and only a lucky hit makes a profit. Over many rounds it evens out to the same 98% as every other bet.</p><h5>Auto-hold</h5><p>When every remaining pair already wins for one side the outcome is decided, so the rest plays out automatically.</p>
   <h5>Fairness</h5><p>Odds = 98% × possible pairs ÷ winning pairs, each pair counted with its lucky multiplier (RTP 98%), rounded down. Position value = Σ stake × odds × win chance. Cash-out = value × 0.95, capped at 95% of the stake. Rounding always favours the house.</p>
   <h5>Wheel colours</h5><p>The glowing ring marks each number: ▲ green = good for your side (over half of the other wheel's numbers win with it), ▼ red = bad, – grey = even.</p>
   <p style="margin-top:10px;color:var(--mute)">Demo credits only. No real money.</p>
@@ -1381,7 +1381,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
     Beat.stop(); stopTimer();
     const R = G.result, init = G.bets[0].stake, score = `${R.finals[0]} + ${R.finals[1]} = ${R.score}`;
     ui.ff = false; ui.ffk = 0; ui.busy = false;
-    const kind = R.cashedOut ? 'cash' : R.winner === 'C' ? 'center' : R.payout > 0 ? 'win' : 'loss';
+    const kind = R.cashedOut ? 'cash' : R.payout > 0 && R.net < 0 ? 'loss' : R.winner === 'C' ? 'center' : R.payout > 0 ? 'win' : 'loss';
     ui.hist.unshift({ k: kind, score: R.score, t: `Round ${G.roundId}: ${R.score} vs ${R.threshold}` });
     const wtxt = R.winner === 'C' ? 'CENTER hit' : NAME[R.winner] + ' won';
     if (R.cashedOut) {
@@ -1393,11 +1393,18 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
       showBanner({ cls: 'center', b1: 'CENTER!', b2: 'Both sides lose', html: scoreBar(R), b4: `Round net ${fmt(R.net)}` });
       Snd.center(); $('#eqRow').classList.add('shake'); if (!reduced) { $('#flash').animate([{ opacity: 0 }, { opacity: .35, offset: .2 }, { opacity: 0 }], { duration: 800 }); }
       say(`Center. Final ${R.score} equals the target. Both sides lose.`);
+    } else if (R.payout > 0 && R.net < 0) {
+      /* Your side won but paid back less than you put in (odds under x1 because a lucky pocket was in play,
+         or flips/boosts cost more than the win). Money went down, so this is shown as a loss: no win banner,
+         confetti, coins or win sound. */
+      showBanner({ cls: 'loss', b1: 'NET LOSS', b2: fmt(R.net), html: scoreBar(R), b4: `${NAME[R.winner]} won, but paid ${fmt(R.payout)} for ${fmt(R.staked)} staked` });
+      Snd.lose();
+      say(`${NAME[R.winner]} won, but it paid ${fmt(R.payout)}, less than you staked. Round net ${fmt(R.net)}.`);
     } else if (R.payout > 0) {
       const mult = R.payout / Math.max(R.staked || init, 1e-9), T = mult >= 10 ? 4 : mult >= 5 ? 3 : mult >= 2 ? 2 : mult >= 1.5 ? 1 : 0;
       const nm = R.mult > 1 ? `LUCKY ×${R.mult}!` : ['YOU WIN', 'NICE WIN', 'BIG WIN', 'HUGE WIN', 'MEGA WIN'][T];
-      showBanner({ cls: T >= 3 ? 'big' : '', b1: mult < 1 ? 'PARTIAL WIN' : nm, ...(R.net >= 0 ? { count: R.net, cfmt: v => '+' + fmt(v) } : { b2: fmt(R.net) }), html: scoreBar(R), b4: `Staked ${fmt(R.staked)} · Paid out ${fmt(R.payout)}` + (mult >= 1.5 ? ` · ×${mult.toFixed(mult >= 10 ? 0 : 1)}` : '') });
-      if (mult < 1.5) { if (mult < 1) Snd.lose(); }                  /* under x1.5: no celebration at all */
+      showBanner({ cls: T >= 3 ? 'big' : '', b1: nm, ...(R.net >= 0 ? { count: R.net, cfmt: v => '+' + fmt(v) } : { b2: fmt(R.net) }), html: scoreBar(R), b4: `Staked ${fmt(R.staked)} · Paid out ${fmt(R.payout)}` + (mult >= 1.5 ? ` · ×${mult.toFixed(mult >= 10 ? 0 : 1)}` : '') });
+      if (mult < 1.5) { }                                            /* under x1.5: no celebration at all */
       else {
         if (T >= 1) { flash(); Snd.win(); }
         const conf = [0, 90, 150, 260, 460][T], coin = [0, 16, 28, 50, 100][T];
@@ -1540,7 +1547,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
         const go = async (pos, on, msg) => { mk.style.left = pos + '%'; await T.sleep(1100); L.classList.toggle('glow', on === 'L'); H.classList.toggle('glow', on === 'H'); Cc.classList.toggle('glow', on === 'C'); L.classList.toggle('dim', on === 'C'); H.classList.toggle('dim', on === 'C'); Cc.classList.toggle('dim', on !== 'C'); v.innerHTML = msg; v.classList.add('on'); await T.sleep(900); };
         await T.sleep(400); await go(27, 'L', 'Score 19 → <span class="gL">LOWER wins</span>'); await go(76, 'H', 'Score 55 → <span class="gH">HIGHER wins</span>'); await go(50, 'C', `Score 36 → <span class="gold">CENTER wins x${oc.toFixed(0)}</span>, HIGHER & LOWER lose`);
       } },
-    { t: 'Sectors disappear', x: 'Every spin knocks a whole sector out of the wheel — the ball can no longer land there — and the last spin is the biggest. Gold pockets are lucky: if the ball ends there, your win is multiplied (×2 to ×10).',
+    { t: 'Sectors disappear', x: 'Every spin knocks a whole sector out of the wheel — the ball can no longer land there — and the last spin is the biggest. Gold pockets are lucky: if the ball ends there, your win is multiplied (×2 to ×10). The catch: lucky pockets lower the payout of an ordinary win, so a likely side can even pay under x1.00.',
       async run(S, T) {
         let g = null; try { g = E.createGame({}); E.placeBet(g, 'H', 1); } catch (e) { g = null; }
         const st = () => g ? E.stats(g) : { H: { prob: .5, odds: 1.96 }, L: { prob: .5, odds: 1.96 } };
