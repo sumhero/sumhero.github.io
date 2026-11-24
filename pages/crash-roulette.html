@@ -555,6 +555,24 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
 #favBtn b{font-weight:700;font-variant-numeric:tabular-nums}#favBtn:disabled{opacity:.5;cursor:default}
 .favGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px;margin-top:14px}.favGrid button{height:42px;border-radius:10px;border:1px solid rgba(255,255,255,.14);color:#fff;font:700 15px var(--ui);cursor:pointer}.favGrid .r{background:#6e2a24}.favGrid .b{background:#2a2522}.favGrid .z{background:#2f5a40}.favGrid .sel{outline:3px solid #7fd3ff;outline-offset:1px}
 .pk.fav{stroke:#7fd3ff!important;stroke-width:2.2!important}.hp.save,.hp.push{background:rgba(127,211,255,.14);color:#bfe6ff;border-color:rgba(127,211,255,.45)}
+#crapsFx{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;opacity:0;pointer-events:none;transition:opacity .45s;background:radial-gradient(ellipse at 50% 55%,rgba(64,38,8,.97) 0%,rgba(20,12,4,.985) 45%,rgba(4,3,2,.99) 100%)}
+#crapsFx.on{opacity:1;pointer-events:auto}
+#crapsFx .cfRays{position:absolute;left:50%;top:55%;width:160vmax;height:160vmax;margin:-80vmax 0 0 -80vmax;background:repeating-conic-gradient(from 0deg,rgba(255,200,90,.07) 0deg 6deg,transparent 6deg 18deg);animation:cfSpin 40s linear infinite;mask-image:radial-gradient(circle,#000 0%,transparent 60%);-webkit-mask-image:radial-gradient(circle,#000 0%,transparent 60%)}
+@keyframes cfSpin{to{transform:rotate(360deg)}}
+#crapsFx .cfTop{position:relative;margin-top:max(3vh,18px);text-align:center}
+#crapsFx .cfT{font:900 clamp(34px,6.5vw,76px)/1 var(--disp,var(--ui));letter-spacing:.08em;background:linear-gradient(180deg,#fff6d8 0%,#ffd77a 38%,#c98a22 62%,#ffe7a6 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px rgba(255,190,70,.55)) drop-shadow(0 3px 0 #5a3505);animation:cfTitle 2.4s ease-in-out infinite}
+@keyframes cfTitle{50%{filter:drop-shadow(0 0 34px rgba(255,200,90,.9)) drop-shadow(0 3px 0 #5a3505)}}
+#crapsFx .cfS{margin-top:8px;font:600 clamp(15px,1.8vw,20px) var(--ui);color:#f3dfb4}#crapsFx .cfS b{color:#ffd36b}
+#crapsFx .cfStage{position:relative;flex:1;width:min(1100px,100vw);min-height:0}
+#crapsFx .cfStage canvas{display:block;width:100%!important;height:100%!important}
+#crapsFx .cfBottom{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:max(4vh,22px);text-align:center;padding:0 16px}
+#crapsFx .cfSum{min-height:1em;font:800 clamp(44px,7vw,84px)/1 var(--disp,var(--ui));color:#ffe3a0;text-shadow:0 0 28px rgba(255,190,70,.8)}
+#crapsFx .cfSum.pop{animation:cfPop .55s cubic-bezier(.2,1.6,.4,1)}@keyframes cfPop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+#crapsFx .cfMsg{min-height:1.3em;font:700 clamp(18px,2.4vw,28px) var(--ui);color:#f6e2b4}
+#crapsFx .cfMsg.win{font-size:clamp(26px,4vw,46px);background:linear-gradient(180deg,#fff6d8,#ffc94d);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 16px rgba(255,200,80,.8))}
+#crapsFx .cfMsg.lose{color:#e58c9b}
+#crapsFx .cfPoint{display:none;padding:5px 16px;border-radius:99px;border:1.5px solid #f0c977;color:#ffe3a0;font:800 14px var(--ui);letter-spacing:.14em;background:rgba(240,201,119,.12);box-shadow:0 0 18px rgba(240,201,119,.35)}#crapsFx .cfPoint.on{display:block}
+#crapsFx .cfRule{font:500 13px var(--ui);color:rgba(243,223,180,.6);max-width:36em}
 #lucky{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:8px}#lucky span{padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;color:#ffe3a0;background:rgba(255,211,107,.12);border:1px solid rgba(255,211,107,.45);white-space:nowrap}#lucky b{color:#ffd36b}
 @media(max-width:700px){.side.C .p{font-size:10px}.side.C .t{font-size:11px}}
 .side.rr{background:rgba(127,211,255,.08)!important;border:1.5px dashed rgba(127,211,255,.6)!important;color:#bfe6ff!important;opacity:1!important;transform:none!important;animation:none!important;cursor:pointer}
@@ -566,6 +584,7 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
 <canvas id="amb" aria-hidden="true"></canvas>
 <canvas id="fx" aria-hidden="true"></canvas>
 <div id="pulse"></div><div id="flash"></div><div id="vig"></div><div id="rays"></div>
+<div id="crapsFx" aria-live="polite"><div class="cfRays"></div><div class="cfTop"><div class="cfT">CRAPS BONUS</div><div class="cfS"></div></div><div class="cfStage"></div><div class="cfBottom"><div class="cfSum"></div><div class="cfMsg"></div><div class="cfPoint"></div><div class="cfRule">7 or 11 wins · 2, 3 or 12 loses · any other total is your point: roll it again before a 7</div></div></div>
 <div class="sr" id="live" aria-live="polite" role="status"></div>
 
 <div id="app">
@@ -1450,7 +1469,32 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   const hideBanner = () => { banner.className = ''; };
   banner.addEventListener('click', hideBanner);
   function flash() { if (reduced) return; $('#flash').animate([{ opacity: 0 }, { opacity: .9, offset: .12 }, { opacity: 0 }], { duration: 900 }); }
-  async function crapsShow(R) {   /* roll the dice one throw at a time in the banner */
+  /* The 3D golden dice (pages/vendor/craps3d.min.js, built from tools/craps3d). It only replays the throws
+     the engine already decided (R.craps.rolls). Without WebGL it falls back to the flat banner dice. */
+  async function crapsShow(R) {
+    const c = R.craps, ov = $('#crapsFx'), q = s => ov.querySelector(s);
+    let fx = null;
+    try { const m = await import('./vendor/craps3d.min.js'); fx = m.createCraps(q('.cfStage'), { onBounce: () => Snd.chip(), onSettle: () => Snd.lock() }); }
+    catch (e) { console.warn('3D dice unavailable, using flat dice', e); return crapsShowFlat(R); }
+    q('.cfS').innerHTML = `Your lucky number <b>${R.fav}</b> came up`; q('.cfSum').textContent = ''; q('.cfMsg').className = 'cfMsg'; q('.cfMsg').textContent = ''; q('.cfPoint').className = 'cfPoint';
+    ov.classList.add('on'); say(`Your lucky number ${R.fav} came up. Craps bonus.`); await sleep(700);
+    for (let i = 0; i < c.rolls.length; i++) {
+      const [a, b] = c.rolls[i], s = a + b, last = i === c.rolls.length - 1;
+      q('.cfSum').textContent = ''; q('.cfMsg').textContent = i === 0 ? 'Throwing…' : `Rolling for ${c.point}…`;
+      await fx.roll([a, b], (i === 0 ? 1900 : 1500) * spd());
+      const sum = q('.cfSum'); sum.textContent = s; sum.classList.remove('pop'); void sum.offsetWidth; sum.classList.add('pop');
+      const msg = q('.cfMsg');
+      if (i === 0 && c.point) { msg.textContent = `Your point is ${s}. Roll ${s} again before a 7!`; const p = q('.cfPoint'); p.textContent = `POINT ${s}`; p.classList.add('on'); }
+      else if (!last) msg.textContent = `${s}: not ${c.point}, not 7. Roll again!`;
+      if (!last) await sleep(1100);
+    }
+    const msg = q('.cfMsg');
+    if (c.win) { msg.className = 'cfMsg win'; msg.textContent = `STAKE BACK +${fmt(R.refund)}`; fx.win(); Snd.win(); }
+    else { const s = c.rolls[c.rolls.length - 1].reduce((x, y) => x + y, 0); msg.className = 'cfMsg lose'; msg.textContent = s === 7 && c.point ? 'Seven out. No luck this time' : `Craps ${s}. No luck this time`; fx.lose(); Snd.lose(); }
+    await sleep(2600);
+    ov.classList.remove('on'); await sleep(450); fx.dispose();
+  }
+  async function crapsShowFlat(R) {   /* fallback: roll the dice one throw at a time in the banner */
     const c = R.craps, F = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'], b2 = banner.querySelector('.b2'), b3 = banner.querySelector('.b3');
     showBanner({ cls: 'craps', b1: `🎲 CRAPS BONUS · ${R.fav}`, b2: '⚀ ⚀', b3: `Your lucky number ${R.fav} came up! 7 or 11 wins your stake back, 2, 3 or 12 loses, anything else is your point.` });
     Snd.lock(); say(`Your lucky number ${R.fav} came up. Craps bonus.`); await sleep(1600);
@@ -1621,7 +1665,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   $('#stage').classList.add('x'); // marker
   ui.nums.bal = G.balance; $('#balance').textContent = fmt(G.balance);
   renderAll(); setStake(1);
-  window.__game = { G, ui, E, spin, act, newRound, Beat, stopTimer, renderAll, Snd }; // handy for debugging / tests
+  window.__game = { G, ui, E, spin, act, newRound, Beat, stopTimer, renderAll, Snd, crapsShow }; // handy for debugging / tests
 })();
 
 /* ===== Tutorial: a non-interactive guided tour (own mini-animations, never touches the real game) ===== */

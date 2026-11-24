@@ -6,10 +6,13 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "build:sw": "node tools/build-sw.js"
+    "build:sw": "node tools/build-sw.js",
+    "build:craps3d": "esbuild tools/craps3d/craps3d.js --bundle --format=esm --minify --target=es2020 --legal-comments=eof --outfile=pages/vendor/craps3d.min.js"
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "jsdom": "^26.0.0",
+    "three": "^0.187.0",
     "vitest": "^3.0.0"
   }
 }

@@ -1,4 +1,4 @@
-const CACHE_VERSION = '2026112411';
+const CACHE_VERSION = '2026112412';
 const CACHE_NAME = `sumhero-v${CACHE_VERSION}`;
 
 const ASSETS = [
@@ -249,7 +249,8 @@ const ASSETS = [
   "/flags/za.svg",
   "/flags/zm.svg",
   "/flags/zw.svg",
-  "/pages/crash-roulette.html"
+  "/pages/crash-roulette.html",
+  "/pages/vendor/craps3d.min.js"
 ];
 
 self.addEventListener('install', (event) => {
