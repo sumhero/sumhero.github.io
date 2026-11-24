@@ -279,7 +279,10 @@ js/
     launcher removes the iframe whenever the game screen is left, because
     hiding the screen alone keeps the page's timers and sound running. Edit
     the game in the page itself; its payout math (98% RTP odds, cash-out at
-    0.95 of fair value) must stay fair for every strategy, and the
+    0.95 of fair value) must stay fair for every strategy. The odds already
+    price in the lucky-pocket multipliers and the craps refund on the
+    player's chosen number, so any new bonus must be priced into the odds the
+    same way, not paid on top. The
     sector-by-sector reveal must leave the final number equally likely to be
     any number still on the wheel.
   - `memory` *does* fit the exercise-and-scoring shape, but

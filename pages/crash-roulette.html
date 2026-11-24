@@ -550,6 +550,9 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
 .lx{font:800 13px var(--ui);fill:#ffd36b;text-anchor:middle;dominant-baseline:central;opacity:0;transition:opacity .3s}.lx.on{opacity:1}
 .pk.lucky{stroke:#ffd36b!important;stroke-width:2.4!important;animation:lk 1.2s ease-in-out infinite}
 @keyframes lk{50%{filter:drop-shadow(0 0 7px #ffd36b) brightness(1.5)}}
+.favBtn{display:block;margin:8px auto 0;padding:4px 12px;border-radius:99px;font:700 12px var(--ui);color:#bfe6ff;background:rgba(127,211,255,.1);border:1px solid rgba(127,211,255,.45);cursor:pointer}.favBtn b{color:#fff}.favBtn:disabled{opacity:.55;cursor:default}
+.favGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px;margin-top:14px}.favGrid button{height:42px;border-radius:10px;border:1px solid rgba(255,255,255,.14);color:#fff;font:700 15px var(--ui);cursor:pointer}.favGrid .r{background:#6e2a24}.favGrid .b{background:#2a2522}.favGrid .z{background:#2f5a40}.favGrid .sel{outline:3px solid #7fd3ff;outline-offset:1px}
+.pk.fav{stroke:#7fd3ff!important;stroke-width:2.2!important}.hp.save{background:rgba(127,211,255,.14);color:#bfe6ff;border-color:rgba(127,211,255,.45)}
 #lucky{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:8px}#lucky span{padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;color:#ffe3a0;background:rgba(255,211,107,.12);border:1px solid rgba(255,211,107,.45);white-space:nowrap}#lucky b{color:#ffd36b}
 @media(max-width:700px){.side.C .p{font-size:10px}.side.C .t{font-size:11px}}
 </style>
@@ -582,7 +585,7 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
       <div id="wheels">
         <div id="chipW"></div>
         <div class="wbox" id="wb0"><div class="wlabel">WHEEL 1</div></div>
-        <div id="eq"><div class="row" id="eqRow"></div><div class="sub" id="eqSub"></div><div id="lucky" aria-label="Lucky pockets"></div><label class="oddsTog"><input type="checkbox" id="oddsTog" checked> Show my odds on the wheel</label></div>
+        <div id="eq"><div class="row" id="eqRow"></div><div class="sub" id="eqSub"></div><div id="lucky" aria-label="Lucky pockets"></div><button class="favBtn" id="favBtn" title="Change your craps number"></button><label class="oddsTog"><input type="checkbox" id="oddsTog" checked> Show my odds on the wheel</label></div>
         <div class="wbox" id="wb1"><div class="wlabel">WHEEL 2</div></div>
       </div>
       <div id="panel" class="glass">
@@ -651,11 +654,17 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
   <h5>The reveal</h5><p>Each wheel narrows down in 5 steps. Every step knocks out a whole <b>sector</b> (a run of 5, 6, 7, 8 and finally 10 neighbouring pockets), so you are predicting where the ball will land. One pocket is left at the end. Wheel 1 resolves first, then Wheel 2. Odds, win chance and the wheel colours update after every step.</p>
   <h5>Your decisions</h5>
   <ul><li><b>Hold</b> – keep your position, reveal the next step.</li><li><b>Boost</b> – buy more potential win on your side at today's odds (doubles your potential payout).</li><li><b>Flip</b> – sell your position, buy the opposite side for the same potential payout.</li><li><b>Cash out</b> – take the cash value now and end the round. The real numbers are still revealed afterwards.</li></ul>
-  <h5>Lucky pockets</h5><p>Each round 1–2 pockets are marked gold with a multiplier (×2 to ×10). If the ball ends on one and your side wins, your win is multiplied. To pay for those big wins, an ordinary win pays less: the more likely a lucky win is for your side, the lower the number on its button. That is why a very likely side can show less than <b>x1.00</b> — an ordinary win then gives back less than you staked, and only a lucky hit makes a profit. Over many rounds it evens out to the same 98% as every other bet.</p><h5>Auto-hold</h5><p>When every remaining pair already wins for one side the outcome is decided, so the rest plays out automatically.</p>
-  <h5>Fairness</h5><p>Odds = 98% × possible pairs ÷ winning pairs, each pair counted with its lucky multiplier (RTP 98%), rounded down. Position value = Σ stake × odds × win chance. Cash-out = value × 0.95, capped at 95% of the stake. Rounding always favours the house.</p>
+  <h5>Lucky pockets</h5><p>Each round 1–2 pockets are marked gold with a multiplier (×2 to ×10). If the ball ends on one and your side wins, your win is multiplied. To pay for those big wins, an ordinary win pays less: the more likely a lucky win is for your side, the lower the number on its button. That is why a very likely side can show less than <b>x1.00</b> — an ordinary win then gives back less than you staked, and only a lucky hit makes a profit. Over many rounds it evens out to the same 98% as every other bet.</p><h5>Craps bonus: your number</h5><p>Pick your own number (🎲 button under the score, 36 by default; a birthday works). If your bet <b>loses</b> and either wheel ends on your number, you play a round of craps: 7 or 11 wins, 2, 3 or 12 loses, anything else becomes your point and you roll until the point (win) or a 7 (lose). Win it and you get your lost stake back. It works about half the time, and it is priced into the odds, so every number is equally fair.</p><h5>Auto-hold</h5><p>When every remaining pair already wins for one side the outcome is decided, so the rest plays out automatically.</p>
+  <h5>Fairness</h5><p>Odds = (98% × possible pairs − 244/495 × losing pairs that hold your craps number) ÷ winning pairs, each winning pair counted with its lucky multiplier (RTP 98%), rounded down. Position value = Σ stake × (odds × win chance + craps refund chance). Cash-out = value × 0.95, capped at 95% of the stake. Rounding always favours the house.</p>
   <h5>Wheel colours</h5><p>The glowing ring marks each number: ▲ green = good for your side (over half of the other wheel's numbers win with it), ▼ red = bad, – grey = even.</p>
   <p style="margin-top:10px;color:var(--mute)">Demo credits only. No real money.</p>
   <button class="ib x" id="rulesClose">Got it</button>
+</dialog>
+<dialog id="favDlg">
+  <h2>YOUR CRAPS NUMBER</h2>
+  <p>If your bet loses and either wheel ends on this number, you roll craps for your stake back. Pick any number you like (a birthday works). The odds already include the bonus, so every number is equally fair.</p>
+  <div class="favGrid" id="favGrid"></div>
+  <button class="ib x" id="favClose">Close</button>
 </dialog>
 
 <script>
@@ -669,6 +678,9 @@ const Engine = (function () {
   const RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
   const MIN_BET = 0.10, MAX_BET = 100, START_BALANCE = 1000, RTP = 0.98;
   const SIDE_NAME = { H: 'HIGHER', L: 'LOWER', C: 'CENTER' };
+  /* Craps bonus: the player picks a number (default 36). If a bet LOSES and either wheel ends on that number,
+     a pass-line craps round is played; winning it refunds the lost stakes. Pass-line wins 244/495 of the time. */
+  const CRAPS_WIN = 244 / 495, DEFAULT_FAV = 36;
 
   const floor2 = v => Math.floor(v * 100 + EPS) / 100;
   const ceil2 = v => Math.ceil(v * 100 - EPS) / 100;
@@ -687,19 +699,32 @@ const Engine = (function () {
   const pairMult = (g, a, b) => Math.max((g.mul && g.mul[0][a]) || 1, (g.mul && g.mul[1][b]) || 1);
   function counts(g) {
     const r1 = g.remaining[0], r2 = g.remaining[1], t = g.threshold;
-    let H = 0, L = 0, C = 0, HW = 0, LW = 0, CW = 0;
+    const f = g.fav;
+    let H = 0, L = 0, C = 0, HW = 0, LW = 0, CW = 0, FH = 0, FL = 0, FC = 0;   /* F*: pairs holding the craps number, by outcome */
     for (let i = 0; i < r1.length; i++) for (let j = 0; j < r2.length; j++) {
-      const s = r1[i] + r2[j], m = pairMult(g, r1[i], r2[j]);
-      if (s > t) { H++; HW += m; } else if (s < t) { L++; LW += m; } else { C++; CW += m; }
+      const s = r1[i] + r2[j], m = pairMult(g, r1[i], r2[j]), fv = r1[i] === f || r2[j] === f;
+      if (s > t) { H++; HW += m; if (fv) FH++; } else if (s < t) { L++; LW += m; if (fv) FL++; } else { C++; CW += m; if (fv) FC++; }
     }
-    return { pp: r1.length * r2.length, H, L, C, HW, LW, CW };
+    return { pp: r1.length * r2.length, H, L, C, HW, LW, CW, F: FH + FL + FC, FH, FL, FC };
   }
   /* prob = plain win chance (shown to the player); ev = lucky-weighted chance (what the payout is worth);
-     odds = 98% x pairs / weighted winning pairs, so the bet is exactly 98% fair WITH the lucky multipliers. */
+     rf = chance of a LOST bet with the craps number on a wheel (craps then refunds the stake with CRAPS_WIN).
+     A €1 bet is worth odds*ev + CRAPS_WIN*rf, so odds = (98% x pairs - CRAPS_WIN x refund pairs) / weighted
+     winning pairs makes every bet exactly 98% fair WITH the lucky multipliers AND the craps bonus. */
+  const oddsFor = (c, k) => floor3((RTP * c.pp - CRAPS_WIN * (c.F - c['F' + k])) / c[k + 'W']);
   function stats(g) {
     const c = counts(g);
-    const mk = k => { const wp = c[k], w = c[k + 'W']; return { wp, prob: c.pp ? wp / c.pp : 0, ev: c.pp ? w / c.pp : 0, odds: wp === 0 ? null : floor3(RTP * c.pp / w) }; };
+    const mk = k => { const wp = c[k], w = c[k + 'W']; return { wp, prob: c.pp ? wp / c.pp : 0, ev: c.pp ? w / c.pp : 0, rf: c.pp ? (c.F - c['F' + k]) / c.pp : 0, odds: wp === 0 ? null : oddsFor(c, k) }; };
     return { pp: c.pp, H: mk('H'), L: mk('L'), C: mk('C') };
+  }
+  /* what a bet is worth right now: its win (with lucky multipliers) plus its chance of a craps refund */
+  const betValue = (st, side, stake, odds) => stake * (odds * st[side].ev + CRAPS_WIN * st[side].rf);
+  function rollCraps(rng) {   /* pass line: 7/11 wins, 2/3/12 loses, otherwise roll until the point (win) or a 7 (lose) */
+    const rolls = [], roll = () => { const d = [1 + Math.floor(rng() * 6), 1 + Math.floor(rng() * 6)]; rolls.push(d); return d[0] + d[1]; };
+    const first = roll();
+    if (first === 7 || first === 11) return { rolls, point: null, win: true };
+    if (first === 2 || first === 3 || first === 12) return { rolls, point: null, win: false };
+    for (;;) { const s = roll(); if (s === first) return { rolls, point: first, win: true }; if (s === 7) return { rolls, point: first, win: false }; }
   }
   function numberColors(g, w, side) {
     const mine = g.remaining[w], oth = g.remaining[1 - w], out = {};
@@ -744,7 +769,8 @@ const Engine = (function () {
   /* ---- round lifecycle ---- */
   function createGame(opts) {
     opts = opts || {};
-    const g = { rng: opts.rng || Math.random, balance: opts.balance != null ? opts.balance : START_BALANCE, roundId: 0, phase: 'idle' };
+    const g = { rng: opts.rng || Math.random, balance: opts.balance != null ? opts.balance : START_BALANCE, roundId: 0, phase: 'idle', fav: DEFAULT_FAV };
+    setFav(g, opts.fav);
     prepareRound(g);
     return g;
   }
@@ -762,6 +788,11 @@ const Engine = (function () {
     g.result = null; g.cashedOut = false; g.cashoutAmount = 0; g.side = null;
     g.phase = 'idle'; g.startBalance = g.balance; g.roundId++;
     return g;
+  }
+  /* the craps number can only change between rounds: the odds of a running bet already price it in */
+  function setFav(g, n) {
+    n = Number(n); if (!Number.isInteger(n) || n < 0 || n > 36 || g.phase === 'live' || g.phase === 'cashed') return false;
+    g.fav = n; return true;
   }
   const openBets = g => g.bets.filter(b => b.status === 'OPEN');
   const currentSide = g => { const o = openBets(g); return o.length ? o[o.length - 1].side : g.side; };
@@ -823,8 +854,14 @@ const Engine = (function () {
       if (b.side === winner) { b.status = 'WON'; payout += floor2(b.stake * b.lockedOdds * mult); } else b.status = 'LOST';
     }
     payout = round2(payout);
-    g.balance = round2(g.balance + payout);
-    g.result = { score, winner, payout, mult, lucky: g.lucky, finals: g.finals.slice(), threshold: g.threshold, cashedOut: g.cashedOut,
+    let craps = null, refund = 0; const lost = g.bets.filter(b => b.status === 'LOST');
+    if (lost.length && (g.finals[0] === g.fav || g.finals[1] === g.fav)) {
+      craps = rollCraps(g.rng);
+      if (craps.win) { for (const b of lost) { b.status = 'REFUNDED'; refund += b.stake; } refund = round2(refund); }
+      log(g, `CRAPS on ${g.fav}: ${craps.rolls.map(d => d[0] + '+' + d[1]).join(', ')} → ${craps.win ? 'stake back €' + refund.toFixed(2) : 'no luck'}`);
+    }
+    g.balance = round2(g.balance + payout + refund);
+    g.result = { score, winner, payout, mult, craps, refund, fav: g.fav, lucky: g.lucky, finals: g.finals.slice(), threshold: g.threshold, cashedOut: g.cashedOut,
       hindsight: g.cashedOut ? hindsightBoost(g) : null, cashout: g.cashoutAmount, net: round2(g.balance - g.startBalance), staked: round2(g.bets.reduce((a, b) => a + b.stake, 0)) };
     g.phase = 'finished';
     log(g, `Final ${g.finals[0]} + ${g.finals[1]} = ${score} vs ${g.threshold} → ${winner === 'C' ? 'CENTER' : SIDE_NAME[winner] + ' won'}${payout ? ` · paid €${payout.toFixed(2)}` : ''} · net ${g.result.net >= 0 ? '+' : ''}€${g.result.net.toFixed(2)}`);
@@ -837,8 +874,9 @@ const Engine = (function () {
     const st = stats(g), prob = st[side].ev;   /* ev: chance weighted by the lucky multipliers */
     let stake = 0, potential = 0, value = 0, cash = 0;
     for (const b of open) {
-      stake += b.stake; potential += b.stake * b.lockedOdds; value += b.stake * b.lockedOdds * prob;
-      cash += floor2(Math.min(b.stake * 0.95, b.stake * b.lockedOdds * prob * 0.95));
+      const bv = betValue(st, side, b.stake, b.lockedOdds);
+      stake += b.stake; potential += b.stake * b.lockedOdds; value += bv;
+      cash += floor2(Math.min(b.stake * 0.95, bv * 0.95));
     }
     return { side, open, stake: round2(stake), potential, value, cash: round2(cash), prob: st[side].prob, ev: prob };
   }
@@ -859,8 +897,8 @@ const Engine = (function () {
     if (!canFlip) res.flip = { ok: false, reason: 'n/a for center' };
     else if (oo === null) res.flip = { ok: false, reason: 'side cannot win', to: oth };
     else {
-      const newStake = ceil2(p.potential / oo); let credit = floor2(p.potential * st[side].ev);
-      if (st[oth].ev < st[side].ev) credit = Math.max(credit, newStake);   /* moving to the LESS likely side never costs you: refund (or free), whatever the rounding */
+      const newStake = ceil2(p.potential / oo); let credit = floor2(p.value);
+      if (betValue(st, oth, newStake, oo) < p.value) credit = Math.max(credit, newStake);   /* moving to a LESS valuable position never costs you: refund (or free), whatever the rounding */
       const net = floor2(newStake - credit);
       res.flip = net > g.balance + EPS ? { ok: false, reason: 'insufficient balance', to: oth, net, newStake, credit, odds: oo }
         : { ok: true, to: oth, net, newStake, credit, odds: oo };
@@ -910,8 +948,8 @@ const Engine = (function () {
       const w = r <= 5 ? 0 : 1, s = r <= 5 ? r - 1 : r - 6, rm = new Set(g.plans[w][s]);
       rem[w] = rem[w].filter(n => !rm.has(n));
       if (r < g.cashAt) continue;
-      const c = counts({ remaining: rem, threshold: g.threshold, mul: g.mul }), wp = c[cp.side + 'W']; if (!wp) continue;
-      const odds = floor3(RTP * c.pp / wp); if (odds <= 1.0) continue;
+      const c = counts({ remaining: rem, threshold: g.threshold, mul: g.mul, fav: g.fav }), wp = c[cp.side + 'W']; if (!wp) continue;
+      const odds = oddsFor(c, cp.side); if (odds <= 1.0) continue;
       const cost = ceil2(cp.potential / odds), boostPay = floor2(cost * odds * fm), total = round2(holdPay + boostPay), vs = round2(total - cost - g.cashoutAmount);
       const sl = r <= 5 ? r : r - 5, label = `W${w + 1} ${sl === 5 ? 'Final' : 'R' + sl}`;
       if (!out.best || vs > out.best.vs) out.best = { r, label, odds, cost, total, vs };
@@ -923,7 +961,7 @@ const Engine = (function () {
 
   return { STEPS, WHEEL_ORDER, RED, MIN_BET, MAX_BET, SIDE_NAME, floor2, ceil2, round2, floor3, other,
     planWheel, createGame, prepareRound, placeBet, validateStake, reveal, stats, counts, numberColors, position, options,
-    boost, flip, cashout, hold, hindsightBoost, resetBalance, currentSide, openBets, pairMult, T_MIN, T_MAX };
+    boost, flip, cashout, hold, hindsightBoost, resetBalance, currentSide, openBets, pairMult, T_MIN, T_MAX, CRAPS_WIN, setFav, rollCraps, betValue };
 })();
 if (false && typeof module !== 'undefined') module.exports = Engine;
 
@@ -935,6 +973,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   const $ = s => document.querySelector(s);
   const E = Engine;
   const G = E.createGame();
+  try { const v = localStorage.getItem('crashRouletteFav'); if (v !== null) E.setFav(G, v); } catch (e) { /* storage blocked: keep 36 */ }
   const reduced = false;   /* all animations/effects always on, whatever the OS 'reduce motion' setting says (by request) */
   const ui = { side: 'H', stake: 1, busy: false, ff: false, fast: false, sound: true, balShown: G.balance, rot: [0, 0], tw: [false, false], vel: [0, 0], hist: [], prevOdds: { H: null, L: null }, nums: {}, stakeAtBet: 1 };
   const A = 360 / 37;
@@ -1088,7 +1127,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
       W.pk[n].classList.toggle('dead', dead); W.pk[n].classList.remove('flash'); W.pf[n].classList.toggle('dead', dead); W.pf[n].classList.remove('flash', 'hl'); W.pk[n].classList.remove('hl'); W.pn[n].classList.toggle('dead', dead);
       setCls(W.rg[n], 'rg' + (c ? ' ' + c : '')); setCls(W.rh[n], 'rh' + (c ? ' ' + c : '')); W.mk[n].setAttribute('d', c ? MK[c] : '');
     }
-    for (let n = 0; n <= 36; n++) { const m = G.mul && G.mul[w][n], on = !!m && rem.has(n); W.lx[n].textContent = m ? '×' + m : ''; W.lx[n].classList.toggle('on', on); W.pk[n].classList.toggle('lucky', on); }
+    for (let n = 0; n <= 36; n++) { const m = G.mul && G.mul[w][n], on = !!m && rem.has(n), fv = n === G.fav && rem.has(n); W.lx[n].textContent = m ? '×' + m : n === G.fav ? '🎲' : ''; W.lx[n].classList.toggle('on', on || fv); W.pk[n].classList.toggle('lucky', on); W.pk[n].classList.toggle('fav', fv); }
     const locked = G.stepsDone[w] === 5;
     W.box.classList.toggle('locked', locked);
     W.lockg.style.opacity = locked ? 1 : 0; W.cap.style.opacity = locked ? 0 : 1;
@@ -1111,7 +1150,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   /* ---------- reveal animation ---------- */
   function popCounter(W, txt) { if (reduced) return; W.pop.textContent = txt; W.pop.animate([{ opacity: 0, transform: 'translate(-50%,-30%) scale(.4)' }, { opacity: 1, transform: 'translate(-50%,-90%) scale(1.25)', offset: .3 }, { opacity: 0, transform: 'translate(-50%,-190%) scale(1)' }], { duration: 1100 * spd(), easing: 'ease-out' }); }
   function burnPocket(w, n) {
-    const W = wheels[w], el = W.pk[n]; W.lx[n].classList.remove('on'); el.classList.remove('lucky');
+    const W = wheels[w], el = W.pk[n]; W.lx[n].classList.remove('on'); el.classList.remove('lucky', 'fav');
     el.classList.remove('hl'); W.pf[n].classList.remove('hl'); el.classList.add('flash'); W.pf[n].classList.add('flash'); W.pn[n].classList.add('dead');
     setCls(W.rg[n], 'rg'); setCls(W.rh[n], 'rh'); W.mk[n].setAttribute('d', '');
     setTimeout(() => { el.classList.remove('flash'); el.classList.add('dead'); W.pf[n].classList.remove('flash'); W.pf[n].classList.add('dead'); }, 120 * spd() + 10);
@@ -1175,6 +1214,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
     $('#eqRow').innerHTML = `<span class="${l1 ? '' : 'q'}">${a}</span><span class="plus">+</span><span class="${l2 ? '' : 'q'}">${b}</span><span class="plus">=</span><span class="${l1 && l2 ? 'sum' : 'q'}">${l1 && l2 ? a + b : '?'}</span>`;
     const lk = (G.lucky || []).filter(l => G.remaining[l.w].includes(l.n));
     $('#lucky').innerHTML = lk.map(l => `<span>⚡ W${l.w + 1} · ${l.n} <b>×${l.m}</b></span>`).join('');
+    const fb = $('#favBtn'); fb.innerHTML = `🎲 Craps number <b>${G.fav}</b>${G.phase === 'idle' ? ' ✎' : ''}`; fb.disabled = G.phase !== 'idle' || ui.busy;
     $('#eqSub').textContent = G.phase === 'idle' ? 'Wheel 1 + Wheel 2' : `${G.remaining[0].length} × ${G.remaining[1].length} pairs left`;
   }
   function renderMeter() {
@@ -1230,7 +1270,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
     svg.innerHTML = h;
   }
   function renderHist() {
-    $('#hist').innerHTML = ui.hist.length ? ui.hist.slice(0, 12).map(h => `<span class="hp ${h.k}" title="${h.t}">${{ win: '✓', loss: '✕', center: '◆', cash: '$' }[h.k]} ${h.score}</span>`).join('') : '<span class="empty">No rounds yet</span>';
+    $('#hist').innerHTML = ui.hist.length ? ui.hist.slice(0, 12).map(h => `<span class="hp ${h.k}" title="${h.t}">${{ win: '✓', loss: '✕', center: '◆', cash: '$', save: '🎲' }[h.k]} ${h.score}</span>`).join('') : '<span class="empty">No rounds yet</span>';
   }
   function renderDebug() {
     const st = E.stats(G), c = k => (st[k].odds ? (st[k].odds * st[k].wp / st.pp).toFixed(4) : 'n/a');
@@ -1377,11 +1417,24 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   const hideBanner = () => { banner.className = ''; };
   banner.addEventListener('click', hideBanner);
   function flash() { if (reduced) return; $('#flash').animate([{ opacity: 0 }, { opacity: .9, offset: .12 }, { opacity: 0 }], { duration: 900 }); }
+  async function crapsShow(R) {   /* roll the dice one throw at a time in the banner */
+    const c = R.craps, F = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'], b2 = banner.querySelector('.b2'), b3 = banner.querySelector('.b3');
+    showBanner({ cls: 'craps', b1: `🎲 CRAPS BONUS · ${R.fav}`, b2: '⚀ ⚀', b3: `Your number ${R.fav} came up! 7 or 11 wins your stake back, 2, 3 or 12 loses, anything else is your point.` });
+    Snd.lock(); say(`Your number ${R.fav} came up. Craps bonus.`); await sleep(1600);
+    for (let i = 0; i < c.rolls.length; i++) {
+      const [a, b] = c.rolls[i], s = a + b, last = i === c.rolls.length - 1;
+      for (let k = 0; k < 9; k++) { b2.textContent = F[Math.floor(Math.random() * 6)] + ' ' + F[Math.floor(Math.random() * 6)]; if (k % 3 === 0) Snd.chip(); await sleep(60); }
+      b2.textContent = F[a - 1] + ' ' + F[b - 1];
+      b3.textContent = i === 0 ? (c.point ? `${s}: your point is ${s}. Roll ${s} again before a 7.` : c.win ? `${s}: winner!` : `${s}: craps, no luck.`)
+        : s === c.point ? `${s}: point made, winner!` : s === 7 ? '7: seven out, no luck.' : `${s}: roll again for ${c.point}…`;
+      await sleep(last ? 1300 : 750);
+    }
+  }
   async function finishRound() {
     Beat.stop(); stopTimer();
     const R = G.result, init = G.bets[0].stake, score = `${R.finals[0]} + ${R.finals[1]} = ${R.score}`;
     ui.ff = false; ui.ffk = 0; ui.busy = false;
-    const kind = R.cashedOut ? 'cash' : R.payout > 0 && R.net < 0 ? 'loss' : R.winner === 'C' ? 'center' : R.payout > 0 ? 'win' : 'loss';
+    const kind = R.refund > 0 ? 'save' : R.cashedOut ? 'cash' : R.payout > 0 && R.net < 0 ? 'loss' : R.winner === 'C' ? 'center' : R.payout > 0 ? 'win' : 'loss';
     ui.hist.unshift({ k: kind, score: R.score, t: `Round ${G.roundId}: ${R.score} vs ${R.threshold}` });
     const wtxt = R.winner === 'C' ? 'CENTER hit' : NAME[R.winner] + ' won';
     if (R.cashedOut) {
@@ -1389,6 +1442,16 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
       const tip = plus ? hindText(R) : h.wins ? `You could have won ${fmt(h.hold)} if you continued` : '✅ Good choice — you would have lost it if you continued';
       showBanner({ cls: 'cashed', b1: plus ? 'YOU\'VE WON' : 'CASHED OUT', b2: plus ? '+' + fmt(R.net) : fmt(R.cashout), html: scoreBar(R), b4: `Staked ${fmt(R.staked)} · Cashed out ${fmt(R.cashout)}`, b5: tip });
       say(`${plus ? 'You won ' + fmt(R.net) + '.' : 'Cashed out ' + fmt(R.cashout) + '.'} ${tip.replace(/^✅ /, '')}.`);
+    } else if (R.craps) {   /* the bet lost and a wheel ended on the player's number: play the craps round */
+      ui.busy = true; await crapsShow(R); ui.busy = false;
+      const rolls = R.craps.rolls.map(d => d[0] + d[1]).join(' · ');
+      if (R.refund > 0) {
+        showBanner({ cls: 'cashed', b1: 'STAKE SAVED 🎲', b2: '+' + fmt(R.refund), html: scoreBar(R), b4: `Craps on your number ${R.fav}: ${rolls} · Round net ${fmt(R.net)}` });
+        Snd.cash(); say(`Craps bonus won. Your stake of ${fmt(R.refund)} is back. Round net ${fmt(R.net)}.`);
+      } else {
+        showBanner({ cls: 'loss', b1: 'NO WIN', b2: fmt(R.net), html: scoreBar(R), b4: `Craps on your number ${R.fav}: ${rolls} · no luck` });
+        Snd.lose(); say(`Craps bonus lost. Round net ${fmt(R.net)}.`);
+      }
     } else if (R.winner === 'C' && !(R.payout > 0)) {
       showBanner({ cls: 'center', b1: 'CENTER!', b2: 'Both sides lose', html: scoreBar(R), b4: `Round net ${fmt(R.net)}` });
       Snd.center(); $('#eqRow').classList.add('shake'); if (!reduced) { $('#flash').animate([{ opacity: 0 }, { opacity: .35, offset: .2 }, { opacity: 0 }], { duration: 800 }); }
@@ -1491,6 +1554,17 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   $('#resetBtn').onclick = () => { Snd.init(); if (G.phase === 'finished') newRound(); if (E.resetBalance(G)) { setStake(Math.min(ui.stake || 1, 1) || 1); syncBalance(); renderAll(); say('Balance reset to €1,000.00'); } };
   $('#sndBtn').onclick = e => { Snd.init(); ui.sound = !ui.sound; e.currentTarget.setAttribute('aria-pressed', ui.sound); e.currentTarget.firstChild.textContent = ui.sound ? '🔊' : '🔇'; };
   $('#rulesClose').onclick = () => $('#rules').close();
+  $('#favBtn').onclick = () => {
+    if (G.phase !== 'idle' || ui.busy) return; Snd.init();
+    $('#favGrid').innerHTML = Array.from({ length: 37 }, (_, n) => `<button data-n="${n}" class="${n === 0 ? 'z' : E.RED.has(n) ? 'r' : 'b'}${n === G.fav ? ' sel' : ''}" aria-pressed="${n === G.fav}">${n}</button>`).join('');
+    $('#favDlg').showModal();
+  };
+  $('#favGrid').onclick = e => {
+    const b = e.target.closest('button'); if (!b || !E.setFav(G, +b.dataset.n)) return;
+    try { localStorage.setItem('crashRouletteFav', String(G.fav)); } catch (err) { /* not saved, still used this session */ }
+    Snd.chip(); $('#favDlg').close(); renderAll(); say(`Your craps number is ${G.fav}.`);
+  };
+  $('#favClose').onclick = () => $('#favDlg').close();
   $('#oddsTog').onchange = e => $('#stage').classList.toggle('hideodds', !e.target.checked);
   $('#footBtn').onclick = e => { const d = $('#drawer'), o = d.classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', o); e.currentTarget.textContent = (o ? '▾' : '▴') + ' Log & debug'; };
   $('#sheetBtn').onclick = () => $('#rail').classList.add('open'); $('#sheetClose').onclick = () => $('#rail').classList.remove('open');
@@ -1547,7 +1621,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
         const go = async (pos, on, msg) => { mk.style.left = pos + '%'; await T.sleep(1100); L.classList.toggle('glow', on === 'L'); H.classList.toggle('glow', on === 'H'); Cc.classList.toggle('glow', on === 'C'); L.classList.toggle('dim', on === 'C'); H.classList.toggle('dim', on === 'C'); Cc.classList.toggle('dim', on !== 'C'); v.innerHTML = msg; v.classList.add('on'); await T.sleep(900); };
         await T.sleep(400); await go(27, 'L', 'Score 19 → <span class="gL">LOWER wins</span>'); await go(76, 'H', 'Score 55 → <span class="gH">HIGHER wins</span>'); await go(50, 'C', `Score 36 → <span class="gold">CENTER wins x${oc.toFixed(0)}</span>, HIGHER & LOWER lose`);
       } },
-    { t: 'Sectors disappear', x: 'Every spin knocks a whole sector out of the wheel — the ball can no longer land there — and the last spin is the biggest. Gold pockets are lucky: if the ball ends there, your win is multiplied (×2 to ×10). The catch: lucky pockets lower the payout of an ordinary win, so a likely side can even pay under x1.00.',
+    { t: 'Sectors disappear', x: 'Every spin knocks a whole sector out of the wheel — the ball can no longer land there — and the last spin is the biggest. Gold pockets are lucky: if the ball ends there, your win is multiplied (×2 to ×10). The catch: lucky pockets lower the payout of an ordinary win, so a likely side can even pay under x1.00. Your 🎲 number: lose with a wheel on it and you roll craps for your stake back.',
       async run(S, T) {
         let g = null; try { g = E.createGame({}); E.placeBet(g, 'H', 1); } catch (e) { g = null; }
         const st = () => g ? E.stats(g) : { H: { prob: .5, odds: 1.96 }, L: { prob: .5, odds: 1.96 } };
