@@ -557,6 +557,8 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
 .pk.fav{stroke:#7fd3ff!important;stroke-width:2.2!important}.hp.save,.hp.push{background:rgba(127,211,255,.14);color:#bfe6ff;border-color:rgba(127,211,255,.45)}
 #lucky{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:8px}#lucky span{padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;color:#ffe3a0;background:rgba(255,211,107,.12);border:1px solid rgba(255,211,107,.45);white-space:nowrap}#lucky b{color:#ffd36b}
 @media(max-width:700px){.side.C .p{font-size:10px}.side.C .t{font-size:11px}}
+.side.rr{background:rgba(127,211,255,.08)!important;border:1.5px dashed rgba(127,211,255,.6)!important;color:#bfe6ff!important;opacity:1!important;transform:none!important;animation:none!important;cursor:pointer}
+.side.rr:hover{background:rgba(127,211,255,.16)!important}.side.rr .o{font-size:clamp(18px,1.8vw,24px);opacity:.75;text-decoration:line-through}.side.rr .p{font-size:11px}@media(max-width:700px){.side.rr .p{display:none}.side.rr .t{font-size:12px}}
 </style>
 </head>
 <body>
@@ -657,7 +659,7 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
   <h5>The reveal</h5><p>Each wheel narrows down in 5 steps. Every step knocks out a whole <b>sector</b> (a run of 5, 6, 7, 8 and finally 10 neighbouring pockets), so you are predicting where the ball will land. One pocket is left at the end. Wheel 1 resolves first, then Wheel 2. Odds, win chance and the wheel colours update after every step.</p>
   <h5>Your decisions</h5>
   <ul><li><b>Hold</b> – keep your position, reveal the next step.</li><li><b>Boost</b> – buy more potential win on your side at today's odds (doubles your potential payout).</li><li><b>Flip</b> – sell your position, buy the opposite side for the same potential payout.</li><li><b>Cash out</b> – take the cash value now and end the round. The real numbers are still revealed afterwards.</li></ul>
-  <h5>Lucky pockets</h5><p>Each round 1–2 pockets are marked gold with a multiplier (×2 to ×10). If the ball ends on one and your side wins, your win is multiplied. To pay for those big wins, an ordinary win pays less: the more likely a lucky win is for your side, the lower the number on its button. That is why a very likely side can show less than <b>x1.00</b> — an ordinary win then gives back less than you staked, and only a lucky hit makes a profit. Over many rounds it evens out to the same 98% as every other bet.</p><h5>Doubles: money back</h5><p>If your bet <b>loses</b> but both wheels end on the same number (7 and 7, 22 and 22…), you get your stake back: no win, no loss.</p><h5>Your lucky number: craps bonus</h5><p>Pick your own lucky number (🎲 button next to your balance, 36 by default; a birthday works). If your bet <b>loses</b> and either wheel ends on your number, you play a round of craps: 7 or 11 wins, 2, 3 or 12 loses, anything else becomes your point and you roll until the point (win) or a 7 (lose). Win it and you get your lost stake back. It works about half the time, and it is priced into the odds, so every number is equally fair. Doubles count first: double 36s give your stake back without a roll.</p><h5>Auto-hold</h5><p>When every remaining pair already wins for one side the outcome is decided, so the rest plays out automatically.</p>
+  <h5>Lucky pockets</h5><p>Each round 1–2 pockets are marked gold with a multiplier (×2 to ×10). If the ball ends on one and your side wins, your win is multiplied. To pay for those big wins, an ordinary win pays less: the more likely a lucky win is for your side, the lower the number on its button. So a very likely side can work out at less than <b>x1.00</b>. Such a side can't be bet: its button turns into <b>🔀 NEW TARGET</b>, which swaps the target for another random one (the hidden results and lucky pockets stay the same). Over many rounds it evens out to the same 98% as every other bet.</p><h5>Doubles: money back</h5><p>If your bet <b>loses</b> but both wheels end on the same number (7 and 7, 22 and 22…), you get your stake back: no win, no loss.</p><h5>Your lucky number: craps bonus</h5><p>Pick your own lucky number (🎲 button next to your balance, 36 by default; a birthday works). If your bet <b>loses</b> and either wheel ends on your number, you play a round of craps: 7 or 11 wins, 2, 3 or 12 loses, anything else becomes your point and you roll until the point (win) or a 7 (lose). Win it and you get your lost stake back. It works about half the time, and it is priced into the odds, so every number is equally fair. Doubles count first: double 36s give your stake back without a roll.</p><h5>Auto-hold</h5><p>When every remaining pair already wins for one side the outcome is decided, so the rest plays out automatically.</p>
   <h5>Fairness</h5><p>Odds = (98% × possible pairs − 244/495 × losing pairs that hold your lucky number − losing doubles) ÷ winning pairs, each winning pair counted with its lucky multiplier (RTP 98%), rounded down. Position value = Σ stake × (odds × win chance + 244/495 × craps chance + doubles chance). Cash-out = value × 0.95, capped at 95% of the stake. Rounding always favours the house.</p>
   <h5>Wheel colours</h5><p>The glowing ring marks each number: ▲ green = good for your side (over half of the other wheel's numbers win with it), ▼ red = bad, – grey = even.</p>
   <p style="margin-top:10px;color:var(--mute)">Demo credits only. No real money.</p>
@@ -680,6 +682,7 @@ const Engine = (function () {
   const WHEEL_ORDER = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
   const RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
   const MIN_BET = 0.10, MAX_BET = 100, START_BALANCE = 1000, RTP = 0.98;
+  const MIN_ODDS = 1;   /* a bet whose ordinary win would pay back less than the stake is not offered */
   const SIDE_NAME = { H: 'HIGHER', L: 'LOWER', C: 'CENTER' };
   /* Craps bonus: the player picks a number (default 36). If a bet LOSES and either wheel ends on that number,
      a pass-line craps round is played; winning it refunds the lost stakes. Pass-line wins 244/495 of the time.
@@ -796,6 +799,14 @@ const Engine = (function () {
     g.phase = 'idle'; g.startBalance = g.balance; g.roundId++;
     return g;
   }
+  /* Before the bet the player may swap the target for another random one (offered when a side pays under x1).
+     Only the target changes: the hidden wheel results and lucky pockets stay, and every target is priced at
+     98% on its own, so choosing between targets cannot beat 98%. */
+  function newTarget(g) {
+    if (g.phase !== 'idle') return false;
+    let t; do t = pickTarget(g.rng); while (t === g.threshold);
+    g.threshold = t; return true;
+  }
   /* the craps number can only change between rounds: the odds of a running bet already price it in */
   function setFav(g, n) {
     n = Number(n); if (!Number.isInteger(n) || n < 0 || n > 36 || g.phase === 'live' || g.phase === 'cashed') return false;
@@ -821,6 +832,7 @@ const Engine = (function () {
     if (!v.ok) return v;
     const st = stats(g), o = st[side] ? st[side].odds : null;
     if (o === null) return { ok: false, error: 'That side cannot win' };
+    if (o < MIN_ODDS) return { ok: false, error: 'That side pays under x1: change the target' };
     if (!(side in SIDE_NAME)) return { ok: false, error: 'Unknown side' };
     g.startBalance = g.balance;
     g.balance = round2(g.balance - v.stake);
@@ -906,6 +918,7 @@ const Engine = (function () {
     const oo = canFlip ? st[oth].odds : null;
     if (!canFlip) res.flip = { ok: false, reason: 'n/a for center' };
     else if (oo === null) res.flip = { ok: false, reason: 'side cannot win', to: oth };
+    else if (oo < MIN_ODDS) res.flip = { ok: false, reason: 'pays under x1', to: oth };
     else {
       const newStake = ceil2(p.potential / oo); let credit = floor2(p.value);
       if (betValue(st, oth, newStake, oo) < p.value) credit = Math.max(credit, newStake);   /* moving to a LESS valuable position never costs you: refund (or free), whatever the rounding */
@@ -971,7 +984,7 @@ const Engine = (function () {
 
   return { STEPS, WHEEL_ORDER, RED, MIN_BET, MAX_BET, SIDE_NAME, floor2, ceil2, round2, floor3, other,
     planWheel, createGame, prepareRound, placeBet, validateStake, reveal, stats, counts, numberColors, position, options,
-    boost, flip, cashout, hold, hindsightBoost, resetBalance, currentSide, openBets, pairMult, T_MIN, T_MAX, CRAPS_WIN, setFav, rollCraps, betValue };
+    boost, flip, cashout, hold, hindsightBoost, resetBalance, currentSide, openBets, pairMult, T_MIN, T_MAX, CRAPS_WIN, setFav, rollCraps, betValue, newTarget, MIN_ODDS };
 })();
 if (false && typeof module !== 'undefined') module.exports = Engine;
 
@@ -1296,11 +1309,21 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   function setStake(v, silent) {
     v = E.round2(Math.max(0, v)); ui.stake = v; renderBet();
   }
+  const lowPay = (st, s) => st[s].odds !== null && st[s].odds < E.MIN_ODDS;
+  function fixSide() {   /* never leave the pick on a side that cannot be bet: move to the other side, else CENTER */
+    if (G.phase !== 'idle') return; const st = E.stats(G), ok = s => st[s].odds !== null && !lowPay(st, s);
+    if (ok(ui.side)) return;
+    const opp = ui.side === 'H' ? 'L' : ui.side === 'L' ? 'H' : null;
+    ui.side = [opp, 'H', 'L', 'C'].filter(Boolean).find(ok) || ui.side;
+  }
   function renderBet() {
+    fixSide();
     document.querySelectorAll('#chips .chip').forEach(c => { const on = Math.abs(+c.dataset.v - (ui.stake || 0)) < 1e-9; c.classList.toggle('sel', on); c.setAttribute('aria-pressed', on); });
     const st = E.stats(G), v = E.validateStake(G, ui.stake), msg = $('#msg'); let err = !v.ok ? v.error : '';
     for (const s of ['H', 'C', 'L']) {
-      const b = $('#side' + s), o = st[s].odds; b.classList.toggle('sel', ui.side === s); b.setAttribute('aria-pressed', ui.side === s); b.disabled = o === null || ui.busy;
+      const b = $('#side' + s), o = st[s].odds, rr = lowPay(st, s); b.classList.toggle('rr', rr); b.classList.toggle('sel', ui.side === s && !rr); b.setAttribute('aria-pressed', ui.side === s && !rr); b.disabled = o === null || ui.busy;
+      if (rr) { b.innerHTML = `<span class="t">🔀 NEW TARGET</span><span class="o">${NAME[s]} x${o.toFixed(2)}</span><span class="p">pays under x1 · tap to change</span>`; b.setAttribute('aria-label', `${NAME[s]} pays only x${o.toFixed(3)}. Tap for a new random target.`); continue; }
+      b.removeAttribute('aria-label');
       b.innerHTML = `<span class="t">${ARROW[s]} ${NAME[s]} ${s === 'H' ? '&gt;' : s === 'L' ? '&lt;' : '='} ${G.threshold}</span><span class="o">${fmtOdds(o)}</span><span class="p">win chance ${pct(st[s].prob)}</span>`;
     }
     if (st[ui.side].odds === null) err = 'This side cannot win';
@@ -1341,7 +1364,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
     return `Final <b>${R.finals[0]} + ${R.finals[1]} = ${R.score}</b> · Target <b>${R.threshold}</b> · <b>${w}</b><br><span style="color:var(--mute)">Round net <b style="color:${R.net >= 0 ? '#4dffb0' : '#ff8095'}">${R.net >= 0 ? '+' : ''}${fmt(R.net)}</b></span>`;
   }
   function renderAll() {
-    renderTarget(); syncWheel(0); syncWheel(1); setActive(); renderEq(); renderMeter(); renderProb(); renderPos(); renderSteps(); renderSpark(); renderHist(); renderDock(); renderDebug();
+    fixSide(); renderTarget(); syncWheel(0); syncWheel(1); setActive(); renderEq(); renderMeter(); renderProb(); renderPos(); renderSteps(); renderSpark(); renderHist(); renderDock(); renderDebug();
   }
 
   /* ---------- tension: heartbeat that speeds up (Aviator-style) ---------- */
@@ -1558,9 +1581,14 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   /* ---------- wiring ---------- */
   buildPos(); buildChips();
   $('#chips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b || ui.busy) return; Snd.init(); Snd.chip(); setStake(Math.min(+b.dataset.v, stakeCap() || +b.dataset.v)); });
-  $('#sideH').onclick = () => { ui.side = 'H'; Snd.init(); Snd.chip(); syncWheel(0); syncWheel(1); renderBet(); renderProb(); };
-  $('#sideL').onclick = () => { ui.side = 'L'; Snd.init(); Snd.chip(); syncWheel(0); syncWheel(1); renderBet(); renderProb(); };
-  $('#sideC').onclick = () => { ui.side = 'C'; Snd.init(); Snd.chip(); syncWheel(0); syncWheel(1); renderBet(); renderProb(); };
+  function pickSide(s) {
+    Snd.init();
+    if ($('#side' + s).classList.contains('rr')) {   /* "new target" mode: roll another target, keep the player's pick if it is still valid */
+      if (ui.busy || !E.newTarget(G)) return; Snd.lock(); renderAll(); say(`New target ${G.threshold}.`); return;
+    }
+    ui.side = s; Snd.chip(); syncWheel(0); syncWheel(1); renderBet(); renderProb();
+  }
+  $('#sideH').onclick = () => pickSide('H'); $('#sideL').onclick = () => pickSide('L'); $('#sideC').onclick = () => pickSide('C');
   $('#spinBtn').onclick = spin;
   $('#aHold').onclick = () => act('hold'); $('#aBoost').onclick = () => act('boost'); $('#aFlip').onclick = () => act('flip'); $('#aCash').onclick = () => act('cash');
   $('#newBtn').onclick = () => { Snd.init(); newRound(); };
@@ -1653,7 +1681,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
         }
         cap.textContent = '…and so on until one number is left';
       } },
-    { t: 'Bonuses', x: 'Three extras. ⚡ Gold lucky pockets multiply a win ×2 to ×10. 🎲 Your lucky number (tap 🎲 next to your balance; a birthday works): lose with a wheel on it and you roll dice for your stake back. ⇆ Doubles: lose but both wheels show the same number, and your stake comes back. All three are paid for by slightly lower odds, so the game stays 98% fair, and a very likely side can even pay under x1.00.',
+    { t: 'Bonuses', x: 'Three extras. ⚡ Gold lucky pockets multiply a win ×2 to ×10. 🎲 Your lucky number (tap 🎲 next to your balance; a birthday works): lose with a wheel on it and you roll dice for your stake back. ⇆ Doubles: lose but both wheels show the same number, and your stake comes back. All three are paid for by slightly lower odds, so the game stays 98% fair. A side that would pay under x1.00 cannot be bet; its button offers a 🔀 new target instead.',
       async run(S, T) {
         S.innerHTML = `<div class="bns">
           <div class="bn lk"><span class="bi">⚡</span><div><b>Lucky pocket ×5</b><em>Your side wins and Wheel 1 ends on the gold 7: €1.80 × 5 = <span class="gold">€9.00</span></em></div></div>
