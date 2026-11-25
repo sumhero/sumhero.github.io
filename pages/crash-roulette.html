@@ -383,6 +383,8 @@ body{background:#0c0c10;overflow-x:hidden}
 #banner .b5{margin-top:10px;font-size:16px;font-weight:600;color:#e6c27a;max-width:30em}#banner .b5:empty{display:none}#banner.cashed{border-color:rgba(91,141,239,.5);box-shadow:0 24px 70px rgba(0,0,0,.5)}#banner.cashed .b2{color:#9fbcf5;text-shadow:none}
 #banner.big{border-width:1px;border-color:var(--gold);animation:none}
 #decided{font-family:var(--ui);font-weight:700;color:#fff;text-shadow:none;letter-spacing:.06em}
+#boosted{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);opacity:0;pointer-events:none;z-index:6;white-space:nowrap;padding:8px 18px;border-radius:999px;background:linear-gradient(180deg,#ff9d2e,#c2570a);border:1px solid #ffd08a;color:#fff;font:800 clamp(16px,2.4vw,24px) var(--ui);letter-spacing:.06em;box-shadow:0 0 26px rgba(255,150,40,.55)}
+#boosted span{font-weight:700;opacity:.95}
 #flash{background:rgba(245,235,210,.45)}
 #vig{background:radial-gradient(ellipse at center,transparent 45%,rgba(110,20,40,.4) 100%)}
 #rays{background:repeating-conic-gradient(from 0deg,rgba(242,230,201,.07) 0 6deg,transparent 6deg 16deg)}
@@ -654,6 +656,7 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
         </div>
       </div>
       <div id="decided" aria-hidden="true">DECIDED!</div>
+      <div id="boosted" aria-hidden="true"></div>
       <div id="banner" role="status"><div class="b1"></div><div class="b2 num"></div><div class="b3"></div><div class="b4"></div><div class="b5"></div></div>
     </section>
 
@@ -959,7 +962,8 @@ const Engine = (function () {
     const p = position(g), st = stats(g), side = p.side, oth = other(side);
     const canFlip = side !== 'C';
     const bo = st[side].odds;
-    if (bo === null || bo <= 1.0) res.boost = { ok: false, reason: 'no upside' };
+    if (bo === null) res.boost = { ok: false, reason: 'side cannot win' };
+    else if (bo <= 1.0) res.boost = { ok: false, reason: 'no upside', odds: bo };   /* the bonuses priced into the odds can push them to x1 or below even at ~85-90% */
     else {
       const cost = ceil2(p.potential / bo);
       res.boost = cost > g.balance + EPS ? { ok: false, reason: 'insufficient balance', cost, gain: p.potential, odds: bo }
@@ -1387,7 +1391,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
     $('#dTimer').classList.toggle('hidden', !on);
     $('#aHold').disabled = !on; $('#sHold').textContent = disabled ? 'Revealing…' : 'Reveal next step';
     if (!disabled) {
-      const b = o.boost; $('#aBoost').disabled = !(on && b.ok); $('#sBoost').textContent = b.ok ? `+${fmt(E.floor2(b.gain))} win · ${fmt(b.cost)}` : (b.reason || '—');
+      const b = o.boost; $('#aBoost').disabled = !(on && b.ok); $('#sBoost').textContent = b.ok ? `+${fmt(E.floor2(b.gain))} win · ${fmt(b.cost)}` : b.reason === 'no upside' ? `Odds x${b.odds.toFixed(2)}: nothing to gain` : (b.reason || '—');
       const f = o.flip; $('#aFlip').disabled = !(on && f.ok);
       $('#sFlip').textContent = f.to ? (f.reason && !f.ok && f.net == null ? f.reason : `to ${NAME[f.to]} · ${f.net < 0 ? 'Refund ' + fmt(-f.net) : f.net === 0 ? 'Free' : 'Cost ' + fmt(f.net)}${f.ok ? '' : ' — ' + f.reason}`) : '—';
       const pr = side ? E.stats(G)[side].prob : 0, oth = side === 'H' ? 'L' : 'H';   /* glow hints: boost when we are the favourite, flip when we are the underdog */
@@ -1499,6 +1503,12 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   const _sb = showBanner; showBanner = function (o) { _sb(o); if (o.html) dropBall(); };
   const hideBanner = () => { banner.className = ''; };
   banner.addEventListener('click', hideBanner);
+  function boostedMoment() {   /* visible proof the boost was bought: on phones the position card sits in a closed sheet */
+    const el = $('#boosted'), win = E.floor2(E.position(G).potential);
+    el.innerHTML = `⚡ BOOSTED <span>· wins ${fmt(win)}</span>`; say(`Boosted. Now wins ${fmt(win)}.`);
+    el.getAnimations().forEach(a => a.cancel());
+    el.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.6)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1.08)', offset: .15 }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .8 }, { opacity: 0, transform: 'translate(-50%,-60%) scale(1)' }], { duration: 1600 * spd() });
+  }
   function flash() { if (reduced) return; $('#flash').animate([{ opacity: 0 }, { opacity: .9, offset: .12 }, { opacity: 0 }], { duration: 900 }); }
   /* The 3D golden dice (pages/vendor/craps3d.min.js, built from tools/craps3d). It only replays the throws
      the engine already decided (R.craps.rolls). Without WebGL it falls back to the flat banner dice. */
@@ -1636,7 +1646,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   async function act(kind) {
     if (ui.busy || G.phase !== 'live') return; Snd.init(); const o = E.options(G);
     if (kind === 'hold') { E.hold(G); if (ui.auto) { G.log[G.log.length - 1] = 'AUTO-HOLD (no decision)'; ui.auto = false; } }
-    else if (kind === 'boost') { if (!o.boost.ok) return; E.boost(G); Snd.chip(); }
+    else if (kind === 'boost') { if (!o.boost.ok) return; E.boost(G); Snd.chip(); boostedMoment(); }
     else if (kind === 'flip') { if (!o.flip.ok) return; E.flip(G); Snd.lock(); }
     else if (kind === 'cash') {
       if (!o.cash.ok) return; E.cashout(G); ui.ff = true; ui.ffk = 0.16; Beat.stop(); Snd.cash();
