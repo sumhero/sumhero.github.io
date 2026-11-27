@@ -48,7 +48,9 @@ tools/build-sw.js     Regenerates sw.js from sw-template.js + a directory scan,
                        plus version.json and js/version.js
 test/                 Vitest suite, mirrors the js/ tree (engine/, games/,
                        render/, data/, i18n/, tools/) plus
-                       test/docs/claude-md.test.js
+                       test/docs/claude-md.test.js and
+                       test/pages/crash-roulette.test.js (which lifts the
+                       Engine block out of the page's HTML and evaluates it)
 js/
   app.js               App controller: screen switching, init, translations
   sound.js             Sound.play('correct'|'wrong'|'victory')
@@ -294,7 +296,15 @@ js/
     chosen number and the stake-back on doubles, so any new bonus must be priced into the odds the
     same way, not paid on top. The
     sector-by-sector reveal must leave the final number equally likely to be
-    any number still on the wheel.
+    any number still on the wheel. Every round is drawn from one secret seed
+    (commit-reveal): its SHA-256 hash is shown before the bet (🔒 Fair in the
+    footer), the seed after the round, and `Engine.verifyRound` replays the
+    seed to check target, lucky pockets, both wheels and the craps dice.
+    Anything random that affects a round's outcome must therefore be drawn
+    from `g.roundRng` in a fixed order — a draw from `g.rng` or `Math.random`
+    would not be covered by the commitment and the replay would not match.
+    The 🔒 button lives in the footer because a fourth header button wraps
+    the header onto a second row on phones.
   - `memory` *does* fit the exercise-and-scoring shape, but
     `GameEngine.completeGame()` hardcodes a three-line stats block
     (exercises/wrongAttempts/time) and the rule

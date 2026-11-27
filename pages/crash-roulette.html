@@ -556,6 +556,8 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
 @keyframes lk{50%{filter:drop-shadow(0 0 7px #ffd36b) brightness(1.5)}}
 #favBtn b{font-weight:700;font-variant-numeric:tabular-nums}#favBtn:disabled{opacity:.5;cursor:default}
 .favGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px;margin-top:14px}.favGrid button{height:42px;border-radius:10px;border:1px solid rgba(255,255,255,.14);color:#fff;font:700 15px var(--ui);cursor:pointer}.favGrid .r{background:#6e2a24}.favGrid .b{background:#2a2522}.favGrid .z{background:#2f5a40}.favGrid .sel{outline:3px solid #7fd3ff;outline-offset:1px}
+#fairDlg code{display:block;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;word-break:break-all;background:rgba(255,255,255,.07);padding:8px 10px;border-radius:10px;color:#e8e6ff;user-select:all;-webkit-user-select:all}#fairDlg code.wait{color:var(--mute);font-family:var(--ui);user-select:none;-webkit-user-select:none}
+#fairChecks{list-style:none;padding:0;margin-top:12px}#fairChecks li.ok{color:#7be0a8}#fairChecks li.bad{color:#ff8f9f;font-weight:700}#fairDlg .how{margin-top:12px;font-size:12px;color:var(--mute)}
 .pk.fav{stroke:#7fd3ff!important;stroke-width:2.2!important}.hp.save,.hp.push{background:rgba(127,211,255,.14);color:#bfe6ff;border-color:rgba(127,211,255,.45)}
 #crapsFx{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;opacity:0;pointer-events:none;transition:opacity .45s;background:radial-gradient(ellipse at 50% 55%,rgba(64,38,8,.97) 0%,rgba(20,12,4,.985) 45%,rgba(4,3,2,.99) 100%)}
 #crapsFx.on{opacity:1;pointer-events:auto}
@@ -625,8 +627,7 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
     <div class="logo"><b>🎡 CRASH ROULETTE</b><span>Double Wheel</span></div>
     <div class="pill" id="balPill"><small>Balance</small><span id="balance" class="num">€1,000.00</span></div>
     <button class="ib reset hidden" id="resetBtn">Reset balance</button>
-    <button class="ib" id="favBtn" title="Lucky number">🎲<b>36</b></button>
-    <button class="ib" id="sndBtn" aria-pressed="true" title="Sound on/off">🔊<span class="lbl">Sound</span></button>
+    <button class="ib" id="favBtn" title="Lucky number">🎲<b>36</b></button>    <button class="ib" id="sndBtn" aria-pressed="true" title="Sound on/off">🔊<span class="lbl">Sound</span></button>
     <button class="ib" id="tutBtn">?<span class="lbl">Tutorial</span></button>
   </header>
 
@@ -697,7 +698,7 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
   </div>
 
   <footer>
-    <div style="display:flex;gap:8px"><button class="ib" id="footBtn" aria-expanded="false">▴ Log &amp; debug</button><button class="ib" id="sheetBtn">▴ Position &amp; history</button></div>
+    <div style="display:flex;gap:8px"><button class="ib" id="footBtn" aria-expanded="false">▴ Log &amp; debug</button><button class="ib" id="sheetBtn">▴ Position &amp; history</button><button class="ib" id="fairBtn" title="Provably fair: check this round">🔒 Fair</button></div>
     <div>Demo — no real money · demo credits only</div>
   </footer>
 </div>
@@ -723,6 +724,15 @@ dialog#tut::backdrop{background:rgba(0,0,0,.72)}
   <p>If your bet loses and either wheel ends on this number, you roll craps for your stake back. Pick any number you like (a birthday works). The odds already include the bonus, so every number is equally fair.</p>
   <div class="favGrid" id="favGrid"></div>
   <button class="ib x" id="favClose">Close</button>
+</dialog>
+<dialog id="fairDlg">
+  <h2>PROVABLY FAIR</h2>
+  <p>Every round is decided <b>before you bet</b> by one secret seed: the target, the lucky pockets, both wheels and the craps dice all come from it. The seed's fingerprint (its SHA-256 hash) is shown here straight away. When the round is over the seed itself is revealed, so you can check that nothing was changed after your bet.</p>
+  <h5>This round's hash</h5><code id="fairHash"></code>
+  <h5>Seed</h5><code id="fairSeed"></code>
+  <ul id="fairChecks"></ul>
+  <p class="how">To check it yourself, hash the seed text with any SHA-256 tool: the result must be the hash above. Demo: the game runs in your browser, so this shows how the check works; it protects players once the seed is kept on a server.</p>
+  <button class="ib x" id="fairClose">Close</button>
 </dialog>
 
 <script>
@@ -829,22 +839,78 @@ const Engine = (function () {
     return out;
   }
 
+  /* ---- provable fairness (commit-reveal) ----
+     With opts.newSeed, every round is drawn from ONE secret seed: target, lucky pockets, both wheels' sector plans,
+     any target swaps and the craps dice all come from the same seeded stream, in that order. The seed's SHA-256
+     hash is the commitment shown before the bet; the seed itself is revealed once the round is finished. Anyone can
+     then check that the hash matches and that replaying the seed gives exactly the round they were shown, so nothing
+     could have been changed after the bet. (This page runs in the browser, so here it only demonstrates the
+     protocol: it protects the player once a server holds the seed.) */
+  const SHA_P = (() => { const p = []; for (let n = 2; p.length < 64; n++) { let ok = true; for (let d = 2; d * d <= n; d++) if (n % d === 0) { ok = false; break; } if (ok) p.push(n); } return p; })();
+  const shaFrac = x => Math.floor((x - Math.floor(x)) * 4294967296) >>> 0;
+  const SHA_K = SHA_P.map(p => shaFrac(Math.cbrt(p))), SHA_H = SHA_P.slice(0, 8).map(p => shaFrac(Math.sqrt(p)));
+  function sha256(str) {   /* synchronous on purpose (crypto.subtle is async and needs https); ASCII input only */
+    const m = []; for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); if (c > 127) throw new Error('sha256: ASCII only'); m.push(c); }
+    const bits = m.length * 8; m.push(0x80); while (m.length % 64 !== 56) m.push(0);
+    m.push(0, 0, 0, Math.floor(bits / 4294967296) & 255, (bits >>> 24) & 255, (bits >>> 16) & 255, (bits >>> 8) & 255, bits & 255);
+    const h = SHA_H.slice(), w = new Array(64), rotr = (x, n) => (x >>> n) | (x << (32 - n));
+    for (let o = 0; o < m.length; o += 64) {
+      for (let i = 0; i < 16; i++) w[i] = (m[o + 4 * i] << 24 | m[o + 4 * i + 1] << 16 | m[o + 4 * i + 2] << 8 | m[o + 4 * i + 3]) >>> 0;
+      for (let i = 16; i < 64; i++) { const x = w[i - 15], y = w[i - 2]; w[i] = (w[i - 16] + (rotr(x, 7) ^ rotr(x, 18) ^ (x >>> 3)) + w[i - 7] + (rotr(y, 17) ^ rotr(y, 19) ^ (y >>> 10))) >>> 0; }
+      let a = h[0], b = h[1], c = h[2], d = h[3], e = h[4], f = h[5], q = h[6], r = h[7];
+      for (let i = 0; i < 64; i++) {
+        const t1 = (r + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & q)) + SHA_K[i] + w[i]) >>> 0;
+        const t2 = ((rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) >>> 0;
+        r = q; q = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+      }
+      [a, b, c, d, e, f, q, r].forEach((v, i) => { h[i] = (h[i] + v) >>> 0; });
+    }
+    return h.map(v => v.toString(16).padStart(8, '0')).join('');
+  }
+  /* the round's random stream: sfc32 seeded with the four 32-bit words of a 32-hex-digit seed */
+  function seedRng(seed) {
+    if (!/^[0-9a-f]{32}$/.test(seed)) throw new Error('seed must be 32 lowercase hex digits');
+    let a = parseInt(seed.slice(0, 8), 16) | 0, b = parseInt(seed.slice(8, 16), 16) | 0, c = parseInt(seed.slice(16, 24), 16) | 0, d = parseInt(seed.slice(24), 16) | 0;
+    const next = () => { const t = (a + b | 0) + d | 0; d = d + 1 | 0; a = b ^ b >>> 9; b = c + (c << 3) | 0; c = c << 21 | c >>> 11; c = c + t | 0; return (t >>> 0) / 4294967296; };
+    for (let i = 0; i < 15; i++) next();   /* mix the seed in before the first draw */
+    return next;
+  }
+  /* everything a round hides or shows before the bet, drawn in one fixed order (shared by the game and the replay) */
+  function drawRound(rng) {
+    const threshold = pickTarget(rng), lucky = pickLucky(rng), pw = [planWheel(rng), planWheel(rng)];
+    return { threshold, lucky, plans: pw.map(x => x.plan), finals: pw.map(x => x.final) };
+  }
+  const swapTarget = (rng, cur) => { let t; do t = pickTarget(rng); while (t === cur); return t; };
+  /* Replays a finished round from its revealed seed and compares it with what the game showed and paid on.
+     Returns null when the round was not seeded or is not finished yet. */
+  function verifyRound(g) {
+    const f = g.fair, r = g.result; if (!f || !r || g.phase !== 'finished') return null;
+    const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+    const rng = seedRng(f.seed), d = drawRound(rng);
+    for (let i = 0; i < f.swaps; i++) d.threshold = swapTarget(rng, d.threshold);
+    const checks = { hash: sha256(f.seed) === f.hash, target: d.threshold === g.threshold, lucky: same(d.lucky, g.lucky),
+      wheels: same(d.plans, g.plans) && same(d.finals, g.finals) && same(d.finals, r.finals),
+      dice: !r.craps || same(rollCraps(rng).rolls, r.craps.rolls) };
+    return { ok: Object.keys(checks).every(k => checks[k]), checks };
+  }
+
   /* ---- round lifecycle ---- */
   function createGame(opts) {
     opts = opts || {};
-    const g = { rng: opts.rng || Math.random, balance: opts.balance != null ? opts.balance : START_BALANCE, roundId: 0, phase: 'idle', fav: DEFAULT_FAV };
+    const g = { rng: opts.rng || Math.random, newSeed: opts.newSeed || null, balance: opts.balance != null ? opts.balance : START_BALANCE, roundId: 0, phase: 'idle', fav: DEFAULT_FAV };
     setFav(g, opts.fav);
     prepareRound(g);
     return g;
   }
   function prepareRound(g) {
     if (g.phase === 'live' || g.phase === 'cashed') throw new Error('round in progress');
-    const rng = g.rng;
-    g.threshold = pickTarget(rng);
-    g.lucky = pickLucky(rng); g.mul = [{}, {}]; for (const l of g.lucky) g.mul[l.w][l.n] = l.m;
-    const pw = [planWheel(rng), planWheel(rng)];
-    g.plans = pw.map(x => x.plan);          /* per wheel: the sector removed at each of the 5 steps */
-    g.finals = pw.map(x => x.final);        /* the survivor of the last step */
+    const seed = g.newSeed ? g.newSeed() : null;
+    g.fair = seed ? { seed, hash: sha256(seed), swaps: 0 } : null;   /* fair.seed stays secret until the round is finished */
+    const rng = g.roundRng = seed ? seedRng(seed) : g.rng, d = drawRound(rng);
+    g.threshold = d.threshold;
+    g.lucky = d.lucky; g.mul = [{}, {}]; for (const l of g.lucky) g.mul[l.w][l.n] = l.m;
+    g.plans = d.plans;                      /* per wheel: the sector removed at each of the 5 steps */
+    g.finals = d.finals;                    /* the survivor of the last step */
     g.remaining = [range37(), range37()];
     g.stepsDone = [0, 0];
     g.bets = []; g.chance = []; g.log = [];
@@ -857,8 +923,9 @@ const Engine = (function () {
      98% on its own, so choosing between targets cannot beat 98%. */
   function newTarget(g) {
     if (g.phase !== 'idle') return false;
-    let t; do t = pickTarget(g.rng); while (t === g.threshold);
-    g.threshold = t; return true;
+    g.threshold = swapTarget(g.roundRng, g.threshold);
+    if (g.fair) g.fair.swaps++;   /* the replay has to repeat the swaps to land on the same target and dice */
+    return true;
   }
   /* the craps number can only change between rounds: the odds of a running bet already price it in */
   function setFav(g, n) {
@@ -892,6 +959,7 @@ const Engine = (function () {
     g.bets.push({ type: 'INITIAL', side, stake: v.stake, lockedOdds: o, status: 'OPEN' });
     g.side = side; g.phase = 'live';
     g.chance.push({ label: 'Start', p: st[side].prob, kind: 'start' });
+    if (g.fair) log(g, `Fair hash ${g.fair.hash}`);
     log(g, `Bet €${v.stake.toFixed(2)} on ${SIDE_NAME[side]} (target ${g.threshold}) @ x${o.toFixed(3)}`);
     return { ok: true };
   }
@@ -931,7 +999,7 @@ const Engine = (function () {
       push = true; for (const b of lost) { b.status = 'PUSHED'; refund += b.stake; } refund = round2(refund);
       log(g, `DOUBLES ${g.finals[0]}–${g.finals[1]}: stake back €${refund.toFixed(2)}`);
     } else if (lost.length && (g.finals[0] === g.fav || g.finals[1] === g.fav)) {
-      craps = rollCraps(g.rng);
+      craps = rollCraps(g.roundRng);
       if (craps.win) { for (const b of lost) { b.status = 'REFUNDED'; refund += b.stake; } refund = round2(refund); }
       log(g, `CRAPS on ${g.fav}: ${craps.rolls.map(d => d[0] + '+' + d[1]).join(', ')} → ${craps.win ? 'stake back €' + refund.toFixed(2) : 'no luck'}`);
     }
@@ -939,6 +1007,7 @@ const Engine = (function () {
     g.result = { score, winner, payout, mult, craps, push, refund, fav: g.fav, lucky: g.lucky, finals: g.finals.slice(), threshold: g.threshold, cashedOut: g.cashedOut,
       hindsight: g.cashedOut ? hindsightBoost(g) : null, cashout: g.cashoutAmount, net: round2(g.balance - g.startBalance), staked: round2(g.bets.reduce((a, b) => a + b.stake, 0)) };
     g.phase = 'finished';
+    if (g.fair) log(g, `Fair seed ${g.fair.seed}`);
     log(g, `Final ${g.finals[0]} + ${g.finals[1]} = ${score} vs ${g.threshold} → ${winner === 'C' ? 'CENTER' : SIDE_NAME[winner] + ' won'}${payout ? ` · paid €${payout.toFixed(2)}` : ''} · net ${g.result.net >= 0 ? '+' : ''}€${g.result.net.toFixed(2)}`);
   }
 
@@ -1038,7 +1107,8 @@ const Engine = (function () {
 
   return { STEPS, WHEEL_ORDER, RED, MIN_BET, MAX_BET, SIDE_NAME, floor2, ceil2, round2, floor3, other,
     planWheel, createGame, prepareRound, placeBet, validateStake, reveal, stats, counts, numberColors, position, options,
-    boost, flip, cashout, hold, hindsightBoost, resetBalance, currentSide, openBets, pairMult, T_MIN, T_MAX, CRAPS_WIN, setFav, rollCraps, betValue, newTarget, MIN_ODDS };
+    boost, flip, cashout, hold, hindsightBoost, resetBalance, currentSide, openBets, pairMult, T_MIN, T_MAX, CRAPS_WIN, setFav, rollCraps, betValue, newTarget, MIN_ODDS,
+    sha256, seedRng, verifyRound };
 })();
 if (false && typeof module !== 'undefined') module.exports = Engine;
 
@@ -1049,7 +1119,13 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
   'use strict';
   const $ = s => document.querySelector(s);
   const E = Engine;
-  const G = E.createGame();
+  /* one fresh 128-bit seed per round: the engine commits to it (see "provable fairness" in the Engine) */
+  const newSeed = () => {
+    const b = new Uint8Array(16);
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(b); else for (let i = 0; i < 16; i++) b[i] = Math.floor(Math.random() * 256);
+    return Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+  };
+  const G = E.createGame({ newSeed });
   try { const v = localStorage.getItem('crashRouletteFav'); if (v !== null) E.setFav(G, v); } catch (e) { /* storage blocked: keep 36 */ }
   const reduced = false;   /* all animations/effects always on, whatever the OS 'reduce motion' setting says (by request) */
   const ui = { side: 'H', stake: 1, busy: false, ff: false, fast: false, sound: true, balShown: G.balance, rot: [0, 0], tw: [false, false], vel: [0, 0], hist: [], prevOdds: { H: null, L: null }, nums: {}, stakeAtBet: 1 };
@@ -1441,7 +1517,7 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
     ui.tTotal = DEC_SEC * 1000 * (ui.fast ? .6 : 1); ui.tEnd = performance.now() + ui.tTotal; ui.lastSec = 99; ui.tIv = setInterval(tickTimer, 80); tickTimer();
   }
   function tickTimer() {
-    if ($('#rules').open || $('#tut[open]')) { ui.tEnd += 80; return; }
+    if ($('#rules').open || $('#fairDlg').open || $('#tut[open]')) { ui.tEnd += 80; return; }
     const left = ui.tEnd - performance.now(), f = Math.max(0, left / ui.tTotal), sec = Math.ceil(left / 1000);
     $('#dTimerBar').style.width = (f * 100) + '%'; $('#dTimerBar').style.background = `hsl(${Math.round(140 * f)} 42% 46%)`;
     $('#dTimerTxt').textContent = `Auto-hold in ${Math.max(0, sec)}s`;
@@ -1691,12 +1767,23 @@ if (false && typeof module !== 'undefined') module.exports = Engine;
     Snd.chip(); $('#favDlg').close(); renderAll(); say(`Your lucky number is ${G.fav}.`);
   };
   $('#favClose').onclick = () => $('#favDlg').close();
+  /* fairness: the hash is visible all round; the seed and the replay check only once the round is finished */
+  function renderFair() {
+    const f = G.fair, done = G.phase === 'finished', v = done ? E.verifyRound(G) : null;
+    const L = { hash: 'The seed gives the hash shown before the bet', target: 'Target', lucky: 'Lucky pockets', wheels: 'Both wheels: every removed sector and the final numbers', dice: 'Craps dice' };
+    $('#fairHash').textContent = f ? f.hash : '—';
+    $('#fairSeed').textContent = f && done ? f.seed : 'Hidden until this round is over';
+    $('#fairSeed').classList.toggle('wait', !(f && done));
+    $('#fairChecks').innerHTML = v ? Object.keys(L).filter(k => k !== 'dice' || G.result.craps).map(k => `<li class="${v.checks[k] ? 'ok' : 'bad'}">${v.checks[k] ? '✓' : '✕'} ${L[k]}</li>`).join('') : '';
+  }
+  $('#fairBtn').onclick = () => { Snd.init(); renderFair(); $('#fairDlg').showModal(); };
+  $('#fairClose').onclick = () => $('#fairDlg').close();
   $('#oddsTog').onchange = e => $('#stage').classList.toggle('hideodds', !e.target.checked);
   $('#footBtn').onclick = e => { const d = $('#drawer'), o = d.classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', o); e.currentTarget.textContent = (o ? '▾' : '▴') + ' Log & debug'; };
   $('#sheetBtn').onclick = () => $('#rail').classList.add('open'); $('#sheetClose').onclick = () => $('#rail').classList.remove('open');
   document.addEventListener('pointerdown', () => Snd.init(), { once: true }); document.addEventListener('keydown', () => Snd.init(), { once: true });
   document.addEventListener('keydown', e => {
-    if (e.metaKey || e.ctrlKey || e.altKey || $('#rules').open || $('#tut[open]')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey || $('#rules').open || $('#fairDlg').open || $('#tut[open]')) return;
     const k = e.key, tag = e.target.tagName, typing = tag === 'INPUT' || tag === 'TEXTAREA';
     if (k === 'Enter') { if (typing || tag === 'BODY') { if (G.phase === 'idle') { e.preventDefault(); spin(); } else if (G.phase === 'finished') { e.preventDefault(); newRound(); } } return; }
     if (typing) return;
